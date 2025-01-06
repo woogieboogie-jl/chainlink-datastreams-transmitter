@@ -1,0 +1,14 @@
+cdcConfig:
+  hostname: 'api.testnet-dataengine.chain.link'
+  wsHostname: 'ws.testnet-dataengine.chain.link'
+  clientID: '...'
+  clientSecret: '...'
+
+onChainConfig:
+  privateKey: '0x...'
+  contractAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3'
+
+clientConfig:
+  priceDelta: '10000000000000000'
+  interval: 5000
+  feedId: '0x000359843a543ee2fe414dc14c7e7920ef10f4372990b79d6361cdc0dd1ba782'
