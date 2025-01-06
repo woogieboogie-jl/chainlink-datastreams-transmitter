@@ -6,9 +6,9 @@ cdcConfig:
 
 onChainConfig:
   privateKey: '0x...'
-  contractAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3'
+  contractAddress: '0x0a990CFfF29bbd388B29202325b3D81401f3F01C'
 
 clientConfig:
   priceDelta: '10000000000000000'
-  interval: 5000
-  feedId: '0x000359843a543ee2fe414dc14c7e7920ef10f4372990b79d6361cdc0dd1ba782'
+  intervalMin: 5
+  feedId: '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'

@@ -1,59 +1,76 @@
 export const abi = [
   {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_verifierProxy',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'constructor',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint16',
+        name: 'version',
+        type: 'uint16',
+      },
+    ],
+    name: 'InvalidReportVersion',
+    type: 'error',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'caller',
+        type: 'address',
+      },
+    ],
+    name: 'NotOwner',
+    type: 'error',
+  },
+  {
     inputs: [],
-    name: 'get',
+    name: 'NothingToWithdraw',
+    type: 'error',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: 'int192',
+        name: 'price',
+        type: 'int192',
+      },
+    ],
+    name: 'DecodedPrice',
+    type: 'event',
+  },
+  {
+    inputs: [],
+    name: 'lastDecodedPrice',
     outputs: [
       {
-        components: [
-          {
-            internalType: 'bytes32',
-            name: 'feedId',
-            type: 'bytes32',
-          },
-          {
-            internalType: 'uint192',
-            name: 'validFromTimestamp',
-            type: 'uint192',
-          },
-          {
-            internalType: 'uint192',
-            name: 'observationsTimestamp',
-            type: 'uint192',
-          },
-          {
-            internalType: 'uint192',
-            name: 'nativeFee',
-            type: 'uint192',
-          },
-          {
-            internalType: 'uint192',
-            name: 'linkFee',
-            type: 'uint192',
-          },
-          {
-            internalType: 'uint192',
-            name: 'expiresAt',
-            type: 'uint192',
-          },
-          {
-            internalType: 'int192',
-            name: 'price',
-            type: 'int192',
-          },
-          {
-            internalType: 'int192',
-            name: 'bid',
-            type: 'int192',
-          },
-          {
-            internalType: 'int192',
-            name: 'ask',
-            type: 'int192',
-          },
-        ],
-        internalType: 'struct SimpleStorage.ReportV3',
+        internalType: 'int192',
         name: '',
-        type: 'tuple',
+        type: 'int192',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 's_verifierProxy',
+    outputs: [
+      {
+        internalType: 'contract IVerifierProxy',
+        name: '',
+        type: 'address',
       },
     ],
     stateMutability: 'view',
@@ -62,59 +79,30 @@ export const abi = [
   {
     inputs: [
       {
-        components: [
-          {
-            internalType: 'bytes32',
-            name: 'feedId',
-            type: 'bytes32',
-          },
-          {
-            internalType: 'uint192',
-            name: 'validFromTimestamp',
-            type: 'uint192',
-          },
-          {
-            internalType: 'uint192',
-            name: 'observationsTimestamp',
-            type: 'uint192',
-          },
-          {
-            internalType: 'uint192',
-            name: 'nativeFee',
-            type: 'uint192',
-          },
-          {
-            internalType: 'uint192',
-            name: 'linkFee',
-            type: 'uint192',
-          },
-          {
-            internalType: 'uint192',
-            name: 'expiresAt',
-            type: 'uint192',
-          },
-          {
-            internalType: 'int192',
-            name: 'price',
-            type: 'int192',
-          },
-          {
-            internalType: 'int192',
-            name: 'bid',
-            type: 'int192',
-          },
-          {
-            internalType: 'int192',
-            name: 'ask',
-            type: 'int192',
-          },
-        ],
-        internalType: 'struct SimpleStorage.ReportV3',
-        name: 'x',
-        type: 'tuple',
+        internalType: 'bytes',
+        name: 'unverifiedReport',
+        type: 'bytes',
       },
     ],
-    name: 'set',
+    name: 'verifyReport',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_beneficiary',
+        type: 'address',
+      },
+      {
+        internalType: 'address',
+        name: '_token',
+        type: 'address',
+      },
+    ],
+    name: 'withdrawToken',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',

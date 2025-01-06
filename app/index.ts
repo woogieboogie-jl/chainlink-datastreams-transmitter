@@ -13,8 +13,8 @@ cdc.on('report', async (report: ReportV3) => {
 
 async function dataUpdater({ report }: { report: ReportV3 }) {
   try {
-    const data = await getPrice();
-    const diff = report.benchmarkPrice - data.price;
+    const price = await getPrice();
+    const diff = report.benchmarkPrice - price;
     if (abs(diff) < priceDelta) return;
     isLoading = true;
     const transaction = await setPrice(report);
@@ -23,7 +23,7 @@ async function dataUpdater({ report }: { report: ReportV3 }) {
         `🚨 ${format(
           fromUnixTime(Number(report.observationsTimestamp)),
           'y/MM/dd HH:mm:ss'
-        )} | ETH/USD: ${formatUSD(report.benchmarkPrice)}$ | ${
+        )} | AVAX/USD: ${formatUSD(report.benchmarkPrice)}$ | ${
           isPositive(diff) ? '📈' : '📉'
         } ${isPositive(diff) ? '+' : ''}${formatUSD(diff)}$`
       );

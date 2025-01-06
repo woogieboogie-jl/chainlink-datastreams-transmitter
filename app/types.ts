@@ -8,6 +8,7 @@ export type ReportV3 = Report & {
   expiresAt: bigint;
   bid: bigint;
   ask: bigint;
+  rawReport: Hex;
 };
 
 export type Config = {
@@ -20,7 +21,7 @@ export type Config = {
   onChainConfig: { privateKey: Hex; contractAddress: Address };
   clientConfig: {
     priceDelta: string;
-    interval: number;
+    intervalMin: number;
     feedId: string;
   };
 };

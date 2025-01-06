@@ -1,17 +1,3 @@
-## Example contract
-
-```bash
-cd contracts
-npm install
-npx hardhat node
-```
-
-In a separate command line
-
-```
-npx hardhat ignition deploy ignition/modules/SimpleStorage.ts --network localhost
-```
-
 ## App
 
 ```bash
