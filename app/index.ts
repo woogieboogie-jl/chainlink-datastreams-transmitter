@@ -1,34 +1,55 @@
 import { format, fromUnixTime } from 'date-fns';
-import { cdc, getPrice, interval, priceDelta, setPrice } from './client';
+import {
+  cdc,
+  interval,
+  priceDelta,
+  setPrice,
+  feeds as feedsList,
+} from './client';
 import { ReportV3 } from './types';
 import { abs, formatUSD, isPositive } from './utils';
-import { setTimeout } from 'timers/promises';
 
 let isLoading = false;
 
+const feeds: { [key: string]: string } = feedsList.reduce(
+  (prev, curr) => ({ ...prev, [curr.name]: curr.feedId }),
+  {}
+);
+
+const timeouts: { [key: string]: boolean } = {};
+
+const prices: { [key: string]: bigint } = {};
+
 cdc.on('report', async (report: ReportV3) => {
-  if (isLoading) return;
+  if (isLoading) {
+    console.log('⌛️ Transaction is in progress...');
+    return;
+  }
+  if (timeouts[report.feedId]) return;
   await dataUpdater({ report });
+  timeouts[report.feedId] = true;
+  setTimeout(() => (timeouts[report.feedId] = false), interval);
 });
 
 async function dataUpdater({ report }: { report: ReportV3 }) {
   try {
-    const price = await getPrice();
-    const diff = report.benchmarkPrice - price;
+    const diff = report.benchmarkPrice - (prices[report.feedId] ?? BigInt(0));
     if (abs(diff) < priceDelta) return;
     isLoading = true;
     const transaction = await setPrice(report);
     if (transaction.status === 'success') {
+      prices[report.feedId] = report.benchmarkPrice;
       console.log(
         `🚨 ${format(
           fromUnixTime(Number(report.observationsTimestamp)),
           'y/MM/dd HH:mm:ss'
-        )} | AVAX/USD: ${formatUSD(report.benchmarkPrice)}$ | ${
+        )} | ${Object.keys(feeds).find(
+          (feedId) => feeds[feedId] === report.feedId
+        )}: ${formatUSD(report.benchmarkPrice)}$ | ${
           isPositive(diff) ? '📈' : '📉'
         } ${isPositive(diff) ? '+' : ''}${formatUSD(diff)}$`
       );
     }
-    await setTimeout(interval);
   } catch (error) {
     console.error(error);
   } finally {

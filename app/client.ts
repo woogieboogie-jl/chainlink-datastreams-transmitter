@@ -34,7 +34,9 @@ export async function getPrice() {
 }
 
 export async function setPrice(report: ReportV3) {
+  const nonce = await publicClient.getTransactionCount(account);
   const { request } = await publicClient.simulateContract({
+    nonce,
     account,
     address: contractAddress,
     abi,
@@ -47,8 +49,9 @@ export async function setPrice(report: ReportV3) {
 
 export const cdc = new ChainlinkDatastreamsConsumer({
   ...cdcConfig,
-  feeds: [clientConfig.feedId],
+  feeds: clientConfig.feeds.map(({ feedId }) => feedId),
 });
 
 export const priceDelta = BigInt(clientConfig.priceDelta);
 export const interval = clientConfig.intervalMin * 60 * 1000;
+export const feeds = clientConfig.feeds;

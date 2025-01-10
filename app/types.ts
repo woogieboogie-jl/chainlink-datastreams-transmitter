@@ -22,6 +22,6 @@ export type Config = {
   clientConfig: {
     priceDelta: string;
     intervalMin: number;
-    feedId: string;
+    feeds: { name: string; feedId: string }[];
   };
 };
