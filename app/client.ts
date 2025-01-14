@@ -53,5 +53,5 @@ export const cdc = new ChainlinkDatastreamsConsumer({
 });
 
 export const priceDelta = BigInt(clientConfig.priceDelta);
-export const interval = clientConfig.intervalMin * 60 * 1000;
+export const interval = clientConfig.intervalSchedule;
 export const feeds = clientConfig.feeds;

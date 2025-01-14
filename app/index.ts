@@ -8,37 +8,56 @@ import {
 } from './client';
 import { ReportV3 } from './types';
 import { abs, formatUSD, isPositive } from './utils';
-
-let isLoading = false;
+import { CronJob } from 'cron';
+import Bottleneck from 'bottleneck';
 
 const feeds: { [key: string]: string } = feedsList.reduce(
   (prev, curr) => ({ ...prev, [curr.name]: curr.feedId }),
   {}
 );
 
-const timeouts: { [key: string]: boolean } = {};
-
-const prices: { [key: string]: bigint } = {};
+const reports: { [key: string]: ReportV3 } = {};
+const store: { [key: string]: ReportV3 } = {};
 
 cdc.on('report', async (report: ReportV3) => {
-  if (isLoading) {
-    console.log('⌛️ Transaction is in progress...');
-    return;
-  }
-  if (timeouts[report.feedId]) return;
-  await dataUpdater({ report });
-  timeouts[report.feedId] = true;
-  setTimeout(() => (timeouts[report.feedId] = false), interval);
+  reports[report.feedId] = report;
 });
 
-async function dataUpdater({ report }: { report: ReportV3 }) {
+const limiter = new Bottleneck({
+  maxConcurrent: 1,
+});
+
+const jobs = feedsList.map(
+  (feed) =>
+    new CronJob(
+      interval,
+      async function () {
+        const report = { ...reports[feed.feedId] };
+        if (!report.benchmarkPrice) return;
+
+        const diff =
+          report.benchmarkPrice -
+          (store[feed.feedId]?.benchmarkPrice ?? BigInt(0));
+        if (abs(diff) < priceDelta) return;
+
+        await limiter.schedule(() => dataUpdater({ report, diff }));
+      },
+      null,
+      true
+    )
+);
+
+async function dataUpdater({
+  report,
+  diff,
+}: {
+  report: ReportV3;
+  diff: bigint;
+}) {
   try {
-    const diff = report.benchmarkPrice - (prices[report.feedId] ?? BigInt(0));
-    if (abs(diff) < priceDelta) return;
-    isLoading = true;
     const transaction = await setPrice(report);
     if (transaction.status === 'success') {
-      prices[report.feedId] = report.benchmarkPrice;
+      store[report.feedId] = report;
       console.log(
         `🚨 ${format(
           fromUnixTime(Number(report.observationsTimestamp)),
@@ -47,12 +66,12 @@ async function dataUpdater({ report }: { report: ReportV3 }) {
           (feedId) => feeds[feedId] === report.feedId
         )}: ${formatUSD(report.benchmarkPrice)}$ | ${
           isPositive(diff) ? '📈' : '📉'
-        } ${isPositive(diff) ? '+' : ''}${formatUSD(diff)}$`
+        } ${isPositive(diff) ? '+' : ''}${formatUSD(
+          diff
+        )}$ | Updated onchain: ${format(Date.now(), 'y/MM/dd HH:mm:ss')}`
       );
     }
   } catch (error) {
     console.error(error);
-  } finally {
-    isLoading = false;
   }
 }

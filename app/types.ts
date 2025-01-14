@@ -21,7 +21,7 @@ export type Config = {
   onChainConfig: { privateKey: Hex; contractAddress: Address };
   clientConfig: {
     priceDelta: string;
-    intervalMin: number;
+    intervalSchedule: string;
     feeds: { name: string; feedId: string }[];
   };
 };
