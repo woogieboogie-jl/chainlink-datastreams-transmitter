@@ -6,12 +6,15 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { avalancheFuji } from 'viem/chains';
 import { Config, ReportV3 } from './types';
 import { abi } from './abi';
+import path from 'path';
 
 const {
   cdcConfig,
   clientConfig,
   onChainConfig: { privateKey, contractAddress },
-} = load(readFileSync('config.yml', 'utf8')) as Config;
+} = load(
+  readFileSync(path.resolve(__dirname, '../config.yml'), 'utf8')
+) as Config;
 
 const publicClient = createPublicClient({
   chain: avalancheFuji,
