@@ -20,7 +20,8 @@
     "@hackbg/chainlink-datastreams-consumer": "git+https://github.com/hackbg/chainlink-low-latency-consumer.git#bf08298573b88d74e3052ca9178e7430e383da11",
     "bottleneck": "^2.19.5",
     "cron": "^3.5.0",
-    "date-fns": "^4.1.0",
-    "viem": "^2.22.1"
+    "viem": "^2.22.1",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

@@ -1,12 +1,13 @@
 import { readFileSync } from 'fs';
 import { load } from 'js-yaml';
 import ChainlinkDatastreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
-import { createPublicClient, createWalletClient, Hash, http } from 'viem';
+import { createPublicClient, createWalletClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { avalancheFuji } from 'viem/chains';
 import { Config, ReportV3 } from './types';
 import { abi } from './abi';
 import path from 'path';
+import { logger } from './logger';
 
 const {
   cdcConfig,
@@ -37,6 +38,7 @@ export async function getPrice() {
 }
 
 export async function setPrice(report: ReportV3) {
+  logger.info('📝 Prepared verification transaction', report);
   const nonce = await publicClient.getTransactionCount(account);
   const { request } = await publicClient.simulateContract({
     nonce,
@@ -46,7 +48,9 @@ export async function setPrice(report: ReportV3) {
     functionName: 'verifyReport',
     args: [report.rawReport],
   });
+  logger.info('ℹ️ Transaction simulated', request);
   const hash = await walletClient.writeContract(request);
+  logger.info(`⌛️ Sending transaction ${hash} `, hash);
   return await publicClient.waitForTransactionReceipt({ hash });
 }
 

@@ -1,4 +1,5 @@
 build
+logs
 node_modules
 config.yml
 .env
