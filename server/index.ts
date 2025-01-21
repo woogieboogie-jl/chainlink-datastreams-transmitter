@@ -3,18 +3,20 @@ import { type ServerBuild } from '@remix-run/node';
 import compression from 'compression';
 import express from 'express';
 import morgan from 'morgan';
-import { CronJob } from 'cron';
+import { CronJob, CronTime } from 'cron';
 import Bottleneck from 'bottleneck';
 import { logger } from 'server/logger.js';
 import {
   cdc,
-  interval,
+  interval as initialInterval,
   priceDelta,
   setPrice,
-  feeds as feedsList,
+  feeds as initialFeeds,
 } from 'server/client.js';
 import { ReportV3 } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
+
+const interval = { interval: initialInterval };
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -64,6 +66,28 @@ async function getBuild() {
     return { error: error, build: null as unknown as ServerBuild };
   }
 }
+
+app.get('/feeds', (req, res) => {
+  res.send(feeds.map(({ name, feedId }) => ({ name, feedId })));
+});
+
+app.get('/interval', (req, res) => {
+  res.send(interval);
+});
+
+app.post('/interval', (req, res) => {
+  const newInterval: string = req.body.interval;
+
+  if (!newInterval) {
+    logger.warn('⚠ New interval invalid input', req.body);
+    res.status(400);
+    return res.send({ warning: 'New interval invalid input' });
+  }
+  interval.interval = newInterval;
+  feeds.forEach(({ job }) => job.setTime(new CronTime(newInterval)));
+  logger.info(`📢 New interval has been set ${newInterval}`, interval);
+  res.send(interval);
+});
 
 app.post('/add', (req, res) => {
   const name: string = req.body.name;
@@ -141,8 +165,10 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => logger.info(`🚀 running at http://localhost:${port}`));
 
 // https://docs.chain.link/data-streams/crypto-streams?network=arbitrum&page=1#testnet-crypto-streams
-const feeds = feedsList.map((feed) => ({ ...feed, job: createCronJob(feed) }));
-
+const feeds = initialFeeds.map((feed) => ({
+  ...feed,
+  job: createCronJob(feed),
+}));
 const reports: { [key: string]: ReportV3 } = {};
 const store: { [key: string]: ReportV3 } = {};
 
@@ -186,7 +212,7 @@ async function dataUpdater({ report }: { report: ReportV3 }) {
 
 function createCronJob(feed: { feedId: string; name: string }) {
   return new CronJob(
-    interval,
+    interval.interval,
     async function () {
       const report = { ...reports[feed.feedId] };
       if (!report.benchmarkPrice) return;
