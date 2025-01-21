@@ -27,6 +27,7 @@ const viteDevServer =
 
 const app = express();
 
+app.use(express.json());
 app.use(compression());
 
 // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
@@ -53,8 +54,7 @@ async function getBuild() {
   try {
     const build = viteDevServer
       ? await viteDevServer.ssrLoadModule('virtual:remix/server-build')
-      : // @ts-expect-error - the file might not exist yet but it will
-        // eslint-disable-next-line import/no-unresolved
+      : // eslint-disable-next-line import/no-unresolved
         await import('../build/server/remix.js');
 
     return { build: build as unknown as ServerBuild, error: null };
@@ -64,6 +64,64 @@ async function getBuild() {
     return { error: error, build: null as unknown as ServerBuild };
   }
 }
+
+app.post('/add', (req, res) => {
+  const name: string = req.body.name;
+  const feedId: string = req.body.feedId;
+
+  if (!name || !feedId) {
+    logger.warn('⚠ Add feed invalid input', req.body);
+    res.status(400);
+    return res.send({ warning: 'Add feed invalid input' });
+  }
+  const isFeedExist = !!feeds.find((feed) => feed.feedId === feedId);
+
+  if (isFeedExist) {
+    logger.info('⚠ Feed already exists', { name, feedId });
+    res.status(400);
+    return res.send({ warning: 'Feed already exists' });
+  }
+
+  const newFeed = {
+    name,
+    feedId,
+    job: createCronJob({ name, feedId }),
+  };
+
+  feeds.push(newFeed);
+  cdc.subscribeTo(newFeed.feedId);
+  logger.info(`📢 New feed ${newFeed.name} has been added`, { name, feedId });
+  res.send(feeds.map(({ name }) => name));
+});
+
+app.post('/remove', (req, res) => {
+  const feedId: string = req.body.feedId;
+  if (!feedId) {
+    logger.warn('⚠ Remove feed invalid input', req.body);
+    res.status(400);
+    return res.send({ warning: 'Remove feed invalid input' });
+  }
+
+  const feed = feeds.find((feed) => feed.feedId === feedId);
+
+  if (!feed) {
+    logger.info('Feed does not exists', { feedId });
+    res.status(400);
+    return res.send({ warning: 'Feed does not exists' });
+  }
+
+  cdc.unsubscribeFrom(feedId);
+  feed.job.stop();
+  feeds.splice(feeds.indexOf(feed), 1);
+
+  logger.info(`📢 Feed ${feed.name} has been removed`, {
+    name: feed.name,
+    feedId,
+  });
+
+  res.send(feeds.map(({ name }) => name));
+});
+
 // handle SSR requests
 app.all(
   '*',
@@ -79,17 +137,14 @@ app.all(
 );
 
 const port = process.env.PORT || 3000;
+
 app.listen(port, () => logger.info(`🚀 running at http://localhost:${port}`));
 
-const feeds: { [key: string]: string } = feedsList.reduce(
-  (prev, curr) => ({ ...prev, [curr.name]: curr.feedId }),
-  {}
-);
+// https://docs.chain.link/data-streams/crypto-streams?network=arbitrum&page=1#testnet-crypto-streams
+const feeds = feedsList.map((feed) => ({ ...feed, job: createCronJob(feed) }));
+
 const reports: { [key: string]: ReportV3 } = {};
 const store: { [key: string]: ReportV3 } = {};
-
-const getReportFeedName = (report: ReportV3) =>
-  Object.keys(feeds).find((feedId) => feeds[feedId] === report.feedId);
 
 cdc.on('report', async (report: ReportV3) => {
   reports[report.feedId] = report;
@@ -111,35 +166,6 @@ limiter.on('received', function (info) {
   logger.info('📆 Scheduled for writing onchain', info);
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const jobs = feedsList.map(
-  (feed) =>
-    new CronJob(
-      interval,
-      async function () {
-        const report = { ...reports[feed.feedId] };
-        if (!report.benchmarkPrice) return;
-
-        const diff =
-          report.benchmarkPrice -
-          (store[feed.feedId]?.benchmarkPrice ?? BigInt(0));
-        if (abs(diff) < priceDelta) return;
-        logger.info(
-          `🚨 Price deviation detected | ${getReportFeedName(
-            report
-          )}: ${formatUSD(report.benchmarkPrice)}$ | ${
-            isPositive(diff) ? '📈' : '📉'
-          } ${isPositive(diff) ? '+' : ''}${formatUSD(diff)}$`,
-          report
-        );
-
-        await limiter.schedule(() => dataUpdater({ report }));
-      },
-      null,
-      true
-    )
-);
-
 async function dataUpdater({ report }: { report: ReportV3 }) {
   try {
     const transaction = await setPrice(report);
@@ -157,3 +183,33 @@ async function dataUpdater({ report }: { report: ReportV3 }) {
     logger.error('ERROR', error);
   }
 }
+
+function createCronJob(feed: { feedId: string; name: string }) {
+  return new CronJob(
+    interval,
+    async function () {
+      const report = { ...reports[feed.feedId] };
+      if (!report.benchmarkPrice) return;
+
+      const diff =
+        report.benchmarkPrice -
+        (store[feed.feedId]?.benchmarkPrice ?? BigInt(0));
+      if (abs(diff) < priceDelta) return;
+      logger.info(
+        `🚨 Price deviation detected | ${getReportFeedName(
+          report
+        )}: ${formatUSD(report.benchmarkPrice)}$ | ${
+          isPositive(diff) ? '📈' : '📉'
+        } ${isPositive(diff) ? '+' : ''}${formatUSD(diff)}$`,
+        report
+      );
+
+      await limiter.schedule(() => dataUpdater({ report }));
+    },
+    null,
+    true
+  );
+}
+
+const getReportFeedName = (report: ReportV3) =>
+  feeds.find((feed) => feed.feedId === report.feedId)?.name ?? '';
