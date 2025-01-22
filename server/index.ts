@@ -67,15 +67,17 @@ async function getBuild() {
   }
 }
 
-app.get('/feeds', (req, res) => {
+const router = express.Router();
+
+router.get('/feeds', (req, res) => {
   res.send(feeds.map(({ name, feedId }) => ({ name, feedId })));
 });
 
-app.get('/interval', (req, res) => {
+router.get('/interval', (req, res) => {
   res.send(interval);
 });
 
-app.post('/interval', (req, res) => {
+router.post('/interval', (req, res) => {
   const newInterval: string = req.body.interval;
 
   if (!newInterval) {
@@ -89,7 +91,7 @@ app.post('/interval', (req, res) => {
   res.send(interval);
 });
 
-app.post('/add', (req, res) => {
+router.post('/add', (req, res) => {
   const name: string = req.body.name;
   const feedId: string = req.body.feedId;
 
@@ -118,7 +120,7 @@ app.post('/add', (req, res) => {
   res.send(feeds.map(({ name }) => name));
 });
 
-app.post('/remove', (req, res) => {
+router.post('/remove', (req, res) => {
   const feedId: string = req.body.feedId;
   if (!feedId) {
     logger.warn('⚠ Remove feed invalid input', req.body);
@@ -145,6 +147,8 @@ app.post('/remove', (req, res) => {
 
   res.send(feeds.map(({ name }) => name));
 });
+
+app.use('/api', router);
 
 // handle SSR requests
 app.all(
