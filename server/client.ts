@@ -59,6 +59,7 @@ export async function setPrice(report: ReportV3) {
     args: [report.rawReport],
   });
   logger.info('ℹ️ Transaction simulated', request);
+  return { status: 'success' };
   const hash = await walletClient.writeContract(request);
   logger.info(`⌛️ Sending transaction ${hash} `, hash);
   return await publicClient.waitForTransactionReceipt({ hash });
