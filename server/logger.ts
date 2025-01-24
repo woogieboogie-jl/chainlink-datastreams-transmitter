@@ -5,6 +5,20 @@ const { combine, timestamp, printf, json, colorize, align, errors } = format;
 
 const timestampFormat = 'YYYY-MM-DD HH:mm:ss';
 
+const allLogsTransport = new DailyRotateFile({
+  filename: 'logs/all/all-%DATE%.log',
+  datePattern: 'YYYY-MM-DD',
+  createSymlink: true,
+  maxFiles: 1,
+  symlinkName: 'all.log',
+  format: combine(
+    timestamp({
+      format: timestampFormat,
+    }),
+    printf((info) => `[${info.timestamp}] ${info.level}: ${info.message}`)
+  ),
+});
+
 const infoLogger = createLogger({
   level: 'silly',
   transports: [
@@ -12,6 +26,7 @@ const infoLogger = createLogger({
       filename: 'logs/logs/logs-%DATE%.log',
       datePattern: 'YYYY-MM-DD',
       maxFiles: '60d',
+      zippedArchive: true,
       format: combine(timestamp({ format: timestampFormat }), json()),
     }),
     new transports.Console({
@@ -24,6 +39,7 @@ const infoLogger = createLogger({
         printf((info) => `[${info.timestamp}] ${info.level}: ${info.message}`)
       ),
     }),
+    allLogsTransport,
   ],
 });
 
@@ -35,6 +51,7 @@ const errorLogger = createLogger({
       filename: 'logs/errors/errors-%DATE%.log',
       datePattern: 'YYYY-MM-DD',
       maxFiles: '60d',
+      zippedArchive: true,
       handleExceptions: true,
       handleRejections: true,
       format: combine(
@@ -58,6 +75,7 @@ const errorLogger = createLogger({
         )
       ),
     }),
+    allLogsTransport,
   ],
 });
 

@@ -36,6 +36,6 @@ export async function setInterval(interval: Interval) {
 
 export async function fetchLogs() {
   const result = await fetch(`${url}/logs`);
-  const data = await result.json();
+  const data: { log: string } = await result.json();
   return data;
 }

@@ -22,6 +22,12 @@ export function Navigation() {
               Overview
             </Link>
             <Link
+              to="/logs"
+              className="flex w-full items-center py-2 text-lg font-semibold"
+            >
+              Logs
+            </Link>
+            <Link
               to="/feeds"
               className="flex w-full items-center py-2 text-lg font-semibold"
             >
@@ -43,6 +49,9 @@ export function Navigation() {
       <nav className="hidden lg:flex gap-6 grow justify-end">
         <Link to="/" className={buttonVariants({ variant: 'link' })}>
           Overview
+        </Link>
+        <Link to="/logs" className={buttonVariants({ variant: 'link' })}>
+          Logs
         </Link>
         <Link to="/feeds" className={buttonVariants({ variant: 'link' })}>
           Feeds

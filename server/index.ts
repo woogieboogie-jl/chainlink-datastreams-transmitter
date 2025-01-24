@@ -15,6 +15,7 @@ import {
 } from 'server/client.js';
 import { ReportV3 } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
+import { readFile } from 'node:fs/promises';
 
 const interval = { interval: initialInterval };
 
@@ -56,7 +57,8 @@ async function getBuild() {
   try {
     const build = viteDevServer
       ? await viteDevServer.ssrLoadModule('virtual:remix/server-build')
-      : // eslint-disable-next-line import/no-unresolved
+      : // @ts-expect-error - the file might not exist yet but it will
+        // eslint-disable-next-line import/no-unresolved
         await import('../build/server/remix.js');
 
     return { build: build as unknown as ServerBuild, error: null };
@@ -146,6 +148,16 @@ router.post('/remove', (req, res) => {
   });
 
   res.send(feeds.map(({ name }) => name));
+});
+
+router.get('/logs', async (req, res) => {
+  try {
+    const log = await readFile('./logs/all/all.log', 'utf8');
+    return res.send({ log });
+  } catch (error) {
+    logger.error('ERROR', error);
+    return res.send({ log: null });
+  }
 });
 
 app.use('/api', router);
