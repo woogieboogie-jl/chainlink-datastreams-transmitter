@@ -5,9 +5,17 @@ import {
   Scripts,
   ScrollRestoration,
 } from '@remix-run/react';
-import type { LinksFunction } from '@remix-run/node';
+import type { LinksFunction, MetaFunction } from '@remix-run/node';
 
 import './tailwind.css';
+import { Navigation } from './components/navigation';
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: 'Datastreams Scheduler' },
+    { name: 'description', content: 'Chainlink Datastreams Scheduler' },
+  ];
+};
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -31,8 +39,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="container">
-        {children}
+      <body className="container min-h-screen bg-background text-foreground">
+        <Navigation />
+        <main className="flex flex-col items-center p-4 gap-8">{children}</main>
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -1,29 +1,43 @@
-import { type MetaFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
+import { fetchFeeds, fetchInterval } from '~/api';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 
-const url = process.env.API_URL || 'http://localhost:3000';
-
-export const loader = async () => {
-  const result = await fetch(`${url}/feeds`);
-  const data: { name: string; feedId: string }[] = await result.json();
-  return data;
-};
-
-export const meta: MetaFunction = () => {
-  return [
-    { title: 'Datastreams Scheduler' },
-    { name: 'description', content: 'Chainlink Datastreams Scheduler' },
-  ];
-};
+export async function loader() {
+  const [feeds, interval] = await Promise.all([fetchFeeds(), fetchInterval()]);
+  return { feeds, interval };
+}
 
 export default function Index() {
-  const data = useLoaderData<typeof loader>();
+  const { feeds, interval } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex h-screen flex-col items-center p-4">
-      <header>
-        <h1 className="leading text-2xl font-bold">Datastreams Scheduler</h1>
-      </header>
-    </div>
+    <>
+      <p>
+        Schedule patern: <span className="font-bold">{interval.interval}</span>
+      </p>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[200px]">Stream</TableHead>
+            <TableHead>Feed ID</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {feeds.map((feed, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">{feed.name}</TableCell>
+              <TableCell>{feed.feedId}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   );
 }
