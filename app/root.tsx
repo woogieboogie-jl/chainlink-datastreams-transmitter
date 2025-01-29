@@ -9,6 +9,11 @@ import type { LinksFunction, MetaFunction } from '@remix-run/node';
 
 import './tailwind.css';
 import { Navigation } from './components/navigation';
+import { WagmiProvider } from 'wagmi';
+import { config } from './wagmiConfig';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 export const meta: MetaFunction = () => {
   return [
@@ -50,5 +55,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <Outlet />
+      </QueryClientProvider>
+    </WagmiProvider>
+  );
 }

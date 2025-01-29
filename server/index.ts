@@ -13,6 +13,8 @@ import {
   setPrice,
   feeds as initialFeeds,
   verifyReport,
+  accountAddress,
+  getContractAddresses,
 } from 'server/client.js';
 import { StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
@@ -78,6 +80,15 @@ router.get('/feeds', (req, res) => {
 
 router.get('/interval', (req, res) => {
   res.send(interval);
+});
+
+router.get('/account', (req, res) => {
+  res.send({ address: accountAddress });
+});
+
+router.get('/contracts', async (req, res) => {
+  const data = await getContractAddresses();
+  res.send(data);
 });
 
 router.post('/interval', (req, res) => {

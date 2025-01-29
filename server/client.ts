@@ -47,6 +47,8 @@ const walletClient = createWalletClient({
 
 const account = privateKeyToAccount(privateKey);
 
+export const accountAddress = account.address;
+
 export async function setPrice(report: ReportV3 | ReportV4) {
   return { status: 'success' };
   // logger.info('📝 Prepared verification transaction', report);
@@ -72,21 +74,7 @@ export const priceDelta = BigInt(clientConfig.priceDelta);
 export const interval = clientConfig.intervalSchedule;
 export const feeds = clientConfig.feeds;
 
-export async function verifyReport(report: StreamReport) {
-  const [, reportData] = decodeAbiParameters(
-    [
-      { type: 'bytes32[3]', name: '' },
-      { type: 'bytes', name: 'reportData' },
-    ],
-    report.rawReport
-  );
-
-  const reportVersion = reportData.charAt(5);
-  if (reportVersion !== '3' && reportVersion !== '4') {
-    logger.warn('⚠️ Invalid report version', report);
-    return;
-  }
-
+export async function getContractAddresses() {
   const feeManagerAddress = await publicClient.readContract({
     address: verifierProxyAddress,
     abi: verifierProxyAbi,
@@ -102,6 +90,37 @@ export async function verifyReport(report: StreamReport) {
     abi: feeManagerAbi,
     functionName: 'i_linkAddress',
   });
+
+  return {
+    verifierProxyAddress,
+    feeManagerAddress,
+    rewardManagerAddress,
+    feeTokenAddress,
+  };
+}
+
+export async function verifyReport(report: StreamReport) {
+  const [, reportData] = decodeAbiParameters(
+    [
+      { type: 'bytes32[3]', name: '' },
+      { type: 'bytes', name: 'reportData' },
+    ],
+    report.rawReport
+  );
+
+  const reportVersion = reportData.charAt(5);
+  if (reportVersion !== '3' && reportVersion !== '4') {
+    logger.warn('⚠️ Invalid report version', report);
+    return;
+  }
+
+  const {
+    feeManagerAddress,
+    rewardManagerAddress,
+    feeTokenAddress,
+    verifierProxyAddress,
+  } = await getContractAddresses();
+
   const [fee] = await publicClient.readContract({
     address: feeManagerAddress,
     abi: feeManagerAbi,
@@ -154,7 +173,9 @@ export async function verifyReport(report: StreamReport) {
   logger.info(
     `⛽️ Estimated fee: ${formatEther(
       fee.amount
-    )} LINK. Estimated gas: ${formatEther(approveLinkGas + verifyReportGas)}`,
+    )} LINK | Estimated gas: ${formatEther(approveLinkGas + verifyReportGas)} ${
+      publicClient.chain.nativeCurrency.symbol
+    }`,
     { fee, approveLinkGas, verifyReportGas }
   );
 
