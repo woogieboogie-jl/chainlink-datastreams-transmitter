@@ -1,4 +1,4 @@
-import { Feed, Interval } from './types';
+import { Feed, Interval } from 'server/types';
 
 const url = `${process.env.API_URL || 'http://localhost:3000'}/api`;
 const postOptions = <T>(body: T) => ({

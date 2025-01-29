@@ -12,8 +12,9 @@ import {
   priceDelta,
   setPrice,
   feeds as initialFeeds,
+  verifyReport,
 } from 'server/client.js';
-import { ReportV3 } from 'server/types.js';
+import { StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
 
@@ -185,10 +186,10 @@ const feeds = initialFeeds.map((feed) => ({
   ...feed,
   job: createCronJob(feed),
 }));
-const reports: { [key: string]: ReportV3 } = {};
-const store: { [key: string]: ReportV3 } = {};
+const reports: { [key: string]: StreamReport } = {};
+const store: { [key: string]: StreamReport } = {};
 
-cdc.on('report', async (report: ReportV3) => {
+cdc.on('report', async (report: StreamReport) => {
   reports[report.feedId] = report;
 });
 
@@ -208,9 +209,11 @@ limiter.on('received', function (info) {
   logger.info('📆 Scheduled for writing onchain', info);
 });
 
-async function dataUpdater({ report }: { report: ReportV3 }) {
+async function dataUpdater({ report }: { report: StreamReport }) {
   try {
-    const transaction = await setPrice(report);
+    const verifiedReport = await verifyReport(report);
+    if (!verifiedReport) return;
+    const transaction = await setPrice(verifiedReport);
     logger.info(`ℹ️ Transaction status: ${transaction.status}`, transaction);
     if (transaction.status === 'success') {
       store[report.feedId] = report;
@@ -253,5 +256,5 @@ function createCronJob(feed: { feedId: string; name: string }) {
   );
 }
 
-const getReportFeedName = (report: ReportV3) =>
+const getReportFeedName = (report: StreamReport) =>
   feeds.find((feed) => feed.feedId === report.feedId)?.name ?? '';
