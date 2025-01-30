@@ -15,10 +15,13 @@ import {
   verifyReport,
   accountAddress,
   getContractAddresses,
+  switchChain,
+  getChainId,
 } from 'server/client.js';
 import { StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
+import { chains } from './chains.js';
 
 const interval = { interval: initialInterval };
 
@@ -160,6 +163,33 @@ router.post('/remove', (req, res) => {
   });
 
   res.send(feeds.map(({ name }) => name));
+});
+
+router.get('/chain', (req, res) => {
+  const chainId = getChainId();
+  res.send({ chainId });
+});
+
+router.post('/chain', (req, res) => {
+  const chainId = Number(req.body.chainId);
+  if (!chainId) {
+    logger.warn('⚠ Chain id invalid input', req.body);
+    res.status(400);
+    return res.send({ warning: 'Chain id invalid input' });
+  }
+
+  const chain = chains.find((chain) => chain.id === chainId);
+
+  if (!chain) {
+    logger.info('Invalid chain', { chainId });
+    res.status(400);
+    return res.send({ warning: 'Invalid chain' });
+  }
+
+  switchChain(chainId);
+  logger.info(`📢 Chain switched to ${chain.name}`, chain);
+
+  res.send({ chainId });
 });
 
 router.get('/logs', async (req, res) => {

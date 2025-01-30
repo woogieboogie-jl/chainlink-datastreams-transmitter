@@ -1,6 +1,5 @@
-import { useLoaderData } from '@remix-run/react';
-import { useEffect } from 'react';
-import { erc20Abi, formatEther, formatUnits } from 'viem';
+import { useLoaderData, useSubmit } from '@remix-run/react';
+import { erc20Abi, formatUnits, formatEther } from 'viem';
 import {
   useBalance,
   useChainId,
@@ -11,33 +10,46 @@ import {
   fetchAccountAddress,
   fetchChainId,
   fetchContractAddresses,
-  fetchFeeds,
-  fetchInterval,
+  switchChain,
 } from '~/api';
 import {
   Table,
   TableBody,
   TableCell,
+  TableRow,
   TableHead,
   TableHeader,
-  TableRow,
 } from '~/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
+import { ActionFunctionArgs } from '@remix-run/node';
+import { useEffect } from 'react';
 
 export async function loader() {
-  const [feeds, interval, account, contracts, chain] = await Promise.all([
-    fetchFeeds(),
-    fetchInterval(),
+  const [account, contracts, chain] = await Promise.all([
     fetchAccountAddress(),
     fetchContractAddresses(),
     fetchChainId(),
   ]);
-  return { feeds, interval, account, contracts, chain };
+  return { account, contracts, chain };
 }
 
-export default function Index() {
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const chain = Object.fromEntries(formData) as { chainId: string };
+  await switchChain(chain);
+  return null;
+}
+
+export default function Chain() {
   const {
-    feeds,
-    interval,
     account: { address },
     contracts: { feeTokenAddress, rewardManagerAddress },
     chain: { chainId },
@@ -74,6 +86,7 @@ export default function Index() {
   });
   const currentChainId = useChainId();
   const { chains, switchChain } = useSwitchChain();
+  const submit = useSubmit();
 
   useEffect(() => {
     if (chainId && currentChainId !== Number(chainId)) {
@@ -94,7 +107,55 @@ export default function Index() {
           <TableBody>
             <TableRow>
               <TableCell className="font-medium">
-                {chains.find((chain) => chain.id === currentChainId)?.name}
+                <Select
+                  defaultValue={
+                    chains.find((chain) => chain.id === currentChainId)?.name
+                  }
+                  onValueChange={(value) => {
+                    switchChain({ chainId: Number(value) });
+
+                    submit({ chainId: value }, { method: 'post' });
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue asChild>
+                      <div>
+                        {
+                          chains.find((chain) => chain.id === currentChainId)
+                            ?.name
+                        }
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Testnet</SelectLabel>
+                      {chains
+                        .filter((chain) => chain.testnet)
+                        .map((chain) => (
+                          <SelectItem
+                            value={chain.id.toString()}
+                            key={chain.id}
+                          >
+                            {chain.name}
+                          </SelectItem>
+                        ))}
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Mainnet</SelectLabel>
+                      {chains
+                        .filter((chain) => !chain.testnet)
+                        .map((chain) => (
+                          <SelectItem
+                            value={chain.id.toString()}
+                            key={chain.id}
+                          >
+                            {chain.name}
+                          </SelectItem>
+                        ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell>{address}</TableCell>
             </TableRow>
@@ -143,36 +204,6 @@ export default function Index() {
           </TableBody>
         </Table>
       )}
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Schedule patern</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow>
-            <TableCell className="font-medium">{interval.interval}</TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[200px]">Stream</TableHead>
-            <TableHead>Feed ID</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {feeds.map((feed, i) => (
-            <TableRow key={i}>
-              <TableCell className="font-medium">{feed.name}</TableCell>
-              <TableCell>{feed.feedId}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
     </>
   );
 }

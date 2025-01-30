@@ -45,6 +45,7 @@ export type Config = {
     privateKey: Hex;
     contractAddress: Address;
     verifierProxyAddress: Address;
+    chainId: number;
   };
   clientConfig: {
     priceDelta: string;

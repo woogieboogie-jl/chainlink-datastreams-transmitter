@@ -1,10 +1,10 @@
 import { ActionFunctionArgs } from '@remix-run/node';
 import { Form, useLoaderData } from '@remix-run/react';
+import { Interval } from 'server/types';
 import { fetchInterval, setInterval } from '~/api';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { Interval } from '~/types';
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();

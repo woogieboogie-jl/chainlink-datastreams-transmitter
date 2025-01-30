@@ -7,7 +7,7 @@ cdcConfig:
 onChainConfig:
   privateKey: '0x...'
   contractAddress: '0x0a990CFfF29bbd388B29202325b3D81401f3F01C'
-  verifierProxyAddress: '0x2bf612C65f5a4d388E687948bb2CF842FFb8aBB3'
+  chainId: 43113
 
 clientConfig:
   priceDelta: '10000000000000000'

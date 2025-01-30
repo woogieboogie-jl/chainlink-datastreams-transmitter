@@ -39,6 +39,12 @@ export function Navigation() {
             >
               Schedule
             </Link>
+            <Link
+              to="/chain"
+              className="flex w-full items-center py-2 text-lg font-semibold"
+            >
+              Chain
+            </Link>
           </div>
         </SheetContent>
       </Sheet>
@@ -58,6 +64,9 @@ export function Navigation() {
         </Link>
         <Link to="/schedule" className={buttonVariants({ variant: 'link' })}>
           Schedule
+        </Link>
+        <Link to="/chain" className={buttonVariants({ variant: 'link' })}>
+          Chain
         </Link>
       </nav>
     </header>

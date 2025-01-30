@@ -1,6 +1,7 @@
 import { ActionFunctionArgs } from '@remix-run/node';
 import { useLoaderData, Form, useSubmit } from '@remix-run/react';
 import { Trash2Icon } from 'lucide-react';
+import { Feed } from 'server/types';
 import { addFeed, fetchFeeds, removeFeed } from '~/api';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -13,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { Feed } from '~/types';
 
 enum Intent {
   ADD = 'ADD',

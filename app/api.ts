@@ -57,3 +57,16 @@ export async function fetchLogs() {
   const data: { log: string } = await result.json();
   return data;
 }
+
+export async function fetchChainId() {
+  const result = await fetch(`${url}/chain`);
+  const data: { chainId: string } = await result.json();
+  return data;
+}
+
+export async function switchChain(chain: { chainId: string | number }) {
+  return await fetch(
+    `${url}/chain`,
+    postOptions<{ chainId: string | number }>(chain)
+  );
+}
