@@ -202,6 +202,18 @@ router.get('/logs', async (req, res) => {
   }
 });
 
+router.post('/start', (req, res) => {
+  cdc.subscribeTo(feeds.map(({ feedId }) => feedId));
+  logger.info('🏁 All streams have been started', { feeds });
+  res.send({ feeds: feeds.map(({ feedId }) => feedId) });
+});
+
+router.post('/stop', (req, res) => {
+  cdc.unsubscribeFrom(feeds.map(({ feedId }) => feedId));
+  logger.info('🛑 All streams have been stoped', { feeds });
+  res.send({ feeds: [] });
+});
+
 app.use('/api', router);
 
 // handle SSR requests

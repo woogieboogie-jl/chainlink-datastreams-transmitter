@@ -1,15 +1,26 @@
 import { ActionFunctionArgs } from '@remix-run/node';
-import { Form, useLoaderData } from '@remix-run/react';
+import { Form, useLoaderData, useSubmit } from '@remix-run/react';
 import { Interval } from 'server/types';
-import { fetchInterval, setInterval } from '~/api';
+import { fetchInterval, setInterval, startStreams, stopStreams } from '~/api';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 
+enum Intent {
+  START = 'START',
+  STOP = 'STOP',
+  SET = 'SET',
+}
+
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
-  const interval = Object.fromEntries(formData) as Interval;
-  return await setInterval(interval);
+  const { intent, ...interval } = Object.fromEntries(formData) as Interval & {
+    intent: Intent;
+  };
+  if (intent === Intent.SET) return await setInterval(interval);
+  if (intent === Intent.START) return await startStreams();
+  if (intent === Intent.STOP) return await stopStreams();
+  return null;
 }
 
 export async function loader() {
@@ -18,6 +29,8 @@ export async function loader() {
 
 export default function Schedule() {
   const interval = useLoaderData<typeof loader>();
+  const submit = useSubmit();
+
   return (
     <>
       <p>
@@ -25,11 +38,24 @@ export default function Schedule() {
       </p>
       <Form method="post" className="space-y-2" id="interval-form">
         <div>
+          <Input type="hidden" name="intent" value={Intent.SET} />
           <Label htmlFor="name">New schedule cron pattern</Label>
           <Input name="interval" placeholder="* * * * * *" />
         </div>
         <Button type="submit">Submit</Button>
       </Form>
+      <div className="flex space-x-4">
+        <Button
+          onClick={() => submit({ intent: Intent.START }, { method: 'post' })}
+        >
+          Start
+        </Button>
+        <Button
+          onClick={() => submit({ intent: Intent.STOP }, { method: 'post' })}
+        >
+          Stop
+        </Button>
+      </div>
     </>
   );
 }

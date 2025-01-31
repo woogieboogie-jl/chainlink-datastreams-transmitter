@@ -2,7 +2,7 @@ import { Feed, Interval } from 'server/types';
 import { Address } from 'viem';
 
 const url = `${process.env.API_URL || 'http://localhost:3000'}/api`;
-const postOptions = <T>(body: T) => ({
+const postOptions = <T>(body?: T) => ({
   method: 'POST',
   headers: {
     Accept: 'application/json',
@@ -69,4 +69,12 @@ export async function switchChain(chain: { chainId: string | number }) {
     `${url}/chain`,
     postOptions<{ chainId: string | number }>(chain)
   );
+}
+
+export async function startStreams() {
+  return await fetch(`${url}/start`, postOptions());
+}
+
+export async function stopStreams() {
+  return await fetch(`${url}/stop`, postOptions());
 }
