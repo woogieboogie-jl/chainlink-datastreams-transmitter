@@ -45,6 +45,12 @@ export function Navigation() {
             >
               Chain
             </Link>
+            <Link
+              to="/contract"
+              className="flex w-full items-center py-2 text-lg font-semibold"
+            >
+              Contract
+            </Link>
           </div>
         </SheetContent>
       </Sheet>
@@ -67,6 +73,9 @@ export function Navigation() {
         </Link>
         <Link to="/chain" className={buttonVariants({ variant: 'link' })}>
           Chain
+        </Link>
+        <Link to="/contract" className={buttonVariants({ variant: 'link' })}>
+          Contract
         </Link>
       </nav>
     </header>

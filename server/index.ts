@@ -10,7 +10,7 @@ import {
   cdc,
   interval as initialInterval,
   priceDelta,
-  setPrice,
+  executeContract as executeWriteContract,
   feeds as initialFeeds,
   verifyReport,
   accountAddress,
@@ -18,10 +18,11 @@ import {
   switchChain,
   getChainId,
 } from 'server/client.js';
-import { StreamReport } from 'server/types.js';
+import { ReportV3, StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
 import { chains } from './chains.js';
+import { Abi } from 'viem';
 
 const interval = { interval: initialInterval };
 
@@ -214,6 +215,48 @@ router.post('/stop', (req, res) => {
   res.send({ feeds: [] });
 });
 
+router.get('/abi', (req, res) => res.send({ abi: JSON.stringify(abi) }));
+router.post('/abi', (req, res) => {
+  try {
+    const newAbi = JSON.parse(req.body.abi);
+    if (!newAbi) {
+      logger.warn('⚠ Invalid abi input', req.body);
+      res.status(400);
+      return res.send({ warning: 'Invalid abi input' });
+    }
+    abi = newAbi;
+    res.send({ info: 'abi updated' });
+  } catch (error) {
+    logger.error('ERROR', error);
+    res.status(400);
+    return res.send({ abi: null });
+  }
+});
+
+router.get('/function', (req, res) => res.send({ functionName }));
+router.post('/function', (req, res) => {
+  const newFunctionName = req.body.functionName;
+  if (!newFunctionName || newFunctionName.length === 0) {
+    logger.warn('⚠ Invalid functionName input', req.body);
+    res.status(400);
+    return res.send({ warning: 'Invalid functionName input' });
+  }
+  functionName = newFunctionName;
+  res.send({ functionName });
+});
+
+router.get('/args', (req, res) => res.send({ functionArgs }));
+router.post('/args', (req, res) => {
+  const newArgs = req.body.args;
+  if (!newArgs || newArgs.length === 0) {
+    logger.warn('⚠ Invalid args input', req.body);
+    res.status(400);
+    return res.send({ warning: 'Invalid args input' });
+  }
+  functionArgs = newArgs;
+  res.send({ functionArgs });
+});
+
 app.use('/api', router);
 
 // handle SSR requests
@@ -241,6 +284,9 @@ const feeds = initialFeeds.map((feed) => ({
 }));
 const reports: { [key: string]: StreamReport } = {};
 const store: { [key: string]: StreamReport } = {};
+let abi: Abi = [];
+let functionName = '';
+let functionArgs: string[] = [];
 
 cdc.on('report', async (report: StreamReport) => {
   reports[report.feedId] = report;
@@ -266,9 +312,20 @@ async function dataUpdater({ report }: { report: StreamReport }) {
   try {
     const verifiedReport = await verifyReport(report);
     if (!verifiedReport) return;
-    const transaction = await setPrice(verifiedReport);
-    logger.info(`ℹ️ Transaction status: ${transaction.status}`, transaction);
-    if (transaction.status === 'success') {
+    logger.info('✅ Report verified', { verifiedReport });
+
+    const transaction = await executeWriteContract({
+      report: verifiedReport as ReportV3,
+      abi,
+      functionName,
+      functionArgs,
+    });
+    if (transaction?.status) {
+      logger.info(`ℹ️ Transaction status: ${transaction?.status}`, {
+        transaction,
+      });
+    }
+    if (transaction?.status === 'success') {
       store[report.feedId] = report;
       logger.info(
         `💾 Price stored | ${getReportFeedName(report)}: ${formatUSD(

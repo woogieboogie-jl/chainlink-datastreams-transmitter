@@ -6,7 +6,7 @@ cdcConfig:
 
 onChainConfig:
   privateKey: '0x...'
-  contractAddress: '0x0a990CFfF29bbd388B29202325b3D81401f3F01C'
+  contractAddress: '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
   chainId: 43113
 
 clientConfig:

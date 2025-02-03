@@ -12,6 +12,7 @@ import {
   zeroAddress,
   isAddress,
   isAddressEqual,
+  Abi,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { Config, ReportV3, ReportV4, StreamReport } from './types';
@@ -26,7 +27,7 @@ const __dirname = import.meta.dirname;
 const {
   cdcConfig,
   clientConfig,
-  onChainConfig: { privateKey, chainId },
+  onChainConfig: { privateKey, chainId, contractAddress },
 } = load(
   readFileSync(
     path.resolve(
@@ -50,20 +51,67 @@ export const switchChain = (id: number) =>
 
 export const accountAddress = account.address;
 
-export async function setPrice(report: ReportV3 | ReportV4) {
-  return { status: 'success' };
-  // logger.info('📝 Prepared verification transaction', report);
-  // const { request } = await publicClient.simulateContract({
-  //   account,
-  //   address: contractAddress,
-  //   abi: contractAbi,
-  //   functionName: 'setReport',
-  //   args: [report],
-  // });
-  // logger.info('ℹ️ Transaction simulated', request);
-  // const hash = await walletClient.writeContract(request);
-  // logger.info(`⌛️ Sending transaction ${hash} `, hash);
-  // return await publicClient.waitForTransactionReceipt({ hash });
+export async function executeContract({
+  report,
+  abi,
+  functionName,
+  functionArgs,
+}: {
+  report: ReportV3;
+  abi: Abi;
+  functionName: string;
+  functionArgs: string[];
+}) {
+  if (!abi || abi.length === 0) {
+    logger.warn('⚠️ No abi provided');
+    return;
+  }
+  if (!functionName || functionName.length === 0) {
+    logger.warn('⚠️ No functionName provided');
+    return;
+  }
+  if (!functionArgs || functionArgs.length === 0) {
+    logger.warn('⚠️ No args provided');
+    return;
+  }
+
+  logger.info('📝 Prepared verification transaction', report);
+  const publicClient = createPublicClient({
+    chain,
+    transport: http(),
+  });
+  const walletClient = createWalletClient({
+    chain,
+    transport: http(),
+  });
+
+  const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
+
+  const gas = await publicClient.estimateContractGas({
+    account,
+    address: contractAddress,
+    abi,
+    functionName,
+    args,
+  });
+  const { request } = await publicClient.simulateContract({
+    account,
+    address: contractAddress,
+    abi,
+    functionName,
+    args,
+  });
+
+  logger.info(
+    `⛽️ Estimated gas: ${formatEther(gas)} ${
+      publicClient.chain?.nativeCurrency.symbol
+    }`,
+    { gas }
+  );
+  logger.info('ℹ️ Transaction simulated', request);
+  const hash = await walletClient.writeContract(request);
+  logger.info(`⌛️ Sending transaction ${hash} `, hash);
+  return await publicClient.waitForTransactionReceipt({ hash });
 }
 
 export const cdc = new ChainlinkDatastreamsConsumer({
