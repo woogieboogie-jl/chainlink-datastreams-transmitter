@@ -8,6 +8,7 @@ onChainConfig:
   privateKey: '0x...'
   contractAddress: '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
   chainId: 43113
+  gasCap: '150000'
 
 clientConfig:
   priceDelta: '10000000000000000'

@@ -46,6 +46,7 @@ export type Config = {
     contractAddress: Address;
     verifierProxyAddress: Address;
     chainId: number;
+    gasCap: string;
   };
   clientConfig: {
     priceDelta: string;

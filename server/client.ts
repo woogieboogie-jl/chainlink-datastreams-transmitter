@@ -27,7 +27,7 @@ const __dirname = import.meta.dirname;
 const {
   cdcConfig,
   clientConfig,
-  onChainConfig: { privateKey, chainId, contractAddress },
+  onChainConfig: { privateKey, chainId, contractAddress, gasCap },
 } = load(
   readFileSync(
     path.resolve(
@@ -80,10 +80,10 @@ export async function executeContract({
     chain,
     transport: http(),
   });
-  const walletClient = createWalletClient({
-    chain,
-    transport: http(),
-  });
+  // const walletClient = createWalletClient({
+  //   chain,
+  //   transport: http(),
+  // });
 
   const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
 
@@ -94,6 +94,19 @@ export async function executeContract({
     functionName,
     args,
   });
+  logger.info(
+    `⛽️ Estimated gas: ${formatEther(gas)} ${
+      publicClient.chain?.nativeCurrency.symbol
+    }`,
+    { gas }
+  );
+  if (gas > BigInt(gasCap)) {
+    logger.info(
+      `🛑 Gas is above the limit of ${formatEther(BigInt(gasCap))} | Aborting`,
+      { gas, gasCap }
+    );
+    return;
+  }
   const { request } = await publicClient.simulateContract({
     account,
     address: contractAddress,
@@ -102,16 +115,11 @@ export async function executeContract({
     args,
   });
 
-  logger.info(
-    `⛽️ Estimated gas: ${formatEther(gas)} ${
-      publicClient.chain?.nativeCurrency.symbol
-    }`,
-    { gas }
-  );
   logger.info('ℹ️ Transaction simulated', request);
-  const hash = await walletClient.writeContract(request);
-  logger.info(`⌛️ Sending transaction ${hash} `, hash);
-  return await publicClient.waitForTransactionReceipt({ hash });
+  return { status: 'success' };
+  // const hash = await walletClient.writeContract(request);
+  // logger.info(`⌛️ Sending transaction ${hash} `, hash);
+  // return await publicClient.waitForTransactionReceipt({ hash });
 }
 
 export const cdc = new ChainlinkDatastreamsConsumer({
@@ -208,16 +216,17 @@ export async function verifyReport(report: StreamReport) {
       functionName: 'getFeeAndReward',
       args: [account.address, reportData, feeTokenAddress],
     });
+    logger.info(`⛽️ Estimated fee: ${formatEther(fee.amount)} LINK`, { fee });
 
     const feeTokenAddressEncoded = encodeAbiParameters(
       [{ type: 'address', name: 'parameterPayload' }],
       [feeTokenAddress]
     );
 
-    const walletClient = createWalletClient({
-      chain,
-      transport: http(),
-    });
+    // const walletClient = createWalletClient({
+    //   chain,
+    //   transport: http(),
+    // });
 
     const approveLinkGas = await publicClient.estimateContractGas({
       account,
@@ -226,6 +235,23 @@ export async function verifyReport(report: StreamReport) {
       functionName: 'approve',
       args: [rewardManagerAddress, fee.amount],
     });
+
+    logger.info(
+      `⛽️ Estimated gas for LINK approval: ${formatEther(approveLinkGas)} ${
+        publicClient.chain?.nativeCurrency.symbol
+      }`,
+      { approveLinkGas }
+    );
+    if (approveLinkGas > BigInt(gasCap)) {
+      logger.info(
+        `🛑 LINK approval gas is above the limit of ${formatEther(
+          BigInt(gasCap)
+        )} | Aborting`,
+        { approveLinkGas, gasCap }
+      );
+      return;
+    }
+
     const { request: approveLinkRequest } = await publicClient.simulateContract(
       {
         account,
@@ -235,10 +261,10 @@ export async function verifyReport(report: StreamReport) {
         args: [rewardManagerAddress, fee.amount],
       }
     );
-    const approveLinkHash = await walletClient.writeContract(
-      approveLinkRequest
-    );
-    await publicClient.waitForTransactionReceipt({ hash: approveLinkHash });
+    // const approveLinkHash = await walletClient.writeContract(
+    //   approveLinkRequest
+    // );
+    // await publicClient.waitForTransactionReceipt({ hash: approveLinkHash });
 
     const verifyReportGas = await publicClient.estimateContractGas({
       account,
@@ -247,6 +273,21 @@ export async function verifyReport(report: StreamReport) {
       functionName: 'verify',
       args: [report.rawReport, feeTokenAddressEncoded],
     });
+    logger.info(
+      `⛽️ Estimated gas forv verification: ${formatEther(verifyReportGas)} ${
+        publicClient.chain?.nativeCurrency.symbol
+      }`,
+      { verifyReportGas }
+    );
+    if (verifyReportGas > BigInt(gasCap)) {
+      logger.info(
+        `🛑 Verification gas is above the limit of ${formatEther(
+          BigInt(gasCap)
+        )} | Aborting`,
+        { verifyReportGas, gasCap }
+      );
+      return;
+    }
     const { request: verifyReportRequest, result: verifiedReportData } =
       await publicClient.simulateContract({
         account,
@@ -255,19 +296,10 @@ export async function verifyReport(report: StreamReport) {
         functionName: 'verify',
         args: [report.rawReport, feeTokenAddressEncoded],
       });
-    const verifyReportHash = await walletClient.writeContract(
-      verifyReportRequest
-    );
-    await publicClient.waitForTransactionReceipt({ hash: verifyReportHash });
-
-    logger.info(
-      `⛽️ Estimated fee: ${formatEther(
-        fee.amount
-      )} LINK | Estimated gas: ${formatEther(
-        approveLinkGas + verifyReportGas
-      )} ${publicClient.chain?.nativeCurrency.symbol}`,
-      { fee, approveLinkGas, verifyReportGas }
-    );
+    // const verifyReportHash = await walletClient.writeContract(
+    //   verifyReportRequest
+    // );
+    // await publicClient.waitForTransactionReceipt({ hash: verifyReportHash });
 
     if (reportVersion === '3') {
       const [
