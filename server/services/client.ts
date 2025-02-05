@@ -1,6 +1,3 @@
-import { readFileSync } from 'fs';
-import { load } from 'js-yaml';
-import ChainlinkDatastreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
 import {
   createPublicClient,
   createWalletClient,
@@ -15,30 +12,18 @@ import {
   Abi,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { Config, ReportV3, ReportV4, StreamReport } from './types';
-import { feeManagerAbi, verifierProxyAbi } from './abi';
-import path from 'path';
+import { ReportV3, ReportV4, StreamReport } from '../types';
+import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
-import { chains } from './chains';
-import { verifiers } from './verifiers';
-
-const __dirname = import.meta.dirname;
-
-const {
-  cdcConfig,
+import { chains } from '../config/chains';
+import { verifiers } from '../config/verifiers';
+import {
+  chainId,
   clientConfig,
-  onChainConfig: { privateKey, chainId, contractAddress, gasCap },
-} = load(
-  readFileSync(
-    path.resolve(
-      __dirname,
-      process.env.NODE_ENV === 'production'
-        ? '../../config.yml'
-        : '../config.yml'
-    ),
-    'utf8'
-  )
-) as Config;
+  contractAddress,
+  gasCap,
+  privateKey,
+} from '../config/config';
 
 let chain = chains.find((chain) => chain.id === chainId);
 
@@ -80,10 +65,10 @@ export async function executeContract({
     chain,
     transport: http(),
   });
-  // const walletClient = createWalletClient({
-  //   chain,
-  //   transport: http(),
-  // });
+  const walletClient = createWalletClient({
+    chain,
+    transport: http(),
+  });
 
   const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
 
@@ -114,18 +99,12 @@ export async function executeContract({
     functionName,
     args,
   });
-
   logger.info('ℹ️ Transaction simulated', request);
-  return { status: 'success' };
-  // const hash = await walletClient.writeContract(request);
-  // logger.info(`⌛️ Sending transaction ${hash} `, hash);
-  // return await publicClient.waitForTransactionReceipt({ hash });
-}
 
-export const cdc = new ChainlinkDatastreamsConsumer({
-  ...cdcConfig,
-  feeds: clientConfig.feeds.map(({ feedId }) => feedId),
-});
+  const hash = await walletClient.writeContract(request);
+  logger.info(`⌛️ Sending transaction ${hash} `, hash);
+  return await publicClient.waitForTransactionReceipt({ hash });
+}
 
 export const priceDelta = BigInt(clientConfig.priceDelta);
 export const interval = clientConfig.intervalSchedule;
@@ -223,10 +202,10 @@ export async function verifyReport(report: StreamReport) {
       [feeTokenAddress]
     );
 
-    // const walletClient = createWalletClient({
-    //   chain,
-    //   transport: http(),
-    // });
+    const walletClient = createWalletClient({
+      chain,
+      transport: http(),
+    });
 
     const approveLinkGas = await publicClient.estimateContractGas({
       account,
@@ -261,10 +240,10 @@ export async function verifyReport(report: StreamReport) {
         args: [rewardManagerAddress, fee.amount],
       }
     );
-    // const approveLinkHash = await walletClient.writeContract(
-    //   approveLinkRequest
-    // );
-    // await publicClient.waitForTransactionReceipt({ hash: approveLinkHash });
+    const approveLinkHash = await walletClient.writeContract(
+      approveLinkRequest
+    );
+    await publicClient.waitForTransactionReceipt({ hash: approveLinkHash });
 
     const verifyReportGas = await publicClient.estimateContractGas({
       account,
@@ -296,10 +275,10 @@ export async function verifyReport(report: StreamReport) {
         functionName: 'verify',
         args: [report.rawReport, feeTokenAddressEncoded],
       });
-    // const verifyReportHash = await walletClient.writeContract(
-    //   verifyReportRequest
-    // );
-    // await publicClient.waitForTransactionReceipt({ hash: verifyReportHash });
+    const verifyReportHash = await walletClient.writeContract(
+      verifyReportRequest
+    );
+    await publicClient.waitForTransactionReceipt({ hash: verifyReportHash });
 
     if (reportVersion === '3') {
       const [

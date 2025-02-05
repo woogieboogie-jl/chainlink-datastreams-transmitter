@@ -1,4 +1,4 @@
-import { chains } from 'server/chains';
+import { chains } from 'server/config/chains';
 import { createClient } from 'viem';
 import { http, createConfig } from 'wagmi';
 

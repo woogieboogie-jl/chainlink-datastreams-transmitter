@@ -5,9 +5,8 @@ import express from 'express';
 import morgan from 'morgan';
 import { CronJob, CronTime } from 'cron';
 import Bottleneck from 'bottleneck';
-import { logger } from 'server/logger.js';
+import { logger } from 'server/services/logger.js';
 import {
-  cdc,
   interval as initialInterval,
   priceDelta,
   executeContract as executeWriteContract,
@@ -17,12 +16,13 @@ import {
   getContractAddresses,
   switchChain,
   getChainId,
-} from 'server/client.js';
+} from 'server/services/client.js';
 import { ReportV3, StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
-import { chains } from './chains.js';
+import { chains } from './config/chains.js';
 import { Abi } from 'viem';
+import { cdc } from './services/datastreams.js';
 
 const interval = { interval: initialInterval };
 
