@@ -9,6 +9,50 @@ onChainConfig:
   contractAddress: '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
   chainId: 43113
   gasCap: '150000'
+  abi:
+    [
+      {
+        'inputs':
+          [
+            { 'internalType': 'bytes32', 'name': 'feedId', 'type': 'bytes32' },
+            {
+              'internalType': 'uint32',
+              'name': 'validFromTimestamp',
+              'type': 'uint32',
+            },
+            {
+              'internalType': 'uint32',
+              'name': 'observationsTimestamp',
+              'type': 'uint32',
+            },
+            {
+              'internalType': 'uint192',
+              'name': 'nativeFee',
+              'type': 'uint192',
+            },
+            { 'internalType': 'uint192', 'name': 'linkFee', 'type': 'uint192' },
+            { 'internalType': 'uint32', 'name': 'expiresAt', 'type': 'uint32' },
+            { 'internalType': 'int192', 'name': 'price', 'type': 'int192' },
+            { 'internalType': 'int192', 'name': 'bid', 'type': 'int192' },
+            { 'internalType': 'int192', 'name': 'ask', 'type': 'int192' },
+          ],
+        'name': 'set',
+        'outputs': [],
+        'stateMutability': 'nonpayable',
+        'type': 'function',
+      },
+    ]
+  functionName: 'set'
+  functionArgs:
+    - 'feedId'
+    - 'validFromTimestamp'
+    - 'observationsTimestamp'
+    - 'nativeFee'
+    - 'linkFee'
+    - 'expiresAt'
+    - 'price'
+    - 'bid'
+    - 'ask'
 
 clientConfig:
   priceDelta: '10000000000000000'

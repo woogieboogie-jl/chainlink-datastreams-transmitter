@@ -17,23 +17,10 @@ import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
 import { chains } from '../config/chains';
 import { verifiers } from '../config/verifiers';
-import {
-  chainId,
-  clientConfig,
-  contractAddress,
-  gasCap,
-  privateKey,
-} from '../config/config';
+import { onChainConfig } from '../config/config';
+import { getChainId, getContractAddress, getGasCap } from 'server/store';
 
-let chain = chains.find((chain) => chain.id === chainId);
-
-const account = privateKeyToAccount(privateKey);
-
-export const getChainId = () => chain?.id;
-
-export const switchChain = (id: number) =>
-  (chain = chains.find((chain) => chain.id === id));
-
+const account = privateKeyToAccount(onChainConfig.privateKey);
 export const accountAddress = account.address;
 
 export async function executeContract({
@@ -61,20 +48,15 @@ export async function executeContract({
   }
 
   logger.info('📝 Prepared verification transaction', report);
-  const publicClient = createPublicClient({
-    chain,
-    transport: http(),
-  });
-  const walletClient = createWalletClient({
-    chain,
-    transport: http(),
-  });
 
   const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
 
+  const address = getContractAddress();
+
+  const { publicClient, walletClient } = getClients();
   const gas = await publicClient.estimateContractGas({
     account,
-    address: contractAddress,
+    address,
     abi,
     functionName,
     args,
@@ -85,7 +67,8 @@ export async function executeContract({
     }`,
     { gas }
   );
-  if (gas > BigInt(gasCap)) {
+  const gasCap = getGasCap();
+  if (gas > gasCap) {
     logger.info(
       `🛑 Gas is above the limit of ${formatEther(BigInt(gasCap))} | Aborting`,
       { gas, gasCap }
@@ -94,7 +77,7 @@ export async function executeContract({
   }
   const { request } = await publicClient.simulateContract({
     account,
-    address: contractAddress,
+    address,
     abi,
     functionName,
     args,
@@ -106,18 +89,11 @@ export async function executeContract({
   return await publicClient.waitForTransactionReceipt({ hash });
 }
 
-export const priceDelta = BigInt(clientConfig.priceDelta);
-export const interval = clientConfig.intervalSchedule;
-export const feeds = clientConfig.feeds;
-
 export async function getContractAddresses() {
   try {
-    const publicClient = createPublicClient({
-      chain,
-      transport: http(),
-    });
-
-    const verifierProxyAddress = verifiers[chain!.id];
+    const { publicClient } = getClients();
+    const chainId = getChainId();
+    const verifierProxyAddress = verifiers[chainId];
 
     const feeManagerAddress = await publicClient.readContract({
       address: verifierProxyAddress,
@@ -154,10 +130,7 @@ export async function getContractAddresses() {
 
 export async function verifyReport(report: StreamReport) {
   try {
-    const publicClient = createPublicClient({
-      chain,
-      transport: http(),
-    });
+    const { publicClient, walletClient } = getClients();
 
     const [, reportData] = decodeAbiParameters(
       [
@@ -202,11 +175,6 @@ export async function verifyReport(report: StreamReport) {
       [feeTokenAddress]
     );
 
-    const walletClient = createWalletClient({
-      chain,
-      transport: http(),
-    });
-
     const approveLinkGas = await publicClient.estimateContractGas({
       account,
       address: feeTokenAddress,
@@ -221,7 +189,8 @@ export async function verifyReport(report: StreamReport) {
       }`,
       { approveLinkGas }
     );
-    if (approveLinkGas > BigInt(gasCap)) {
+    const gasCap = getGasCap();
+    if (approveLinkGas > gasCap) {
       logger.info(
         `🛑 LINK approval gas is above the limit of ${formatEther(
           BigInt(gasCap)
@@ -360,3 +329,20 @@ export async function verifyReport(report: StreamReport) {
 
 const isAddressValid = (address: string) =>
   !isAddress(address) || isAddressEqual(address, zeroAddress) ? false : true;
+
+function getClients() {
+  const chainId = getChainId();
+  const chain = chains.find((chain) => chain.id === chainId);
+  if (!chain) {
+    logger.warn('⚠️ Invalid chain', { chainId });
+  }
+  const publicClient = createPublicClient({
+    chain,
+    transport: http(),
+  });
+  const walletClient = createWalletClient({
+    chain,
+    transport: http(),
+  });
+  return { publicClient, walletClient };
+}

@@ -5,11 +5,7 @@ import { Config } from '../types';
 
 const __dirname = import.meta.dirname;
 
-export const {
-  cdcConfig,
-  clientConfig,
-  onChainConfig: { privateKey, chainId, contractAddress, gasCap },
-} = load(
+export const { cdcConfig, clientConfig, onChainConfig } = load(
   readFileSync(
     path.resolve(
       __dirname,
