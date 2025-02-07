@@ -20,10 +20,12 @@ import {
   addFeed,
   getAbi,
   getChainId,
+  getContractAddress,
   getFeed,
   getFeeds,
   getFunctionArgs,
   getFunctionName,
+  getGasCap,
   getInterval,
   getLatestReport,
   getPriceDelta,
@@ -31,13 +33,16 @@ import {
   removeFeed,
   setAbi,
   setChainId,
+  setContractAddress,
   setFunctionArgs,
   setFunctionName,
+  setGasCap,
   setInterval,
   setLatestReport,
   setSavedReport,
 } from './store.js';
 import { schedule } from './services/limiter.js';
+import { isAddress, zeroAddress } from 'viem';
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -112,13 +117,13 @@ router.post('/interval', (req, res) => {
   const interval: string = req.body.interval;
 
   if (!interval) {
-    logger.warn('⚠ New interval invalid input', req.body);
+    logger.warn('⚠ New interval invalid input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'New interval invalid input' });
   }
   setInterval(interval);
   jobs.forEach(({ job }) => job.setTime(new CronTime(interval)));
-  logger.info(`📢 New interval has been set ${interval}`, interval);
+  logger.info(`📢 New interval has been set ${interval}`, { interval });
   res.send({ interval });
 });
 
@@ -127,14 +132,14 @@ router.post('/add', (req, res) => {
   const feedId: string = req.body.feedId;
 
   if (!name || !feedId) {
-    logger.warn('⚠ Add feed invalid input', req.body);
+    logger.warn('⚠ Add feed invalid input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Add feed invalid input' });
   }
   const isFeedExist = !!getFeed(feedId);
 
   if (isFeedExist) {
-    logger.info('⚠ Feed already exists', { name, feedId });
+    logger.info('⚠ Feed already exists', { feed: { name, feedId } });
     res.status(400);
     return res.send({ warning: 'Feed already exists' });
   }
@@ -142,14 +147,14 @@ router.post('/add', (req, res) => {
   addFeed({ feedId, name });
   jobs.push({ feedId, job: createCronJob(feedId) });
   cdc.subscribeTo(feedId);
-  logger.info(`📢 New feed ${name} has been added`, { name, feedId });
+  logger.info(`📢 New feed ${name} has been added`, { feed: { name, feedId } });
   res.send(getFeeds());
 });
 
 router.post('/remove', (req, res) => {
   const feedId: string = req.body.feedId;
   if (!feedId) {
-    logger.warn('⚠ Remove feed invalid input', req.body);
+    logger.warn('⚠ Remove feed invalid input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Remove feed invalid input' });
   }
@@ -157,7 +162,7 @@ router.post('/remove', (req, res) => {
   const feed = getFeed(feedId);
 
   if (!feed) {
-    logger.info('Feed does not exists', { feedId });
+    logger.warn('⚠️ Feed does not exists', { feedId });
     res.status(400);
     return res.send({ warning: 'Feed does not exists' });
   }
@@ -165,7 +170,7 @@ router.post('/remove', (req, res) => {
   const job = jobs.find((job) => job.feedId === feedId);
 
   if (!job) {
-    logger.info('Job does not exists', { feedId });
+    logger.warn('⚠️ Job does not exists', { feedId });
     res.status(400);
     return res.send({ warning: 'Job does not exists' });
   }
@@ -175,7 +180,7 @@ router.post('/remove', (req, res) => {
   removeFeed(feedId);
   jobs.splice(jobs.indexOf(job), 1);
 
-  logger.info(`📢 Feed ${feed.name} has been removed`, feed);
+  logger.info(`📢 Feed ${feed.name} has been removed`, { feed });
 
   res.send(getFeeds());
 });
@@ -187,7 +192,7 @@ router.get('/chain', (req, res) => {
 router.post('/chain', (req, res) => {
   const chainId = Number(req.body.chainId);
   if (!chainId) {
-    logger.warn('⚠ Chain id invalid input', req.body);
+    logger.warn('⚠ Chain id invalid input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Chain id invalid input' });
   }
@@ -201,7 +206,7 @@ router.post('/chain', (req, res) => {
   }
 
   setChainId(chainId);
-  logger.info(`📢 Chain switched to ${chain.name}`, chain);
+  logger.info(`📢 Chain switched to ${chain.name}`, { chain });
 
   res.send({ chainId });
 });
@@ -230,16 +235,47 @@ router.post('/stop', (req, res) => {
   res.send({ feeds: [] });
 });
 
+router.get('/contract', (req, res) =>
+  res.send({ contract: getContractAddress() })
+);
+router.post('/contract', (req, res) => {
+  const contract = req.body.contract;
+  if (!isAddress(contract) || contract === zeroAddress) {
+    logger.warn('⚠ Invalid contract address', { body: req.body });
+    res.status(400);
+    return res.send({ warning: 'Invalid contract address' });
+  }
+  setContractAddress(contract);
+  logger.info(`📢 New contract has been set ${contract}`, { contract });
+  res.send({ contract });
+});
+
+router.get('/gascap', (req, res) =>
+  res.send({ gasCap: getGasCap().toString() })
+);
+router.post('/gascap', (req, res) => {
+  const gasCap = req.body.contract;
+  if (isNaN(Number(gasCap))) {
+    logger.warn('⚠ Invalid gas cap', { body: req.body });
+    res.status(400);
+    return res.send({ warning: 'Invalid gas cap' });
+  }
+  setGasCap(BigInt(gasCap));
+  logger.info(`📢 New gas cap has been set ${gasCap}`, { gasCap });
+  res.send({ gasCap });
+});
+
 router.get('/abi', (req, res) => res.send({ abi: JSON.stringify(getAbi()) }));
 router.post('/abi', (req, res) => {
   try {
     const abi = JSON.parse(req.body.abi);
     if (!abi) {
-      logger.warn('⚠ Invalid abi input', req.body);
+      logger.warn('⚠ Invalid abi input', { body: req.body });
       res.status(400);
       return res.send({ warning: 'Invalid abi input' });
     }
     setAbi(abi);
+    logger.info(`📢 New abi has been set`, { abi });
     res.send({ info: 'abi updated' });
   } catch (error) {
     logger.error('ERROR', error);
@@ -254,11 +290,12 @@ router.get('/function', (req, res) =>
 router.post('/function', (req, res) => {
   const functionName = req.body.functionName;
   if (!functionName || functionName.length === 0) {
-    logger.warn('⚠ Invalid functionName input', req.body);
+    logger.warn('⚠ Invalid functionName input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Invalid functionName input' });
   }
   setFunctionName(functionName);
+  logger.info(`📢 New function has been set ${functionName}`, { functionName });
   res.send({ functionName });
 });
 
@@ -268,11 +305,15 @@ router.get('/args', (req, res) =>
 router.post('/args', (req, res) => {
   const functionArgs = req.body.args;
   if (!functionArgs || functionArgs.length === 0) {
-    logger.warn('⚠ Invalid args input', req.body);
+    logger.warn('⚠ Invalid args input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Invalid args input' });
   }
   setFunctionArgs(functionArgs);
+  logger.info(
+    `📢 New set of arguments has been set ${functionArgs.join(', ')}`,
+    { functionArgs }
+  );
   res.send({ functionArgs: getFunctionArgs() });
 });
 

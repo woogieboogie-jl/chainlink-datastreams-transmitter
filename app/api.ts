@@ -116,3 +116,26 @@ export async function setFunctionArgs(args: { args: string }) {
     })
   );
 }
+
+export async function fetchContractAddress() {
+  const result = await fetch(`${url}/contract`);
+  const data: { contract: string } = await result.json();
+  return data;
+}
+
+export async function setContractAddress(contract: { contract: string }) {
+  return await fetch(
+    `${url}/contract`,
+    postOptions<{ contract: string }>(contract)
+  );
+}
+
+export async function fetchGasCap() {
+  const result = await fetch(`${url}/gascap`);
+  const data: { gasCap: string } = await result.json();
+  return data;
+}
+
+export async function setGasCap(cap: { gasCap: string }) {
+  return await fetch(`${url}/gascap`, postOptions<{ gasCap: string }>(cap));
+}

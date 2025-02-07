@@ -2,11 +2,15 @@ import { ActionFunctionArgs } from '@remix-run/node';
 import { Form, useLoaderData } from '@remix-run/react';
 import {
   fetchAbi,
+  fetchContractAddress,
   fetchFunctionArgs,
   fetchFunctionName,
+  fetchGasCap,
   setAbi,
+  setContractAddress,
   setFunctionArgs,
   setFunctionName,
+  setGasCap,
 } from '~/api';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -15,6 +19,8 @@ import { ScrollArea } from '~/components/ui/scroll-area';
 import { Textarea } from '~/components/ui/textarea';
 
 enum Intent {
+  CONTRACT = 'CONTRACT',
+  GASCAP = 'GASCAP',
   ABI = 'ABI',
   FUNCTION = 'FUNCTION',
   ARGS = 'ARGS',
@@ -23,6 +29,10 @@ enum Intent {
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const { intent, ...data } = Object.fromEntries(formData);
+  if (intent === Intent.CONTRACT)
+    return await setContractAddress(data as { contract: string });
+  if (intent === Intent.GASCAP)
+    return await setGasCap(data as { gasCap: string });
   if (intent === Intent.ABI) return await setAbi(data as { abi: string });
   if (intent === Intent.FUNCTION)
     return await setFunctionName(data as { functionName: string });
@@ -32,19 +42,44 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function loader() {
-  const [abi, functionName, args] = await Promise.all([
+  const [contract, gasCap, abi, functionName, args] = await Promise.all([
+    fetchContractAddress(),
+    fetchGasCap(),
     fetchAbi(),
     fetchFunctionName(),
     fetchFunctionArgs(),
   ]);
-  return { abi, functionName, args };
+  return { contract, gasCap, abi, functionName, args };
 }
 
 export default function Contract() {
-  const { abi, functionName, args } = useLoaderData<typeof loader>();
+  const { contract, gasCap, abi, functionName, args } =
+    useLoaderData<typeof loader>();
 
   return (
     <>
+      <Form method="post" className="space-y-2 w-full" id="contract-form">
+        <Input type="hidden" name="intent" value={Intent.CONTRACT} />
+        <div className="space-y-4">
+          <Label htmlFor="function">Contract address</Label>
+          <code>
+            <pre>{contract.contract}</pre>
+          </code>
+          <Input name="contract" placeholder="0x..." />
+        </div>
+        <Button type="submit">Submit</Button>
+      </Form>
+      <Form method="post" className="space-y-2 w-full" id="gascap-form">
+        <Input type="hidden" name="intent" value={Intent.GASCAP} />
+        <div className="space-y-4">
+          <Label htmlFor="gascap">Gas limit</Label>
+          <code>
+            <pre>{`${gasCap.gasCap} WEI`}</pre>
+          </code>
+          <Input name="contract" placeholder="0x..." />
+        </div>
+        <Button type="submit">Submit</Button>
+      </Form>
       <Form method="post" className="space-y-2 w-full" id="abi-form">
         <Input type="hidden" name="intent" value={Intent.ABI} />
         <div className="space-y-4">
@@ -65,7 +100,7 @@ export default function Contract() {
       <Form method="post" className="space-y-2 w-full" id="function-form">
         <Input type="hidden" name="intent" value={Intent.FUNCTION} />
         <div className="space-y-4">
-          <Label htmlFor="function">Function name</Label>
+          <Label htmlFor="functionName">Function name</Label>
           <code>
             <pre>{functionName.functionName}</pre>
           </code>
