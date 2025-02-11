@@ -21,7 +21,8 @@ import {
   getAbi,
   getChainId,
   getContractAddress,
-  getFeed,
+  getFeedExists,
+  getFeedName,
   getFeeds,
   getFunctionArgs,
   getFunctionName,
@@ -39,10 +40,11 @@ import {
   setGasCap,
   setInterval,
   setLatestReport,
+  setPriceDelta,
   setSavedReport,
 } from './store.js';
 import { schedule } from './services/limiter.js';
-import { isAddress, zeroAddress } from 'viem';
+import { formatEther, isAddress, zeroAddress } from 'viem';
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -96,12 +98,19 @@ async function getBuild() {
 
 const router = express.Router();
 
-router.get('/feeds', (req, res) => {
-  res.send(getFeeds());
+router.get('/feeds', async (req, res) => {
+  const feedsIds = await getFeeds();
+  const feeds = await Promise.all(
+    feedsIds.map(async (feedId) => ({
+      feedId,
+      name: await getFeedName(feedId),
+    }))
+  );
+  res.send(feeds);
 });
 
-router.get('/interval', (req, res) => {
-  res.send({ interval: getInterval() });
+router.get('/interval', async (req, res) => {
+  res.send({ interval: await getInterval() });
 });
 
 router.get('/account', (req, res) => {
@@ -127,7 +136,7 @@ router.post('/interval', (req, res) => {
   res.send({ interval });
 });
 
-router.post('/add', (req, res) => {
+router.post('/add', async (req, res) => {
   const name: string = req.body.name;
   const feedId: string = req.body.feedId;
 
@@ -136,7 +145,7 @@ router.post('/add', (req, res) => {
     res.status(400);
     return res.send({ warning: 'Add feed invalid input' });
   }
-  const isFeedExist = !!getFeed(feedId);
+  const isFeedExist = await getFeedExists(feedId);
 
   if (isFeedExist) {
     logger.info('⚠ Feed already exists', { feed: { name, feedId } });
@@ -144,14 +153,20 @@ router.post('/add', (req, res) => {
     return res.send({ warning: 'Feed already exists' });
   }
 
-  addFeed({ feedId, name });
-  jobs.push({ feedId, job: createCronJob(feedId) });
+  await addFeed({ feedId, name });
+  const interval = await getInterval();
+  if (!interval) {
+    logger.warn('⚠ Interval is missing. Set interval and try again');
+    res.status(400);
+    return res.send({ warning: 'Interval missing' });
+  }
+  jobs.push({ feedId, job: createCronJob(feedId, interval) });
   cdc.subscribeTo(feedId);
   logger.info(`📢 New feed ${name} has been added`, { feed: { name, feedId } });
-  res.send(getFeeds());
+  res.send(await getFeeds());
 });
 
-router.post('/remove', (req, res) => {
+router.post('/remove', async (req, res) => {
   const feedId: string = req.body.feedId;
   if (!feedId) {
     logger.warn('⚠ Remove feed invalid input', { body: req.body });
@@ -159,9 +174,9 @@ router.post('/remove', (req, res) => {
     return res.send({ warning: 'Remove feed invalid input' });
   }
 
-  const feed = getFeed(feedId);
+  const feedExists = getFeedExists(feedId);
 
-  if (!feed) {
+  if (!feedExists) {
     logger.warn('⚠️ Feed does not exists', { feedId });
     res.status(400);
     return res.send({ warning: 'Feed does not exists' });
@@ -177,16 +192,16 @@ router.post('/remove', (req, res) => {
 
   cdc.unsubscribeFrom(feedId);
   job.job.stop();
-  removeFeed(feedId);
+  await removeFeed(feedId);
   jobs.splice(jobs.indexOf(job), 1);
+  const name = await getFeedName(feedId);
+  logger.info(`📢 Feed ${name} has been removed`, { feed: { feedId, name } });
 
-  logger.info(`📢 Feed ${feed.name} has been removed`, { feed });
-
-  res.send(getFeeds());
+  res.send(await getFeeds());
 });
 
-router.get('/chain', (req, res) => {
-  res.send({ chainId: getChainId() });
+router.get('/chain', async (req, res) => {
+  res.send({ chainId: await getChainId() });
 });
 
 router.post('/chain', (req, res) => {
@@ -221,37 +236,37 @@ router.get('/logs', async (req, res) => {
   }
 });
 
-router.post('/start', (req, res) => {
-  const feeds = getFeeds();
-  cdc.subscribeTo(feeds.map(({ feedId }) => feedId));
+router.post('/start', async (req, res) => {
+  const feeds = await getFeeds();
+  cdc.subscribeTo(feeds);
   logger.info('🏁 All streams have been started', { feeds });
-  res.send({ feeds: feeds.map(({ feedId }) => feedId) });
+  res.send({ feeds });
 });
 
-router.post('/stop', (req, res) => {
-  const feeds = getFeeds();
-  cdc.unsubscribeFrom(feeds.map(({ feedId }) => feedId));
+router.post('/stop', async (req, res) => {
+  const feeds = await getFeeds();
+  cdc.unsubscribeFrom(feeds);
   logger.info('🛑 All streams have been stoped', { feeds });
-  res.send({ feeds: [] });
+  res.send({ feedsStopped: feeds });
 });
 
-router.get('/contract', (req, res) =>
-  res.send({ contract: getContractAddress() })
+router.get('/contract', async (req, res) =>
+  res.send({ contract: await getContractAddress() })
 );
-router.post('/contract', (req, res) => {
+router.post('/contract', async (req, res) => {
   const contract = req.body.contract;
   if (!isAddress(contract) || contract === zeroAddress) {
     logger.warn('⚠ Invalid contract address', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Invalid contract address' });
   }
-  setContractAddress(contract);
+  await setContractAddress(contract);
   logger.info(`📢 New contract has been set ${contract}`, { contract });
   res.send({ contract });
 });
 
-router.get('/gascap', (req, res) =>
-  res.send({ gasCap: getGasCap().toString() })
+router.get('/gascap', async (req, res) =>
+  res.send({ gasCap: await getGasCap() })
 );
 router.post('/gascap', (req, res) => {
   const gasCap = req.body.contract;
@@ -260,61 +275,79 @@ router.post('/gascap', (req, res) => {
     res.status(400);
     return res.send({ warning: 'Invalid gas cap' });
   }
-  setGasCap(BigInt(gasCap));
+  setGasCap(gasCap);
   logger.info(`📢 New gas cap has been set ${gasCap}`, { gasCap });
   res.send({ gasCap });
 });
 
-router.get('/abi', (req, res) => res.send({ abi: JSON.stringify(getAbi()) }));
-router.post('/abi', (req, res) => {
+router.get('/abi', async (req, res) => res.send({ abi: await getAbi() }));
+router.post('/abi', async (req, res) => {
+  const abi = req.body.abi;
+  if (!abi) {
+    logger.warn('⚠ Invalid abi input', { body: req.body });
+    res.status(400);
+    return res.send({ warning: 'Invalid abi input' });
+  }
   try {
-    const abi = JSON.parse(req.body.abi);
-    if (!abi) {
-      logger.warn('⚠ Invalid abi input', { body: req.body });
-      res.status(400);
-      return res.send({ warning: 'Invalid abi input' });
-    }
-    setAbi(abi);
-    logger.info(`📢 New abi has been set`, { abi });
-    res.send({ info: 'abi updated' });
+    JSON.parse(abi);
   } catch (error) {
     logger.error('ERROR', error);
     res.status(400);
     return res.send({ abi: null });
   }
+  await setAbi(abi);
+  logger.info(`📢 New abi has been set`, { abi });
+  res.send({ info: 'abi updated' });
 });
 
-router.get('/function', (req, res) =>
-  res.send({ functionName: getFunctionName() })
+router.get('/function', async (req, res) =>
+  res.send({ functionName: await getFunctionName() })
 );
-router.post('/function', (req, res) => {
+router.post('/function', async (req, res) => {
   const functionName = req.body.functionName;
   if (!functionName || functionName.length === 0) {
     logger.warn('⚠ Invalid functionName input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Invalid functionName input' });
   }
-  setFunctionName(functionName);
+  await setFunctionName(functionName);
   logger.info(`📢 New function has been set ${functionName}`, { functionName });
   res.send({ functionName });
 });
 
-router.get('/args', (req, res) =>
-  res.send({ functionArgs: getFunctionArgs() })
+router.get('/args', async (req, res) =>
+  res.send({ functionArgs: await getFunctionArgs() })
 );
-router.post('/args', (req, res) => {
+router.post('/args', async (req, res) => {
   const functionArgs = req.body.args;
   if (!functionArgs || functionArgs.length === 0) {
     logger.warn('⚠ Invalid args input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Invalid args input' });
   }
-  setFunctionArgs(functionArgs);
+  await setFunctionArgs(functionArgs);
   logger.info(
     `📢 New set of arguments has been set ${functionArgs.join(', ')}`,
     { functionArgs }
   );
-  res.send({ functionArgs: getFunctionArgs() });
+  res.send({ functionArgs });
+});
+
+router.get('/delta', async (req, res) => {
+  res.send({ priceDelta: await getPriceDelta() });
+});
+router.post('/delta', async (req, res) => {
+  const priceDelta = req.body.priceDelta;
+  if (!priceDelta || isNaN(Number(priceDelta))) {
+    logger.warn('⚠ Invalid price delta input', { body: req.body });
+    res.status(400);
+    return res.send({ warning: 'Invalid price delta input' });
+  }
+  await setPriceDelta(priceDelta);
+  logger.info(`📢 New price delta has been set ${formatEther(priceDelta)}`, {
+    priceDelta,
+  });
+  res.send({ priceDelta });
 });
 
 app.use('/api', router);
@@ -334,15 +367,27 @@ app.all(
 );
 
 const port = process.env.PORT || 3000;
+const jobs: { job: CronJob<null, null>; feedId: string }[] = [];
 
-app.listen(port, () => logger.info(`🚀 running at http://localhost:${port}`));
+app.listen(port, async () => {
+  logger.info(`🚀 running at http://localhost:${port}`);
+  const feeds = await getFeeds();
+  const interval = await getInterval();
+  if (!interval) {
+    logger.warn('⚠ Interval is missing. Set interval and try again');
+    return;
+  }
+  cdc.subscribeTo(feeds);
+  jobs.push(
+    ...feeds.map((feedId) => ({
+      feedId,
+      job: createCronJob(feedId, interval),
+    }))
+  );
+  logger.info('🏁 Streams have been started', { feeds });
+});
 
 // https://docs.chain.link/data-streams/crypto-streams?network=arbitrum&page=1#testnet-crypto-streams
-
-const jobs = getFeeds().map(({ feedId }) => ({
-  feedId,
-  job: createCronJob(feedId),
-}));
 
 cdc.on('report', async (report: StreamReport) => {
   setLatestReport(report);
@@ -351,13 +396,26 @@ cdc.on('report', async (report: StreamReport) => {
 async function dataUpdater({ report }: { report: StreamReport }) {
   try {
     const verifiedReport = await verifyReport(report);
-    if (!verifiedReport) return;
+    if (!verifiedReport) {
+      logger.warn(`🛑 Verified report is missing | Aborting`);
+      return;
+    }
+    const functionName = await getFunctionName();
+    if (!functionName) {
+      logger.warn(`🛑 Function name is missing | Aborting`);
+      return;
+    }
+    const abi = await getAbi();
+    if (!abi) {
+      logger.warn(`🛑 Contract ABI is missing | Aborting`);
+      return;
+    }
     logger.info('✅ Report verified', { verifiedReport });
     const transaction = await executeWriteContract({
       report: verifiedReport as ReportV3,
-      abi: getAbi(),
-      functionName: getFunctionName(),
-      functionArgs: getFunctionArgs(),
+      abi: JSON.parse(abi),
+      functionName,
+      functionArgs: await getFunctionArgs(),
     });
     if (transaction?.status) {
       logger.info(`ℹ️ Transaction status: ${transaction?.status}`, {
@@ -365,9 +423,9 @@ async function dataUpdater({ report }: { report: StreamReport }) {
       });
     }
     if (transaction?.status === 'success') {
-      setSavedReport(report);
+      await setSavedReport(report);
       logger.info(
-        `💾 Price stored | ${getReportFeedName(report)}: ${formatUSD(
+        `💾 Price stored | ${await getFeedName(report.feedId)}: ${formatUSD(
           report.benchmarkPrice
         )}$`,
         { report }
@@ -378,20 +436,20 @@ async function dataUpdater({ report }: { report: StreamReport }) {
   }
 }
 
-function createCronJob(feedId: string) {
+function createCronJob(feedId: string, interval: string) {
   return new CronJob(
-    getInterval(),
+    interval,
     async function () {
       const report = getLatestReport(feedId);
       const latestBenchmarkPrice = report.benchmarkPrice;
       if (!latestBenchmarkPrice) return;
-      const savedBenchmarkPrice = getSavedReportBenchmarkPrice(feedId);
-      const diff = latestBenchmarkPrice - savedBenchmarkPrice;
-      const priceDelta = getPriceDelta();
-      if (abs(diff) < priceDelta) return;
+      const savedBenchmarkPrice = await getSavedReportBenchmarkPrice(feedId);
+      const diff = latestBenchmarkPrice - BigInt(savedBenchmarkPrice ?? 0);
+      const priceDelta = await getPriceDelta();
+      if (abs(diff) < BigInt(priceDelta ?? 0)) return;
       logger.info(
-        `🚨 Price deviation detected | ${getReportFeedName(
-          report
+        `🚨 Price deviation detected | ${await getFeedName(
+          report.feedId
         )}: ${formatUSD(latestBenchmarkPrice)}$ | ${
           isPositive(diff) ? '📈' : '📉'
         } ${isPositive(diff) ? '+' : ''}${formatUSD(diff)}$`,
@@ -404,6 +462,3 @@ function createCronJob(feedId: string) {
     true
   );
 }
-
-const getReportFeedName = (report: StreamReport) =>
-  getFeeds().find((feed) => feed.feedId === report.feedId)?.name ?? '';

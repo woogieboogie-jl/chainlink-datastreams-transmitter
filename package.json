@@ -30,6 +30,7 @@
     "cron": "^3.5.0",
     "cross-env": "^7.0.3",
     "express": "^4.19.2",
+    "ioredis": "^5.5.0",
     "isbot": "^4.1.0",
     "js-yaml": "^4.1.0",
     "lucide-react": "^0.473.0",

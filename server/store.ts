@@ -1,66 +1,60 @@
-import { Abi, Address } from 'viem';
-import { clientConfig, onChainConfig } from './config/config';
+import { Address } from 'viem';
 import { StreamReport } from './types';
+import {
+  addToSet,
+  deleteValue,
+  getList,
+  getSet,
+  getValue,
+  isSetMember,
+  removeFromSet,
+  setList,
+  setValue,
+} from './services/redis';
 
-const store: {
-  functionName: string;
-  interval: string;
-  functionArgs: string[];
-  abi: Abi;
-  latestReports: { [key: string]: StreamReport };
-  savedReports: { [key: string]: StreamReport };
-  feeds: { name: string; feedId: string }[];
-  priceDelta: bigint;
-  chainId: number;
-  contractAddress: Address;
-  gasCap: bigint;
-} = {
-  functionName: onChainConfig.functionName,
-  interval: clientConfig.intervalSchedule,
-  functionArgs: onChainConfig.functionArgs,
-  abi: onChainConfig.abi,
-  latestReports: {},
-  savedReports: {},
-  feeds: clientConfig.feeds,
-  priceDelta: BigInt(clientConfig.priceDelta),
-  chainId: onChainConfig.chainId,
-  contractAddress: onChainConfig.contractAddress,
-  gasCap: BigInt(onChainConfig.gasCap),
-};
+const latestReports: { [key: string]: StreamReport } = {};
 
-const getFunctionName = () => store.functionName;
-const setFunctionName = (functionName: string) =>
-  (store.functionName = functionName);
-const getInterval = () => store.interval;
-const setInterval = (interval: string) => (store.interval = interval);
-const getFunctionArgs = () => store.functionArgs;
-const setFunctionArgs = (functionArgs: string[]) =>
-  (store.functionArgs = functionArgs);
-const getAbi = () => store.abi;
-const setAbi = (abi: Abi) => (store.abi = abi);
-const getLatestReport = (feedId: string) => store.latestReports[feedId];
+const getFunctionName = async () => await getValue('functionName');
+const setFunctionName = async (functionName: string) =>
+  await setValue('functionName', functionName);
+const getInterval = async () => await getValue('interval');
+const setInterval = async (interval: string) =>
+  await setValue('interval', interval);
+const getFunctionArgs = async () => await getList('functionArgs');
+const setFunctionArgs = async (functionArgs: string[]) =>
+  await setList('functionArgs', functionArgs);
+const getAbi = async () => await getValue('abi');
+const setAbi = async (abi: string) => await setValue('abi', abi);
+const getLatestReport = (feedId: string) => latestReports[feedId];
 const setLatestReport = (report: StreamReport) =>
-  (store.latestReports[report.feedId] = report);
-const getSavedReportBenchmarkPrice = (feedId: string) =>
-  store.savedReports[feedId]?.benchmarkPrice ?? BigInt(0);
-const setSavedReport = (report: StreamReport) =>
-  (store.savedReports[report.feedId] = report);
-const getFeeds = () => store.feeds;
-const getFeed = (feedId: string) =>
-  store.feeds.find((feed) => feed.feedId === feedId);
-const addFeed = (feed: { feedId: string; name: string }) =>
-  store.feeds.push(feed);
-const removeFeed = (feedId: string) =>
-  (store.feeds = store.feeds.filter((feed) => feed.feedId !== feedId));
-const getPriceDelta = () => store.priceDelta;
-const setPriceDelta = (priceDelta: bigint) => (store.priceDelta = priceDelta);
-const getChainId = () => store.chainId;
-const setChainId = (chainId: number) => (store.chainId = chainId);
-const getContractAddress = () => store.contractAddress;
-const setContractAddress = (address: Address) =>
-  (store.contractAddress = address);
-const getGasCap = () => store.gasCap;
-const setGasCap = (gasCap: bigint) => (store.gasCap = gasCap);
+  (latestReports[report.feedId] = report);
+const getSavedReportBenchmarkPrice = async (feedId: string) =>
+  await getValue(`price:${feedId}`);
+const setSavedReport = async (report: StreamReport) =>
+  await setValue(`price:${report.feedId}`, report.benchmarkPrice.toString());
+const getFeeds = async () => await getSet('feeds');
+const getFeedName = async (feedId: string) => await getValue(`name:${feedId}`);
+const addFeed = async (feed: { feedId: string; name: string }) => {
+  await addToSet('feeds', feed.feedId);
+  await setValue(`name:${feed.feedId}`, feed.name);
+};
+const removeFeed = async (feedId: string) => {
+  await removeFromSet('feeds', feedId);
+  await deleteValue(`name:${feedId}`);
+};
+const getFeedExists = async (feedId: string) =>
+  await isSetMember('feeds', feedId);
+const getPriceDelta = async () => await getValue('priceDelta');
+const setPriceDelta = async (priceDelta: string) =>
+  await setValue('priceDelta', priceDelta);
+const getChainId = async () => await getValue('chainId');
+const setChainId = async (chainId: number) =>
+  await setValue('chainId', chainId);
+const getContractAddress = async () => await getValue('contractAddress');
+const setContractAddress = async (address: Address) =>
+  await setValue('contractAddress', address);
+const getGasCap = async () => await getValue('gasCap');
+const setGasCap = async (gasCap: string) => await setValue('gasCap', gasCap);
 
 export {
   getFunctionName,
@@ -76,9 +70,10 @@ export {
   getSavedReportBenchmarkPrice,
   setSavedReport,
   getFeeds,
-  getFeed,
+  getFeedName,
   addFeed,
   removeFeed,
+  getFeedExists,
   getPriceDelta,
   setPriceDelta,
   getChainId,

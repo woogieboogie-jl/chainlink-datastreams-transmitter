@@ -1,7 +1,8 @@
 import ChainlinkDatastreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
-import { cdcConfig, clientConfig } from 'server/config/config';
 
 export const cdc = new ChainlinkDatastreamsConsumer({
-  ...cdcConfig,
-  feeds: clientConfig.feeds.map(({ feedId }) => feedId),
+  hostname: process.env.DATASTREAMS_HOSTNAME,
+  wsHostname: process.env.DATASTREAMS_WS_HOSTNAME,
+  clientID: process.env.DATASTREAMS_CLIENT_ID,
+  clientSecret: process.env.DATASTREAMS_CLIENT_SECRET,
 });

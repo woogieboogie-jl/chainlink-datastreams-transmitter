@@ -17,6 +17,8 @@ import {
   soneiumMinato,
   sonic,
   sonicTestnet,
+  worldchain,
+  worldchainSepolia,
 } from 'viem/chains';
 
 export const chains: readonly [Chain, ...Chain[]] = [
@@ -37,4 +39,6 @@ export const chains: readonly [Chain, ...Chain[]] = [
   soneiumMinato,
   sonic,
   sonicTestnet,
+  worldchain,
+  worldchainSepolia,
 ];

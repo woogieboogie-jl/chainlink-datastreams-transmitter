@@ -1,5 +1,6 @@
 import { ActionFunctionArgs } from '@remix-run/node';
 import { Form, useLoaderData } from '@remix-run/react';
+import { formatEther } from 'viem';
 import {
   fetchAbi,
   fetchContractAddress,
@@ -74,7 +75,9 @@ export default function Contract() {
         <div className="space-y-4">
           <Label htmlFor="gascap">Gas limit</Label>
           <code>
-            <pre>{`${gasCap.gasCap} WEI`}</pre>
+            <pre>{`${gasCap.gasCap} WEI (${formatEther(
+              BigInt(gasCap.gasCap)
+            )} ETH)`}</pre>
           </code>
           <Input name="contract" placeholder="0x..." />
         </div>

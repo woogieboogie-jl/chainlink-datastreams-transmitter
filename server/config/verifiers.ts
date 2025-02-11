@@ -17,6 +17,8 @@ import {
   soneiumMinato,
   sonic,
   sonicTestnet,
+  worldchain,
+  worldchainSepolia,
 } from 'viem/chains';
 
 export const verifiers: Record<number, Address> = {
@@ -37,4 +39,6 @@ export const verifiers: Record<number, Address> = {
   [soneiumMinato.id]: '0x26603bAC5CE09DAE5604700B384658AcA13AD6ae',
   [sonic.id]: '0xfBFff08fE4169853F7B1b5Ac67eC10dc8806801d',
   [sonicTestnet.id]: '0xfBFff08fE4169853F7B1b5Ac67eC10dc8806801d',
+  [worldchain.id]: '0x65eaE24251C5707D5aCBF7461A49fe87CB1bE4c7',
+  [worldchainSepolia.id]: '0x2482A390bE58b3cBB6Df72dB2e950Db20256e55E',
 };

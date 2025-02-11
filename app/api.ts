@@ -139,3 +139,16 @@ export async function fetchGasCap() {
 export async function setGasCap(cap: { gasCap: string }) {
   return await fetch(`${url}/gascap`, postOptions<{ gasCap: string }>(cap));
 }
+
+export async function fetchPriceDelta() {
+  const result = await fetch(`${url}/delta`);
+  const data: { priceDelta: string } = await result.json();
+  return data;
+}
+
+export async function setPriceDelta(delta: { priceDelta: string }) {
+  return await fetch(
+    `${url}/delta`,
+    postOptions<{ priceDelta: string }>(delta)
+  );
+}

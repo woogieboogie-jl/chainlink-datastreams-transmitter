@@ -1,5 +1,5 @@
 import { Report } from '@hackbg/chainlink-datastreams-consumer';
-import { Abi, Address, Hex } from 'viem';
+import { Hex } from 'viem';
 
 export type StreamReport = Report & {
   validFromTimestamp: bigint;
@@ -35,26 +35,8 @@ export type ReportV4 = {
 };
 
 export type Config = {
-  cdcConfig: {
-    hostname: string;
-    whHostname: string;
-    clientId: string;
-    clientSecret: string;
-  };
-  onChainConfig: {
-    privateKey: Hex;
-    contractAddress: Address;
-    verifierProxyAddress: Address;
-    chainId: number;
-    gasCap: string;
-    abi: Abi;
-    functionName: string;
-    functionArgs: string[];
-  };
   clientConfig: {
-    priceDelta: string;
     intervalSchedule: string;
-    feeds: { name: string; feedId: string }[];
   };
 };
 

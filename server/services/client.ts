@@ -10,6 +10,7 @@ import {
   isAddress,
   isAddressEqual,
   Abi,
+  Hex,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { ReportV3, ReportV4, StreamReport } from '../types';
@@ -17,10 +18,9 @@ import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
 import { chains } from '../config/chains';
 import { verifiers } from '../config/verifiers';
-import { onChainConfig } from '../config/config';
 import { getChainId, getContractAddress, getGasCap } from 'server/store';
 
-const account = privateKeyToAccount(onChainConfig.privateKey);
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as Hex);
 export const accountAddress = account.address;
 
 export async function executeContract({
@@ -51,9 +51,14 @@ export async function executeContract({
 
   const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
 
-  const address = getContractAddress();
-
-  const { publicClient, walletClient } = getClients();
+  const address = await getContractAddress();
+  if (!address || !isAddress(address)) return;
+  const clients = await getClients();
+  if (!clients || !clients.publicClient || !clients.walletClient) {
+    logger.warn('⚠️ Invalid clients', { clients });
+    return;
+  }
+  const { publicClient, walletClient } = clients;
   const gas = await publicClient.estimateContractGas({
     account,
     address,
@@ -67,8 +72,8 @@ export async function executeContract({
     }`,
     { gas }
   );
-  const gasCap = getGasCap();
-  if (gas > gasCap) {
+  const gasCap = await getGasCap();
+  if (gasCap && gas > BigInt(gasCap)) {
     logger.info(
       `🛑 Gas is above the limit of ${formatEther(BigInt(gasCap))} | Aborting`,
       { gas, gasCap }
@@ -91,9 +96,23 @@ export async function executeContract({
 
 export async function getContractAddresses() {
   try {
-    const { publicClient } = getClients();
-    const chainId = getChainId();
-    const verifierProxyAddress = verifiers[chainId];
+    const clients = await getClients();
+    if (!clients || !clients.publicClient) {
+      logger.warn('⚠️ Invalid clients', { clients });
+      return {
+        verifierProxyAddress: zeroAddress,
+        feeManagerAddress: zeroAddress,
+        rewardManagerAddress: zeroAddress,
+        feeTokenAddress: zeroAddress,
+      };
+    }
+    const { publicClient } = clients;
+    const chainId = await getChainId();
+    if (!chainId) {
+      logger.warn('⚠️ No chainId provided');
+      return;
+    }
+    const verifierProxyAddress = verifiers[Number(chainId)];
 
     const feeManagerAddress = await publicClient.readContract({
       address: verifierProxyAddress,
@@ -118,7 +137,7 @@ export async function getContractAddresses() {
       feeTokenAddress,
     };
   } catch (error) {
-    logger.error('ERROR', error);
+    logger.error('ERROR', { error });
     return {
       verifierProxyAddress: zeroAddress,
       feeManagerAddress: zeroAddress,
@@ -130,7 +149,12 @@ export async function getContractAddresses() {
 
 export async function verifyReport(report: StreamReport) {
   try {
-    const { publicClient, walletClient } = getClients();
+    const clients = await getClients();
+    if (!clients || !clients.publicClient || !clients.walletClient) {
+      logger.warn('⚠️ Invalid clients', { clients });
+      return;
+    }
+    const { publicClient, walletClient } = clients;
 
     const [, reportData] = decodeAbiParameters(
       [
@@ -142,18 +166,21 @@ export async function verifyReport(report: StreamReport) {
 
     const reportVersion = reportData.charAt(5);
     if (reportVersion !== '3' && reportVersion !== '4') {
-      logger.warn('⚠️ Invalid report version', report);
+      logger.warn('⚠️ Invalid report version', { report });
       return;
     }
 
     const contractAddresses = await getContractAddresses();
 
     if (
+      !contractAddresses ||
       Object.values(contractAddresses)
         .map((address) => isAddressValid(address))
         .includes(false)
-    )
+    ) {
+      logger.warn('⚠️ Invalid contract addresses', { contractAddresses });
       return;
+    }
 
     const {
       feeManagerAddress,
@@ -189,8 +216,8 @@ export async function verifyReport(report: StreamReport) {
       }`,
       { approveLinkGas }
     );
-    const gasCap = getGasCap();
-    if (approveLinkGas > gasCap) {
+    const gasCap = await getGasCap();
+    if (gasCap && approveLinkGas > BigInt(gasCap)) {
       logger.info(
         `🛑 LINK approval gas is above the limit of ${formatEther(
           BigInt(gasCap)
@@ -222,12 +249,12 @@ export async function verifyReport(report: StreamReport) {
       args: [report.rawReport, feeTokenAddressEncoded],
     });
     logger.info(
-      `⛽️ Estimated gas forv verification: ${formatEther(verifyReportGas)} ${
+      `⛽️ Estimated gas for verification: ${formatEther(verifyReportGas)} ${
         publicClient.chain?.nativeCurrency.symbol
       }`,
       { verifyReportGas }
     );
-    if (verifyReportGas > BigInt(gasCap)) {
+    if (gasCap && verifyReportGas > BigInt(gasCap)) {
       logger.info(
         `🛑 Verification gas is above the limit of ${formatEther(
           BigInt(gasCap)
@@ -323,16 +350,20 @@ export async function verifyReport(report: StreamReport) {
       return verifiedReport;
     }
   } catch (error) {
-    logger.error('ERROR', error);
+    logger.error('ERROR', { error });
   }
 }
 
 const isAddressValid = (address: string) =>
   !isAddress(address) || isAddressEqual(address, zeroAddress) ? false : true;
 
-function getClients() {
-  const chainId = getChainId();
-  const chain = chains.find((chain) => chain.id === chainId);
+async function getClients() {
+  const chainId = await getChainId();
+  if (!chainId) {
+    logger.warn('⚠️ No chainId provided');
+    return;
+  }
+  const chain = chains.find((chain) => chain.id === Number(chainId));
   if (!chain) {
     logger.warn('⚠️ Invalid chain', { chainId });
   }
