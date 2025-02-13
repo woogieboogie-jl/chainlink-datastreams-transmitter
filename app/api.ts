@@ -155,3 +155,7 @@ export async function setPriceDelta(delta: { priceDelta: string }) {
     postOptions<{ priceDelta: string }>(delta)
   );
 }
+
+export async function addChain(chain: unknown) {
+  return await fetch(`${url}/chains/add`, postOptions({ chain }));
+}

@@ -4,14 +4,16 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from '@remix-run/react';
 import type { LinksFunction, MetaFunction } from '@remix-run/node';
 
 import './tailwind.css';
 import { Navigation } from './components/navigation';
-import { WagmiProvider } from 'wagmi';
-import { config } from './wagmiConfig';
+import { createConfig, WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { getAllChains } from 'server/config/chains';
+import { Chain, createClient, http } from 'viem';
 
 const queryClient = new QueryClient();
 
@@ -54,7 +56,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+export async function loader() {
+  const chains = await getAllChains();
+  return chains;
+}
+
 export default function App() {
+  const chains = useLoaderData<typeof loader>();
+  const config = createConfig({
+    chains: chains as readonly [Chain, ...Chain[]],
+    client({ chain }) {
+      return createClient({ chain, transport: http() });
+    },
+  });
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>

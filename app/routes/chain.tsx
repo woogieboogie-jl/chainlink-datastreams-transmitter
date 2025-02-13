@@ -30,7 +30,8 @@ import {
   SelectValue,
 } from '~/components/ui/select';
 import { ActionFunctionArgs } from '@remix-run/node';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Button } from '~/components/ui/button';
 
 export async function loader() {
   const [account, contracts, chain] = await Promise.all([
@@ -94,73 +95,77 @@ export default function Chain() {
     }
   }, [chainId, currentChainId, switchChain]);
 
+  const [chainInput, setChainInput] = useState(currentChainId.toString());
+
   return (
     <>
       {address && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Chain</TableHead>
-              <TableHead>Account</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium">
-                <Select
-                  defaultValue={
-                    chains.find((chain) => chain.id === currentChainId)?.name
-                  }
-                  onValueChange={(value) => {
-                    switchChain({ chainId: Number(value) });
-
-                    submit({ chainId: value }, { method: 'post' });
-                  }}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue asChild>
-                      <div>
-                        {
-                          chains.find((chain) => chain.id === currentChainId)
-                            ?.name
-                        }
-                      </div>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Testnet</SelectLabel>
-                      {chains
-                        .filter((chain) => chain.testnet)
-                        .map((chain) => (
-                          <SelectItem
-                            value={chain.id.toString()}
-                            key={chain.id}
-                          >
-                            {chain.name}
-                          </SelectItem>
-                        ))}
-                    </SelectGroup>
-                    <SelectGroup>
-                      <SelectLabel>Mainnet</SelectLabel>
-                      {chains
-                        .filter((chain) => !chain.testnet)
-                        .map((chain) => (
-                          <SelectItem
-                            value={chain.id.toString()}
-                            key={chain.id}
-                          >
-                            {chain.name}
-                          </SelectItem>
-                        ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </TableCell>
-              <TableCell>{address}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Chain</TableHead>
+                <TableHead>Account</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-medium">{`${chainId} (${
+                  chains.find((chain) => chain.id === currentChainId)?.name
+                })`}</TableCell>
+                <TableCell>{address}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+          <div className="flex gap-2 w-full">
+            <Select
+              defaultValue={chainInput}
+              onValueChange={(value) => setChainInput(value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue asChild>
+                  <div>
+                    {
+                      chains.find((chain) => chain.id === Number(chainInput))
+                        ?.name
+                    }
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Testnet</SelectLabel>
+                  {chains
+                    .filter((chain) => chain.testnet)
+                    .map((chain) => (
+                      <SelectItem value={chain.id.toString()} key={chain.id}>
+                        {chain.name}
+                      </SelectItem>
+                    ))}
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Mainnet</SelectLabel>
+                  {chains
+                    .filter((chain) => !chain.testnet)
+                    .map((chain) => (
+                      <SelectItem value={chain.id.toString()} key={chain.id}>
+                        {chain.name}
+                      </SelectItem>
+                    ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button
+              disabled={currentChainId === Number(chainInput)}
+              onClick={() => {
+                switchChain({ chainId: Number(chainInput) });
+                submit({ chainId: chainInput }, { method: 'post' });
+              }}
+            >
+              Switch chain
+            </Button>
+          </div>
+        </>
       )}
       <Table>
         <TableHeader>

@@ -14,7 +14,7 @@ import {
 import { ReportV3, StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
-import { chains } from './config/chains.js';
+import { getAllChains } from './config/chains.js';
 import { cdc } from './services/datastreams.js';
 import {
   addChain,
@@ -206,14 +206,14 @@ router.get('/chain', async (req, res) => {
   res.send({ chainId: await getChainId() });
 });
 
-router.post('/chain', (req, res) => {
+router.post('/chain', async (req, res) => {
   const chainId = Number(req.body.chainId);
   if (!chainId) {
     logger.warn('⚠ Chain id invalid input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Chain id invalid input' });
   }
-
+  const chains = await getAllChains();
   const chain = chains.find((chain) => chain.id === chainId);
 
   if (!chain) {
@@ -353,27 +353,72 @@ router.post('/delta', async (req, res) => {
 });
 
 router.post('/chains/add', async (req, res) => {
-  const chainData = req.body.chain;
-  if (!chainData) {
+  const chain = req.body.chain;
+  if (!chain) {
     logger.warn('⚠ Invalid chain input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Invalid chain input' });
   }
   try {
-    const chain = JSON.parse(chainData);
-    const chainId = chain.id;
-    if (!chainId) {
+    if (!chain.id || isNaN(Number(chain.id))) {
       logger.warn('⚠ Invalid chain id', { chain });
       res.status(400);
       return res.send({ warning: 'Invalid chain id' });
     }
-    await addChain(chainId, chain);
+    if (!chain.name) {
+      logger.warn('⚠ Chain name is missing', { chain });
+      res.status(400);
+      return res.send({ warning: 'Chain name is missing' });
+    }
+    if (!chain.nativeCurrency) {
+      logger.warn('⚠ Native currency object is missing', { chain });
+      res.status(400);
+      return res.send({ warning: 'Native currency object is missing' });
+    }
+    if (!chain.nativeCurrency.name) {
+      logger.warn('⚠ Chain native currency name is missing', { chain });
+      res.status(400);
+      return res.send({ warning: 'Chain native currency name is missing' });
+    }
+    if (!chain.nativeCurrency.symbol) {
+      logger.warn('⚠ Chain native currency symbol is missing', { chain });
+      res.status(400);
+      return res.send({ warning: 'Chain native currency symbol is missing' });
+    }
+    if (
+      !chain.nativeCurrency.decimals ||
+      isNaN(Number(chain.nativeCurrency.decimals))
+    ) {
+      logger.warn('⚠ Invalid chain native currency decimals', { chain });
+      res.status(400);
+      return res.send({ warning: 'Invalid chain native currency decimals' });
+    }
+    if (!chain.rpcUrls) {
+      logger.warn('⚠ RPC urls object is missing', { chain });
+      res.status(400);
+      return res.send({ warning: 'RPC urls object is missing' });
+    }
+    if (!chain.rpcUrls.default) {
+      logger.warn('⚠ Default RPC urls object is missing', { chain });
+      res.status(400);
+      return res.send({ warning: 'Default RPC urls object is missing' });
+    }
+    if (
+      !chain.rpcUrls.default.http ||
+      chain.rpcUrls.default.http.length === 0
+    ) {
+      logger.warn('⚠ Default http RPC url is missing', { chain });
+      res.status(400);
+      return res.send({ warning: 'Default http RPC url is missing' });
+    }
+
+    await addChain(chain.id, JSON.stringify(chain));
     logger.info(`📢 New chain has been added`, { chain });
     res.send({ chains: await getChains() });
   } catch (error) {
     logger.error('ERROR', error);
     res.status(400);
-    return res.send({ abi: null });
+    return res.send({ chain: null });
   }
 });
 

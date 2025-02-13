@@ -16,7 +16,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
-import { chains } from '../config/chains';
+import { getAllChains } from '../config/chains';
 import { verifiers } from '../config/verifiers';
 import { getChainId, getContractAddress, getGasCap } from 'server/store';
 
@@ -363,6 +363,7 @@ async function getClients() {
     logger.warn('⚠️ No chainId provided');
     return;
   }
+  const chains = await getAllChains();
   const chain = chains.find((chain) => chain.id === Number(chainId));
   if (!chain) {
     logger.warn('⚠️ Invalid chain', { chainId });
