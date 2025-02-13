@@ -27,7 +27,7 @@ export default function Feeds() {
   return (
     <div className="w-full h-[calc(100vh_-_100px)]">
       <ClientOnly>
-        <Logger text={data?.log} />
+        <Logger text={data?.log ?? ''} />
       </ClientOnly>
     </div>
   );

@@ -17,9 +17,11 @@ import { readFile } from 'node:fs/promises';
 import { chains } from './config/chains.js';
 import { cdc } from './services/datastreams.js';
 import {
+  addChain,
   addFeed,
   getAbi,
   getChainId,
+  getChains,
   getContractAddress,
   getFeedExists,
   getFeedName,
@@ -136,7 +138,7 @@ router.post('/interval', (req, res) => {
   res.send({ interval });
 });
 
-router.post('/add', async (req, res) => {
+router.post('/feeds/add', async (req, res) => {
   const name: string = req.body.name;
   const feedId: string = req.body.feedId;
 
@@ -166,7 +168,7 @@ router.post('/add', async (req, res) => {
   res.send(await getFeeds());
 });
 
-router.post('/remove', async (req, res) => {
+router.post('/feeds/remove', async (req, res) => {
   const feedId: string = req.body.feedId;
   if (!feedId) {
     logger.warn('⚠ Remove feed invalid input', { body: req.body });
@@ -350,6 +352,31 @@ router.post('/delta', async (req, res) => {
   res.send({ priceDelta });
 });
 
+router.post('/chains/add', async (req, res) => {
+  const chainData = req.body.chain;
+  if (!chainData) {
+    logger.warn('⚠ Invalid chain input', { body: req.body });
+    res.status(400);
+    return res.send({ warning: 'Invalid chain input' });
+  }
+  try {
+    const chain = JSON.parse(chainData);
+    const chainId = chain.id;
+    if (!chainId) {
+      logger.warn('⚠ Invalid chain id', { chain });
+      res.status(400);
+      return res.send({ warning: 'Invalid chain id' });
+    }
+    await addChain(chainId, chain);
+    logger.info(`📢 New chain has been added`, { chain });
+    res.send({ chains: await getChains() });
+  } catch (error) {
+    logger.error('ERROR', error);
+    res.status(400);
+    return res.send({ abi: null });
+  }
+});
+
 app.use('/api', router);
 
 // handle SSR requests
@@ -441,7 +468,7 @@ function createCronJob(feedId: string, interval: string) {
     interval,
     async function () {
       const report = getLatestReport(feedId);
-      const latestBenchmarkPrice = report.benchmarkPrice;
+      const latestBenchmarkPrice = report?.benchmarkPrice;
       if (!latestBenchmarkPrice) return;
       const savedBenchmarkPrice = await getSavedReportBenchmarkPrice(feedId);
       const diff = latestBenchmarkPrice - BigInt(savedBenchmarkPrice ?? 0);

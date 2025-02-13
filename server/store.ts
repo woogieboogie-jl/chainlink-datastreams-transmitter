@@ -55,6 +55,16 @@ const setContractAddress = async (address: Address) =>
   await setValue('contractAddress', address);
 const getGasCap = async () => await getValue('gasCap');
 const setGasCap = async (gasCap: string) => await setValue('gasCap', gasCap);
+const getChains = async () => await getSet('chains');
+const getChain = async (chainId: string) => await getValue(`chain:${chainId}`);
+const addChain = async (chainId: string, chain: string) => {
+  await setValue(`chain:${chainId}`, chain);
+  await addToSet('chains', chainId);
+};
+const removeChain = async (chainId: string) => {
+  await deleteValue(`chain:${chainId}`);
+  await removeFromSet('chains', chainId);
+};
 
 export {
   getFunctionName,
@@ -82,4 +92,8 @@ export {
   setContractAddress,
   getGasCap,
   setGasCap,
+  getChains,
+  getChain,
+  addChain,
+  removeChain,
 };

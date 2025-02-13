@@ -41,11 +41,14 @@ export async function fetchContractAddresses() {
 }
 
 export async function addFeed(feed: Feed) {
-  return await fetch(`${url}/add`, postOptions<Feed>(feed));
+  return await fetch(`${url}/feeds/add`, postOptions<Feed>(feed));
 }
 
 export async function removeFeed(feed: { feedId: string }) {
-  return await fetch(`${url}/remove`, postOptions<{ feedId: string }>(feed));
+  return await fetch(
+    `${url}/feeds/remove`,
+    postOptions<{ feedId: string }>(feed)
+  );
 }
 
 export async function setInterval(interval: Interval) {
