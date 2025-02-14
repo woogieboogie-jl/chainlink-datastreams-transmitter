@@ -72,7 +72,7 @@ export default function Schedule() {
       <p>
         Price delta:{' '}
         <span className="font-bold">{`${priceDelta.priceDelta} (${formatEther(
-          BigInt(priceDelta.priceDelta)
+          BigInt(priceDelta.priceDelta ?? 0),
         )})`}</span>
       </p>
       <Form method="post" className="space-y-2" id="delta-form">
