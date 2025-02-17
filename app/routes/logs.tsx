@@ -25,7 +25,7 @@ export default function Feeds() {
   }, [revalidator]);
 
   return (
-    <div className="w-full h-[calc(100vh_-_100px)]">
+    <div className="w-full h-[calc(100vh_-_152px)]">
       <ClientOnly>
         <Logger text={data?.log ?? ''} />
       </ClientOnly>

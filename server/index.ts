@@ -192,11 +192,11 @@ router.post('/feeds/remove', async (req, res) => {
     return res.send({ warning: 'Job does not exists' });
   }
 
+  const name = await getFeedName(feedId);
   cdc.unsubscribeFrom(feedId);
   job.job.stop();
   await removeFeed(feedId);
   jobs.splice(jobs.indexOf(job), 1);
-  const name = await getFeedName(feedId);
   logger.info(`📢 Feed ${name} has been removed`, { feed: { feedId, name } });
 
   res.send(await getFeeds());
@@ -271,7 +271,7 @@ router.get('/gascap', async (req, res) =>
   res.send({ gasCap: await getGasCap() })
 );
 router.post('/gascap', (req, res) => {
-  const gasCap = req.body.contract;
+  const gasCap = req.body.gasCap;
   if (isNaN(Number(gasCap))) {
     logger.warn('⚠ Invalid gas cap', { body: req.body });
     res.status(400);

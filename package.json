@@ -13,7 +13,7 @@
   "dependencies": {
     "@hackbg/chainlink-datastreams-consumer": "git+https://github.com/hackbg/chainlink-low-latency-consumer.git#bf08298573b88d74e3052ca9178e7430e383da11",
     "@hookform/resolvers": "^3.10.0",
-    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-scroll-area": "^1.2.2",
     "@radix-ui/react-select": "^2.1.5",
