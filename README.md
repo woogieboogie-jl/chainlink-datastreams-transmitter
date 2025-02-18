@@ -31,6 +31,7 @@ Built with:
   - [Development](#development)
     - [Modifications](#modifications)
   - [Styling](#styling)
+  - [License](#license)
   - [Resources](#resources)
 
 ## System Architecture Overview
@@ -120,6 +121,11 @@ npm start
 ## Styling
 
 This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever css framework you prefer. See the [Vite docs on css](https://vitejs.dev/guide/features.html#css) for more information.
+
+## License
+This project is licensed under the GNU General Public License (GPL). This means you are free to use, modify, and distribute the software, provided that any derivative work is also licensed under the GPL.
+
+By contributing to this project, you agree that your contributions will be governed by the same license. For full details, see the LICENSE file.
 
 ## Resources
 
