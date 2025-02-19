@@ -12,38 +12,25 @@ import {
 import { ReportV3, StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
-import { getAllChains } from './config/chains.js';
 import { cdc } from './services/datastreams.js';
 import {
-  addChain,
   addFeed,
   getAbi,
-  getChains,
-  getContractAddress,
   getFeedExists,
   getFeedName,
   getFeeds,
   getFunctionArgs,
   getFunctionName,
-  getGasCap,
   getInterval,
   getLatestReport,
   getPriceDelta,
   getSavedReportBenchmarkPrice,
   removeFeed,
-  setAbi,
-  setChainId,
-  setContractAddress,
-  setFunctionArgs,
-  setFunctionName,
-  setGasCap,
   setInterval,
   setLatestReport,
-  setPriceDelta,
   setSavedReport,
 } from './store.js';
 import { schedule } from './services/limiter.js';
-import { formatEther, isAddress, zeroAddress } from 'viem';
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -96,21 +83,6 @@ async function getBuild() {
 }
 
 const router = express.Router();
-
-router.get('/feeds', async (req, res) => {
-  const feedsIds = await getFeeds();
-  const feeds = await Promise.all(
-    feedsIds.map(async (feedId) => ({
-      feedId,
-      name: await getFeedName(feedId),
-    }))
-  );
-  res.send(feeds);
-});
-
-router.get('/interval', async (req, res) => {
-  res.send({ interval: await getInterval() });
-});
 
 router.post('/interval', (req, res) => {
   const interval: string = req.body.interval;
@@ -190,28 +162,6 @@ router.post('/feeds/remove', async (req, res) => {
   res.send(await getFeeds());
 });
 
-router.post('/chain', async (req, res) => {
-  const chainId = Number(req.body.chainId);
-  if (!chainId) {
-    logger.warn('⚠ Chain id invalid input', { body: req.body });
-    res.status(400);
-    return res.send({ warning: 'Chain id invalid input' });
-  }
-  const chains = await getAllChains();
-  const chain = chains.find((chain) => chain.id === chainId);
-
-  if (!chain) {
-    logger.info('Invalid chain', { chainId });
-    res.status(400);
-    return res.send({ warning: 'Invalid chain' });
-  }
-
-  setChainId(chainId);
-  logger.info(`📢 Chain switched to ${chain.name}`, { chain });
-
-  res.send({ chainId });
-});
-
 router.get('/logs', async (req, res) => {
   try {
     const log = await readFile('./logs/all/all.log', 'utf8');
@@ -234,176 +184,6 @@ router.post('/stop', async (req, res) => {
   cdc.unsubscribeFrom(feeds);
   logger.info('🛑 All streams have been stoped', { feeds });
   res.send({ feedsStopped: feeds });
-});
-
-router.get('/contract', async (req, res) =>
-  res.send({ contract: await getContractAddress() })
-);
-router.post('/contract', async (req, res) => {
-  const contract = req.body.contract;
-  if (!isAddress(contract) || contract === zeroAddress) {
-    logger.warn('⚠ Invalid contract address', { body: req.body });
-    res.status(400);
-    return res.send({ warning: 'Invalid contract address' });
-  }
-  await setContractAddress(contract);
-  logger.info(`📢 New contract has been set ${contract}`, { contract });
-  res.send({ contract });
-});
-
-router.get('/gascap', async (req, res) =>
-  res.send({ gasCap: await getGasCap() })
-);
-router.post('/gascap', (req, res) => {
-  const gasCap = req.body.gasCap;
-  if (isNaN(Number(gasCap))) {
-    logger.warn('⚠ Invalid gas cap', { body: req.body });
-    res.status(400);
-    return res.send({ warning: 'Invalid gas cap' });
-  }
-  setGasCap(gasCap);
-  logger.info(`📢 New gas cap has been set ${gasCap}`, { gasCap });
-  res.send({ gasCap });
-});
-
-router.get('/abi', async (req, res) => res.send({ abi: await getAbi() }));
-router.post('/abi', async (req, res) => {
-  const abi = req.body.abi;
-  if (!abi) {
-    logger.warn('⚠ Invalid abi input', { body: req.body });
-    res.status(400);
-    return res.send({ warning: 'Invalid abi input' });
-  }
-  try {
-    JSON.parse(abi);
-  } catch (error) {
-    logger.error('ERROR', error);
-    res.status(400);
-    return res.send({ abi: null });
-  }
-  await setAbi(abi);
-  logger.info(`📢 New abi has been set`, { abi });
-  res.send({ info: 'abi updated' });
-});
-
-router.get('/function', async (req, res) =>
-  res.send({ functionName: await getFunctionName() })
-);
-router.post('/function', async (req, res) => {
-  const functionName = req.body.functionName;
-  if (!functionName || functionName.length === 0) {
-    logger.warn('⚠ Invalid functionName input', { body: req.body });
-    res.status(400);
-    return res.send({ warning: 'Invalid functionName input' });
-  }
-  await setFunctionName(functionName);
-  logger.info(`📢 New function has been set ${functionName}`, { functionName });
-  res.send({ functionName });
-});
-
-router.get('/args', async (req, res) =>
-  res.send({ functionArgs: await getFunctionArgs() })
-);
-router.post('/args', async (req, res) => {
-  const functionArgs = req.body.args;
-  if (!functionArgs || functionArgs.length === 0) {
-    logger.warn('⚠ Invalid args input', { body: req.body });
-    res.status(400);
-    return res.send({ warning: 'Invalid args input' });
-  }
-  await setFunctionArgs(functionArgs);
-  logger.info(
-    `📢 New set of arguments has been set ${functionArgs.join(', ')}`,
-    { functionArgs }
-  );
-  res.send({ functionArgs });
-});
-
-router.get('/delta', async (req, res) => {
-  res.send({ priceDelta: await getPriceDelta() });
-});
-router.post('/delta', async (req, res) => {
-  const priceDelta = req.body.priceDelta;
-  if (!priceDelta || isNaN(Number(priceDelta))) {
-    logger.warn('⚠ Invalid price delta input', { body: req.body });
-    res.status(400);
-    return res.send({ warning: 'Invalid price delta input' });
-  }
-  await setPriceDelta(priceDelta);
-  logger.info(`📢 New price delta has been set ${formatEther(priceDelta)}`, {
-    priceDelta,
-  });
-  res.send({ priceDelta });
-});
-
-router.post('/chains/add', async (req, res) => {
-  const chain = req.body.chain;
-  if (!chain) {
-    logger.warn('⚠ Invalid chain input', { body: req.body });
-    res.status(400);
-    return res.send({ warning: 'Invalid chain input' });
-  }
-  try {
-    if (!chain.id || isNaN(Number(chain.id))) {
-      logger.warn('⚠ Invalid chain id', { chain });
-      res.status(400);
-      return res.send({ warning: 'Invalid chain id' });
-    }
-    if (!chain.name) {
-      logger.warn('⚠ Chain name is missing', { chain });
-      res.status(400);
-      return res.send({ warning: 'Chain name is missing' });
-    }
-    if (!chain.nativeCurrency) {
-      logger.warn('⚠ Native currency object is missing', { chain });
-      res.status(400);
-      return res.send({ warning: 'Native currency object is missing' });
-    }
-    if (!chain.nativeCurrency.name) {
-      logger.warn('⚠ Chain native currency name is missing', { chain });
-      res.status(400);
-      return res.send({ warning: 'Chain native currency name is missing' });
-    }
-    if (!chain.nativeCurrency.symbol) {
-      logger.warn('⚠ Chain native currency symbol is missing', { chain });
-      res.status(400);
-      return res.send({ warning: 'Chain native currency symbol is missing' });
-    }
-    if (
-      !chain.nativeCurrency.decimals ||
-      isNaN(Number(chain.nativeCurrency.decimals))
-    ) {
-      logger.warn('⚠ Invalid chain native currency decimals', { chain });
-      res.status(400);
-      return res.send({ warning: 'Invalid chain native currency decimals' });
-    }
-    if (!chain.rpcUrls) {
-      logger.warn('⚠ RPC urls object is missing', { chain });
-      res.status(400);
-      return res.send({ warning: 'RPC urls object is missing' });
-    }
-    if (!chain.rpcUrls.default) {
-      logger.warn('⚠ Default RPC urls object is missing', { chain });
-      res.status(400);
-      return res.send({ warning: 'Default RPC urls object is missing' });
-    }
-    if (
-      !chain.rpcUrls.default.http ||
-      chain.rpcUrls.default.http.length === 0
-    ) {
-      logger.warn('⚠ Default http RPC url is missing', { chain });
-      res.status(400);
-      return res.send({ warning: 'Default http RPC url is missing' });
-    }
-
-    await addChain(chain.id, JSON.stringify(chain));
-    logger.info(`📢 New chain has been added`, { chain });
-    res.send({ chains: await getChains() });
-  } catch (error) {
-    logger.error('ERROR', error);
-    res.status(400);
-    return res.send({ chain: null });
-  }
 });
 
 app.use('/api', router);

@@ -10,7 +10,8 @@ import { Label } from '~/components/ui/label';
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const feed = Object.fromEntries(formData) as Feed;
-  await addFeed(feed);
+  const result = await addFeed(feed);
+  if (result.status !== 200) return null;
   return redirect('/');
 }
 

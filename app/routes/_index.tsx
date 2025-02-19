@@ -1,14 +1,15 @@
 import { Form, Link, useLoaderData } from '@remix-run/react';
 import { Pause, Play, Plus, Trash2Icon } from 'lucide-react';
-import { formatEther } from 'viem';
 import {
-  fetchContractAddress,
-  fetchFeeds,
-  fetchFunctionName,
-  fetchGasCap,
-  fetchInterval,
-  fetchPriceDelta,
-} from '~/api';
+  getContractAddress,
+  getFeedName,
+  getFeeds,
+  getFunctionName,
+  getGasCap,
+  getInterval,
+  getPriceDelta,
+} from 'server/store';
+import { formatEther } from 'viem';
 import { Button, buttonVariants } from '~/components/ui/button';
 import {
   Card,
@@ -33,12 +34,20 @@ import { cn } from '~/lib/utils';
 export async function loader() {
   const [feeds, interval, priceDelta, gasCap, contractAddress, functionName] =
     await Promise.all([
-      fetchFeeds(),
-      fetchInterval(),
-      fetchPriceDelta(),
-      fetchGasCap(),
-      fetchContractAddress(),
-      fetchFunctionName(),
+      (async function () {
+        const feedsIds = await getFeeds();
+        return await Promise.all(
+          feedsIds.map(async (feedId) => ({
+            feedId,
+            name: await getFeedName(feedId),
+          }))
+        );
+      })(),
+      getInterval(),
+      getPriceDelta(),
+      getGasCap(),
+      getContractAddress(),
+      getFunctionName(),
     ]);
   return { feeds, interval, priceDelta, gasCap, contractAddress, functionName };
 }
@@ -130,7 +139,7 @@ export default function Index() {
           </CardHeader>
           <CardContent>
             <p>
-              Pattern: <strong>{interval.interval}</strong>
+              Pattern: <strong>{interval}</strong>
             </p>
             <Link
               to="/schedule/new"
@@ -189,15 +198,11 @@ export default function Index() {
           <CardContent>
             <div className="w-full flex gap-2 items-center pt-2 truncate">
               <span className="w-24">Contract address:</span>
-              <span className="truncate font-mono">
-                {contractAddress.contract}
-              </span>
+              <span className="truncate font-mono">{contractAddress}</span>
             </div>
             <div className="w-full flex gap-2 items-center pt-2 truncate">
               <span className="w-24">Function:</span>
-              <span className="truncate font-mono">
-                {functionName.functionName}
-              </span>
+              <span className="truncate font-mono">{functionName}</span>
             </div>
           </CardContent>
           <CardFooter>
@@ -219,9 +224,9 @@ export default function Index() {
           </CardHeader>
           <CardContent>
             <p>
-              <strong>{`${formatEther(BigInt(priceDelta.priceDelta ?? 0))} (${
-                priceDelta.priceDelta
-              })`}</strong>
+              <strong>{`${formatEther(
+                BigInt(priceDelta ?? 0)
+              )} (${priceDelta})`}</strong>
             </p>
             <Form
               method="post"
@@ -249,9 +254,9 @@ export default function Index() {
           </CardHeader>
           <CardContent>
             <p>
-              <strong>{`${formatEther(BigInt(gasCap.gasCap ?? 0))} ETH (${
-                gasCap.gasCap
-              } WEI)`}</strong>
+              <strong>{`${formatEther(
+                BigInt(gasCap ?? 0)
+              )} ETH (${gasCap} WEI)`}</strong>
             </p>
             <Form
               method="post"

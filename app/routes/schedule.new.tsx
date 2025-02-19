@@ -1,7 +1,8 @@
 import { ActionFunctionArgs, redirect } from '@remix-run/node';
-import { Form, useNavigate } from '@remix-run/react';
+import { Form, useLoaderData, useNavigate } from '@remix-run/react';
+import { getInterval } from 'server/store';
 import { Interval } from 'server/types';
-import { fetchPriceDelta, setInterval } from '~/api';
+import { setInterval } from '~/api';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -15,11 +16,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function loader() {
-  return await fetchPriceDelta();
+  return await getInterval();
 }
 
 export default function Schedule() {
   const navigate = useNavigate();
+  const interval = useLoaderData<typeof loader>();
 
   return (
     <Card>
@@ -27,6 +29,9 @@ export default function Schedule() {
         <CardTitle>New schedule</CardTitle>
       </CardHeader>
       <CardContent>
+        <p>
+          Pattern: <strong>{interval}</strong>
+        </p>
         <Form method="post" className="space-y-4" id="interval-form">
           <div>
             <Label htmlFor="name">Cron pattern</Label>

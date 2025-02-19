@@ -1,5 +1,4 @@
 import { Link, useLoaderData, useNavigate, useSubmit } from '@remix-run/react';
-import { switchChain } from '~/api';
 import {
   Select,
   SelectContent,
@@ -23,7 +22,8 @@ import {
 } from '~/components/ui/card';
 import { Plus } from 'lucide-react';
 import { getAllChains } from 'server/config/chains';
-import { getChainId } from 'server/store';
+import { getChainId, setChainId } from 'server/store';
+import { logger } from 'server/services/logger';
 
 export async function loader() {
   const [chainId, chains] = await Promise.all([getChainId(), getAllChains()]);
@@ -32,8 +32,22 @@ export async function loader() {
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
-  const chain = Object.fromEntries(formData) as { chainId: string };
-  await switchChain(chain);
+  const data = Object.fromEntries(formData) as { chainId: string };
+  const chainId = Number(data.chainId);
+  if (!chainId) {
+    logger.warn('⚠ Chain id invalid input', { data });
+    return null;
+  }
+  const chains = await getAllChains();
+  const chain = chains.find((chain) => chain.id === chainId);
+
+  if (!chain) {
+    logger.info('Invalid chain', { chainId });
+    return null;
+  }
+
+  setChainId(chainId);
+  logger.info(`📢 Chain switched to ${chain.name}`, { chain });
   return null;
 }
 
@@ -48,9 +62,9 @@ export default function SwitchChain() {
     <Card>
       <CardHeader>
         <CardTitle>Switch chain</CardTitle>
-        <CardDescription>{`${chainId} (${
+        <CardDescription>{`${
           chains.find((chain) => chain.id === Number(chainId))?.name
-        })`}</CardDescription>
+        } (${chainId})`}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex gap-2 w-full">
@@ -62,7 +76,6 @@ export default function SwitchChain() {
                     chains.find((chain) => chain.id === Number(chainInput))
                       ?.name
                   }
-                  {chainInput}
                 </div>
               </SelectValue>
             </SelectTrigger>

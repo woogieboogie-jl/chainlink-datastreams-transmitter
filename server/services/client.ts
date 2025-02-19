@@ -19,10 +19,15 @@ import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
 import { getAllChains } from '../config/chains';
 import { verifiers } from '../config/verifiers';
-import { getChainId, getContractAddress, getGasCap } from 'server/store';
+import {
+  getChainId,
+  getContractAddress,
+  getGasCap,
+  setChainId,
+} from 'server/store';
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as Hex);
-export const accountAddress = account.address;
+export const accountAddress = account?.address ?? zeroAddress;
 
 export async function executeContract({
   report,
@@ -371,6 +376,7 @@ async function getClients() {
   const chain = chains.find((chain) => chain.id === Number(chainId));
   if (!chain) {
     logger.warn('⚠️ Invalid chain', { chainId });
+    setChainId('');
   }
   const publicClient = createPublicClient({
     chain,

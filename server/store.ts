@@ -48,7 +48,7 @@ const getPriceDelta = async () => await getValue('priceDelta');
 const setPriceDelta = async (priceDelta: string) =>
   await setValue('priceDelta', priceDelta);
 const getChainId = async () => await getValue('chainId');
-const setChainId = async (chainId: number) =>
+const setChainId = async (chainId: number | string) =>
   await setValue('chainId', chainId);
 const getContractAddress = async () => await getValue('contractAddress');
 const setContractAddress = async (address: Address) =>

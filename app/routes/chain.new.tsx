@@ -1,6 +1,7 @@
 import { ActionFunctionArgs, redirect } from '@remix-run/node';
 import { Form, useNavigate } from '@remix-run/react';
-import { addChain } from '~/api';
+import { logger } from 'server/services/logger';
+import { addChain } from 'server/store';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -23,8 +24,63 @@ export async function action({ request }: ActionFunctionArgs) {
     },
     testnet: data.testnet,
   };
-  await addChain(chain);
-  return redirect('/chain');
+
+  if (!chain) {
+    logger.warn('⚠ Invalid chain input', { data });
+    return null;
+  }
+  try {
+    if (!chain.id || isNaN(Number(chain.id))) {
+      logger.warn('⚠ Invalid chain id', { chain });
+      return null;
+    }
+    if (!chain.name) {
+      logger.warn('⚠ Chain name is missing', { chain });
+      return null;
+    }
+    if (!chain.nativeCurrency) {
+      logger.warn('⚠ Native currency object is missing', { chain });
+      return null;
+    }
+    if (!chain.nativeCurrency.name) {
+      logger.warn('⚠ Chain native currency name is missing', { chain });
+      return null;
+    }
+    if (!chain.nativeCurrency.symbol) {
+      logger.warn('⚠ Chain native currency symbol is missing', { chain });
+      return null;
+    }
+    if (
+      !chain.nativeCurrency.decimals ||
+      isNaN(Number(chain.nativeCurrency.decimals))
+    ) {
+      logger.warn('⚠ Invalid chain native currency decimals', { chain });
+      return null;
+    }
+    if (!chain.rpcUrls) {
+      logger.warn('⚠ RPC urls object is missing', { chain });
+      return null;
+    }
+    if (!chain.rpcUrls.default) {
+      logger.warn('⚠ Default RPC urls object is missing', { chain });
+      return null;
+    }
+    if (
+      !chain.rpcUrls.default.http ||
+      chain.rpcUrls.default.http.length === 0 ||
+      !chain.rpcUrls.default.http[0]
+    ) {
+      logger.warn('⚠ Default http RPC url is missing', { chain });
+      return null;
+    }
+
+    await addChain(chain.id.toString(), JSON.stringify(chain));
+    logger.info(`📢 New chain has been added`, { chain });
+    return redirect('/chain/switch');
+  } catch (error) {
+    logger.error('ERROR', error);
+    return null;
+  }
 }
 
 export default function NewChain() {
