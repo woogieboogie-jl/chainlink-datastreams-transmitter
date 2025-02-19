@@ -1,5 +1,4 @@
 import { Feed, Interval } from 'server/types';
-import { Address } from 'viem';
 
 const url = `${process.env.API_URL || 'http://localhost:3000'}/api`;
 const postOptions = <T>(body?: T) => ({
@@ -23,23 +22,6 @@ export async function fetchInterval() {
   return data;
 }
 
-export async function fetchAccountAddress() {
-  const result = await fetch(`${url}/account`);
-  const data: { address: Address } = await result.json();
-  return data;
-}
-
-export async function fetchContractAddresses() {
-  const result = await fetch(`${url}/contracts`);
-  const data: {
-    verifierProxyAddress: Address;
-    feeManagerAddress: Address;
-    rewardManagerAddress: Address;
-    feeTokenAddress: Address;
-  } = await result.json();
-  return data;
-}
-
 export async function addFeed(feed: Feed) {
   return await fetch(`${url}/feeds/add`, postOptions<Feed>(feed));
 }
@@ -58,12 +40,6 @@ export async function setInterval(interval: Interval) {
 export async function fetchLogs() {
   const result = await fetch(`${url}/logs`);
   const data: { log: string } = await result.json();
-  return data;
-}
-
-export async function fetchChainId() {
-  const result = await fetch(`${url}/chain`);
-  const data: { chainId: string } = await result.json();
   return data;
 }
 

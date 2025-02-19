@@ -11,6 +11,7 @@ import {
   isAddressEqual,
   Abi,
   Hex,
+  formatUnits,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { ReportV3, ReportV4, StreamReport } from '../types';
@@ -94,7 +95,7 @@ export async function executeContract({
   return await publicClient.waitForTransactionReceipt({ hash });
 }
 
-export async function getContractAddresses() {
+async function getContractAddresses() {
   try {
     const clients = await getClients();
     if (!clients || !clients.publicClient) {
@@ -119,16 +120,19 @@ export async function getContractAddresses() {
       abi: verifierProxyAbi,
       functionName: 's_feeManager',
     });
-    const rewardManagerAddress = await publicClient.readContract({
-      address: feeManagerAddress,
-      abi: feeManagerAbi,
-      functionName: 'i_rewardManager',
-    });
-    const feeTokenAddress = await publicClient.readContract({
-      address: feeManagerAddress,
-      abi: feeManagerAbi,
-      functionName: 'i_linkAddress',
-    });
+
+    const [rewardManagerAddress, feeTokenAddress] = await Promise.all([
+      publicClient.readContract({
+        address: feeManagerAddress,
+        abi: feeManagerAbi,
+        functionName: 'i_rewardManager',
+      }),
+      publicClient.readContract({
+        address: feeManagerAddress,
+        abi: feeManagerAbi,
+        functionName: 'i_linkAddress',
+      }),
+    ]);
 
     return {
       verifierProxyAddress,
@@ -377,4 +381,69 @@ async function getClients() {
     transport: http(),
   });
   return { publicClient, walletClient };
+}
+
+export async function getBalance() {
+  const clients = await getClients();
+  if (!clients || !clients.publicClient) {
+    logger.warn('⚠️ Invalid clients', { clients });
+    return;
+  }
+  const { publicClient } = clients;
+  const balance = await publicClient.getBalance({ address: accountAddress });
+  return {
+    value: formatEther(balance),
+    symbol: publicClient.chain?.nativeCurrency.symbol,
+  };
+}
+
+export async function getLinkBalance() {
+  const clients = await getClients();
+  if (!clients || !clients.publicClient) {
+    logger.warn('⚠️ Invalid clients', { clients });
+    return;
+  }
+  const { publicClient } = clients;
+  const contractAddresses = await getContractAddresses();
+
+  if (
+    !contractAddresses ||
+    !isAddressValid(contractAddresses.feeTokenAddress)
+  ) {
+    logger.warn('⚠️ Invalid fee token addresses', { contractAddresses });
+    return;
+  }
+  const { feeTokenAddress } = contractAddresses;
+  const [balance, decimals, symbol] = await Promise.all([
+    publicClient.readContract({
+      address: feeTokenAddress,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [accountAddress],
+    }),
+    publicClient.readContract({
+      address: feeTokenAddress,
+      abi: erc20Abi,
+      functionName: 'decimals',
+    }),
+    publicClient.readContract({
+      address: feeTokenAddress,
+      abi: erc20Abi,
+      functionName: 'symbol',
+    }),
+  ]);
+  return {
+    value: formatUnits(balance, decimals),
+    symbol,
+  };
+}
+
+export async function getCurrentChain() {
+  const clients = await getClients();
+  if (!clients || !clients.publicClient) {
+    logger.warn('⚠️ Invalid clients', { clients });
+    return;
+  }
+  const { publicClient } = clients;
+  return { chainId: publicClient.chain?.id, name: publicClient.chain?.name };
 }

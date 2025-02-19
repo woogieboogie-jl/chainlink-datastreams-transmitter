@@ -6,17 +6,14 @@ import { Address } from 'viem';
 
 export function Navigation({
   address,
-  chainId,
-  contracts,
+  chain,
+  balance,
+  linkBalance,
 }: {
   address: Address;
-  chainId: string;
-  contracts: {
-    verifierProxyAddress: Address;
-    feeManagerAddress: Address;
-    rewardManagerAddress: Address;
-    feeTokenAddress: Address;
-  };
+  chain?: { chainId?: number; name?: string };
+  balance?: { value: string; symbol?: string };
+  linkBalance?: { value: string; symbol?: string };
 }) {
   return (
     <header className="w-full shrink-0 sticky top-0 z-50 bg-card backdrop-blur-sm shadow-md">
@@ -28,7 +25,12 @@ export function Navigation({
           Datastreams
         </h1>
         <div className="grow" />
-        <ChainInfo address={address} chainId={chainId} contracts={contracts} />
+        <ChainInfo
+          address={address}
+          chain={chain}
+          balance={balance}
+          linkBalance={linkBalance}
+        />
         <Link to="/logs" className={buttonVariants({ variant: 'link' })}>
           <SquareTerminal className="size-6" />
           Logs

@@ -8,8 +8,6 @@ import { logger } from 'server/services/logger.js';
 import {
   executeContract as executeWriteContract,
   verifyReport,
-  accountAddress,
-  getContractAddresses,
 } from 'server/services/client.js';
 import { ReportV3, StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
@@ -20,7 +18,6 @@ import {
   addChain,
   addFeed,
   getAbi,
-  getChainId,
   getChains,
   getContractAddress,
   getFeedExists,
@@ -115,15 +112,6 @@ router.get('/interval', async (req, res) => {
   res.send({ interval: await getInterval() });
 });
 
-router.get('/account', (req, res) => {
-  res.send({ address: accountAddress });
-});
-
-router.get('/contracts', async (req, res) => {
-  const data = await getContractAddresses();
-  res.send(data);
-});
-
 router.post('/interval', (req, res) => {
   const interval: string = req.body.interval;
 
@@ -200,10 +188,6 @@ router.post('/feeds/remove', async (req, res) => {
   logger.info(`📢 Feed ${name} has been removed`, { feed: { feedId, name } });
 
   res.send(await getFeeds());
-});
-
-router.get('/chain', async (req, res) => {
-  res.send({ chainId: await getChainId() });
 });
 
 router.post('/chain', async (req, res) => {

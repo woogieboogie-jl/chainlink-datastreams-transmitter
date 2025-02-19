@@ -1,19 +1,5 @@
 import { Link, useLoaderData, useNavigate, useSubmit } from '@remix-run/react';
-import { useChainId, useSwitchChain } from 'wagmi';
-import {
-  fetchAccountAddress,
-  fetchChainId,
-  fetchContractAddresses,
-  switchChain,
-} from '~/api';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-  TableHead,
-  TableHeader,
-} from '~/components/ui/table';
+import { switchChain } from '~/api';
 import {
   Select,
   SelectContent,
@@ -24,7 +10,7 @@ import {
   SelectValue,
 } from '~/components/ui/select';
 import { ActionFunctionArgs } from '@remix-run/node';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button, buttonVariants } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 import {
@@ -36,10 +22,12 @@ import {
   CardTitle,
 } from '~/components/ui/card';
 import { Plus } from 'lucide-react';
+import { getAllChains } from 'server/config/chains';
+import { getChainId } from 'server/store';
 
 export async function loader() {
-  const chain = await fetchChainId();
-  return chain;
+  const [chainId, chains] = await Promise.all([getChainId(), getAllChains()]);
+  return { chainId, chains };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -50,19 +38,10 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function SwitchChain() {
-  const { chainId } = useLoaderData<typeof loader>();
-
-  const currentChainId = useChainId();
-  const { chains, switchChain } = useSwitchChain();
+  const { chainId, chains } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
-  useEffect(() => {
-    if (chainId && currentChainId !== Number(chainId)) {
-      switchChain({ chainId: Number(chainId) });
-    }
-  }, [chainId, currentChainId, switchChain]);
-
-  const [chainInput, setChainInput] = useState(currentChainId.toString());
+  const [chainInput, setChainInput] = useState(chainId);
   const navigate = useNavigate();
 
   return (
@@ -70,7 +49,7 @@ export default function SwitchChain() {
       <CardHeader>
         <CardTitle>Switch chain</CardTitle>
         <CardDescription>{`${chainId} (${
-          chains.find((chain) => chain.id === currentChainId)?.name
+          chains.find((chain) => chain.id === Number(chainId))?.name
         })`}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -92,8 +71,11 @@ export default function SwitchChain() {
                 <SelectLabel>Mainnet</SelectLabel>
                 {chains
                   .filter((chain) => !chain.testnet)
-                  .map((chain) => (
-                    <SelectItem value={chain.id.toString()} key={chain.id}>
+                  .map((chain, i) => (
+                    <SelectItem
+                      value={chain.id.toString()}
+                      key={`${chain.id}${i}`}
+                    >
                       {chain.name}
                     </SelectItem>
                   ))}
@@ -102,8 +84,11 @@ export default function SwitchChain() {
                 <SelectLabel>Testnet</SelectLabel>
                 {chains
                   .filter((chain) => chain.testnet)
-                  .map((chain) => (
-                    <SelectItem value={chain.id.toString()} key={chain.id}>
+                  .map((chain, i) => (
+                    <SelectItem
+                      value={chain.id.toString()}
+                      key={`${chain.id}${i}`}
+                    >
                       {chain.name}
                     </SelectItem>
                   ))}
@@ -111,9 +96,8 @@ export default function SwitchChain() {
             </SelectContent>
           </Select>
           <Button
-            disabled={currentChainId === Number(chainInput)}
+            disabled={chainId === chainInput}
             onClick={() => {
-              switchChain({ chainId: Number(chainInput) });
               submit({ chainId: chainInput }, { method: 'post' });
             }}
           >

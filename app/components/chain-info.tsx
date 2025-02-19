@@ -1,12 +1,12 @@
-import { useEffect } from 'react';
-import { Address, erc20Abi, formatEther, formatUnits } from 'viem';
+import { Address } from 'viem';
+import { Root as VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import {
-  useBalance,
-  useChainId,
-  useReadContracts,
-  useSwitchChain,
-} from 'wagmi';
-import { Dialog, DialogClose, DialogContent, DialogTrigger } from './ui/dialog';
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
 import { buttonVariants } from './ui/button';
 import { Link } from '@remix-run/react';
 import { cn } from '~/lib/utils';
@@ -14,51 +14,15 @@ import { ChevronDown } from 'lucide-react';
 
 export function ChainInfo({
   address,
-  chainId,
-  contracts: { feeTokenAddress },
+  chain,
+  balance,
+  linkBalance,
 }: {
   address: Address;
-  chainId: string;
-  contracts: {
-    verifierProxyAddress: Address;
-    feeManagerAddress: Address;
-    rewardManagerAddress: Address;
-    feeTokenAddress: Address;
-  };
+  chain?: { chainId?: number; name?: string };
+  balance?: { value: string; symbol?: string };
+  linkBalance?: { value: string; symbol?: string };
 }) {
-  const currentChainId = useChainId();
-  const { chains, switchChain } = useSwitchChain();
-  const { data: balance } = useBalance({
-    address,
-  });
-  const { data: tokenBalance } = useReadContracts({
-    allowFailure: false,
-    contracts: [
-      {
-        address: feeTokenAddress,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [address],
-      },
-      {
-        address: feeTokenAddress,
-        abi: erc20Abi,
-        functionName: 'decimals',
-      },
-      {
-        address: feeTokenAddress,
-        abi: erc20Abi,
-        functionName: 'symbol',
-      },
-    ],
-  });
-
-  useEffect(() => {
-    if (chainId && currentChainId !== Number(chainId)) {
-      switchChain({ chainId: Number(chainId) });
-    }
-  }, [chainId, currentChainId, switchChain]);
-
   return (
     <Dialog>
       <DialogTrigger
@@ -70,11 +34,12 @@ export function ChainInfo({
         <span className="truncate">{address}</span>
         <ChevronDown className="size-4 shrink-0" />
       </DialogTrigger>
-      <DialogContent className="divide-y px-0 gap-2">
+      <DialogContent className="px-0 gap-2">
+        <VisuallyHidden>
+          <DialogTitle>Token balances</DialogTitle>
+        </VisuallyHidden>
         <div className="flex gap-2 items-center px-4">
-          <p className="font-semibold">{`${
-            chains.find((chain) => chain.id === currentChainId)?.name
-          }`}</p>
+          <p className="font-semibold">{`${chain?.name} (${chain?.chainId})`}</p>
           <DialogClose asChild>
             <Link
               to="/chain/switch"
@@ -84,19 +49,17 @@ export function ChainInfo({
             </Link>
           </DialogClose>
         </div>
-        <div className="w-full px-4 pt-2 truncate">{address}</div>
+        <div className="w-full px-4 pt-2 truncate border-t">{address}</div>
         {balance && (
-          <div className="w-full flex gap-2 items-center px-4 pt-2 truncate">
+          <div className="w-full flex gap-2 items-center px-4 pt-2 truncate border-t">
             <span className="w-24">{balance.symbol}</span>
-            <span className="truncate">{formatEther(balance.value)}</span>
+            <span className="truncate">{balance.value}</span>
           </div>
         )}
-        {tokenBalance && (
-          <div className="w-full flex gap-2 items-center px-4 pt-2 truncate">
-            <span className="w-24">{tokenBalance[2]}</span>
-            <span className="truncate">
-              {formatUnits(tokenBalance[0], tokenBalance[1])}
-            </span>
+        {linkBalance && (
+          <div className="w-full flex gap-2 items-center px-4 pt-2 truncate border-t">
+            <span className="w-24">{linkBalance.symbol}</span>
+            <span className="truncate">{linkBalance.value}</span>
           </div>
         )}
       </DialogContent>
