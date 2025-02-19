@@ -13,6 +13,7 @@ import { Button, buttonVariants } from '~/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -51,6 +52,18 @@ export default function Index() {
       <Card>
         <CardHeader>
           <CardTitle>Data streams</CardTitle>
+          <CardDescription>
+            The price feeds you are subscribed to. Check{' '}
+            <a
+              href="https://docs.chain.link/data-streams/crypto-streams"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(buttonVariants({ variant: 'link' }), 'p-0 h-auto')}
+            >
+              Chainlink documentation
+            </a>{' '}
+            for a list of supported streams.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table className="border-spacing-x-0 border-spacing-y-2 border-separate">
@@ -109,6 +122,10 @@ export default function Index() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-semibold">Schedule</CardTitle>
+            <CardDescription>
+              Set the interval to check for price changes and write it on-chain.
+              Represented as cron expression with seconds granularity.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p>
@@ -163,6 +180,9 @@ export default function Index() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-semibold">Contract</CardTitle>
+            <CardDescription>
+              Your contract where the price changes will be stored.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="w-full flex gap-2 items-center pt-2 truncate">
@@ -190,6 +210,10 @@ export default function Index() {
         <Card>
           <CardHeader>
             <CardTitle>Price delta</CardTitle>
+            <CardDescription>
+              Set the price deviation. Only changes equal or greater will be
+              written on-chain
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p>
@@ -205,7 +229,7 @@ export default function Index() {
             >
               <div>
                 <Label htmlFor="priceDelta">New price delta</Label>
-                <Input name="priceDelta" type="number" step="0.0001" />
+                <Input name="priceDelta" type="number" step="0.0001" min="0" />
               </div>
               <Button type="submit">Submit</Button>
             </Form>
@@ -214,6 +238,11 @@ export default function Index() {
         <Card>
           <CardHeader>
             <CardTitle>Gas cap</CardTitle>
+            <CardDescription>
+              Set the maximum amount of gas you are willing to spend for a
+              transaction. If the estimated gas is greater then the transaction
+              will be canceled. Set in WEI (the smallest unit on the chain)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p>
