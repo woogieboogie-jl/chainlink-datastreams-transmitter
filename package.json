@@ -11,7 +11,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@hackbg/chainlink-datastreams-consumer": "git+https://github.com/hackbg/chainlink-low-latency-consumer.git#bf08298573b88d74e3052ca9178e7430e383da11",
+    "@hackbg/chainlink-datastreams-consumer": "git+https://github.com/hackbg/chainlink-low-latency-consumer.git#dc5219f89e11b8c927e48653b7713e59db3cdef0",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-scroll-area": "^1.2.2",
