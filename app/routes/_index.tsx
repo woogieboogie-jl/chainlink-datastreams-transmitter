@@ -101,7 +101,7 @@ export default function Index() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table className="border-spacing-x-0 border-spacing-y-2 border-separate">
+          <Table className="border-separate border-spacing-y-2">
             <TableHeader>
               <TableRow>
                 <TableHead>Stream</TableHead>
@@ -116,7 +116,7 @@ export default function Index() {
               {feeds.map((feed, i) => (
                 <TableRow
                   key={i}
-                  className="bg-background [&_td:last-child]:rounded-r-md [&_td:first-child]:rounded-l-md"
+                  className="rounded-md ring-1 ring-inset ring-gray-300 bg-background [&_td:last-child]:rounded-r-md [&_td:first-child]:rounded-l-md"
                 >
                   <TableCell>{feed.name}</TableCell>
                   <TableCell>{feed.feedId}</TableCell>
