@@ -78,12 +78,12 @@ export default function Schedule() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p>
-          Pattern: <strong>{interval}</strong>
+        <p className="mb-4">
+          Current active pattern: <strong>{interval}</strong>
         </p>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="interval">Cron pattern</Label>
+            <Label htmlFor="interval">Set new cron pattern:</Label>
             <Input
               name="interval"
               placeholder="* * * * *"
