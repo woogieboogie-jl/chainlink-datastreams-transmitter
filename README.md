@@ -7,7 +7,7 @@
 [![Data Streams Documentation](https://img.shields.io/static/v1?label=data-streams-docs&message=latest&color=blue)](https://docs.chain.link/data-streams/)
 </div>
 
-# Chainlink Data Streams Scheduler
+# Chainlink Data Streams Broadcaster
 
 Data Streams is an on-demand, low-latency data oracle service that allows users to retrieve data at sub-second intervals. While Data Streams enables off-chain data access, this scheduler aims to bring that data on-chain in a manner consistent with the traditional Data Feeds 1.0 model.
 
@@ -22,7 +22,7 @@ Built with:
 
 ## Table of contents
 
-- [Chainlink Data Streams Scheduler](#chainlink-data-streams-scheduler)
+- [Chainlink Data Streams Broadcaster](#chainlink-data-streams-broadcaster)
   - [Table of contents](#table-of-contents)
   - [System Architecture Overview](#system-architecture-overview)
   - [Environment Variables](#environment-variables)
@@ -38,7 +38,7 @@ Built with:
 
 ```mermaid
 graph TD
-    A[Streams Aggregation Network] -->|1.Monitors prices via websocket| B[Data Streams Chain Scheduler]
+    A[Streams Aggregation Network] -->|1.Monitors prices via websocket| B[Data Streams Chain Broadcaster]
     B -->|2.Retrieves Verified Reports at set interval or deviation| C[Streams Verifier Contract]
     B -->|3.Writes Prices on-chain to data feeds contract| D[ETH/USD]
     B -->|3.Writes Prices on-chain to data feeds contract| E[BTC/USD]
