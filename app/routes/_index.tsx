@@ -197,11 +197,11 @@ export default function Index() {
           </CardHeader>
           <CardContent>
             <div className="w-full flex gap-2 items-center pt-2 truncate">
-              <span className="w-24">Contract address:</span>
+              <span className="w-32">Contract address:</span>
               <span className="truncate font-mono">{contractAddress}</span>
             </div>
             <div className="w-full flex gap-2 items-center pt-2 truncate">
-              <span className="w-24">Function:</span>
+              <span className="w-32">Function:</span>
               <span className="truncate font-mono">{functionName}</span>
             </div>
           </CardContent>

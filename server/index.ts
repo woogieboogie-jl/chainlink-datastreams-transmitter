@@ -123,7 +123,7 @@ router.post('/feeds/add', async (req, res) => {
     return res.send({ warning: 'Interval missing' });
   }
   jobs.push({ feedId, job: createCronJob(feedId, interval) });
-  cdc.subscribeTo(feedId);
+  await cdc.subscribeTo(feedId);
   logger.info(`📢 New feed ${name} has been added`, { feed: { name, feedId } });
   res.send(await getFeeds());
 });
@@ -153,7 +153,7 @@ router.post('/feeds/remove', async (req, res) => {
   }
 
   const name = await getFeedName(feedId);
-  cdc.unsubscribeFrom(feedId);
+  await cdc.unsubscribeFrom(feedId);
   job.job.stop();
   await removeFeed(feedId);
   jobs.splice(jobs.indexOf(job), 1);
@@ -174,14 +174,14 @@ router.get('/logs', async (req, res) => {
 
 router.post('/start', async (req, res) => {
   const feeds = await getFeeds();
-  cdc.subscribeTo(feeds);
+  await cdc.subscribeTo(feeds);
   logger.info('🏁 All streams have been started', { feeds });
   res.send({ feeds });
 });
 
 router.post('/stop', async (req, res) => {
-  const feeds = await getFeeds();
-  cdc.unsubscribeFrom(feeds);
+  const feeds = [...cdc.feeds];
+  await cdc.unsubscribeFrom(feeds);
   logger.info('🛑 All streams have been stoped', { feeds });
   res.send({ feedsStopped: feeds });
 });
@@ -213,7 +213,7 @@ app.listen(port, async () => {
     logger.warn('⚠ Interval is missing. Set interval and try again');
     return;
   }
-  cdc.subscribeTo(feeds);
+  await cdc.subscribeTo(feeds);
   jobs.push(
     ...feeds.map((feedId) => ({
       feedId,
