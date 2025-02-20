@@ -44,11 +44,6 @@ export default function Schedule() {
   const [intervalInput, setIntervalInput] = useState('');
   const [nextThree, setNextThree] = useState<string[]>([]);
 
-  // console.log(
-  //   'Next 3:',
-  //   cronExpression.take(3).map((date) => date.toString())
-  // );
-
   useEffect(() => {
     if (!intervalInput) {
       setNextThree([]);

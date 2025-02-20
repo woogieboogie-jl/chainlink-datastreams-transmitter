@@ -222,6 +222,12 @@ router.post('/stop', async (req, res) => {
   res.send({ feedsStopped: feeds });
 });
 
+router.get('/latest/:feedId', async (req, res) => {
+  const feedId = req.params.feedId;
+  const latestReport = getLatestReport(feedId);
+  res.send({ latestPrice: latestReport?.benchmarkPrice.toString() });
+});
+
 app.use('/api', router);
 
 // handle SSR requests

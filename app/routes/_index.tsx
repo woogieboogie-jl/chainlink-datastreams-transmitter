@@ -1,5 +1,6 @@
-import { Form, Link, useLoaderData } from '@remix-run/react';
+import { Form, Link, useLoaderData, useRevalidator } from '@remix-run/react';
 import { Pause, Play, Plus, Trash2Icon } from 'lucide-react';
+import { useEffect } from 'react';
 import {
   getContractAddress,
   getFeedName,
@@ -8,8 +9,11 @@ import {
   getGasCap,
   getInterval,
   getPriceDelta,
+  getSavedReportBenchmarkPrice,
 } from 'server/store';
+import { formatUSD } from 'server/utils';
 import { formatEther } from 'viem';
+import { fetchLatestPrice } from '~/api';
 import { Button, buttonVariants } from '~/components/ui/button';
 import {
   Card,
@@ -40,6 +44,8 @@ export async function loader() {
           feedsIds.map(async (feedId) => ({
             feedId,
             name: await getFeedName(feedId),
+            savedPrice: await getSavedReportBenchmarkPrice(feedId),
+            latestReport: await fetchLatestPrice(feedId),
           }))
         );
       })(),
@@ -55,6 +61,19 @@ export async function loader() {
 export default function Index() {
   const { feeds, interval, priceDelta, gasCap, contractAddress, functionName } =
     useLoaderData<typeof loader>();
+
+  const revalidator = useRevalidator();
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (revalidator.state === 'idle') {
+        revalidator.revalidate();
+      }
+    }, 5000);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [revalidator]);
 
   return (
     <>
@@ -80,6 +99,8 @@ export default function Index() {
               <TableRow>
                 <TableHead>Stream</TableHead>
                 <TableHead>Feed ID</TableHead>
+                <TableHead>Saved price</TableHead>
+                <TableHead>Last reported</TableHead>
                 <TableHead>Remove</TableHead>
               </TableRow>
             </TableHeader>
@@ -91,6 +112,12 @@ export default function Index() {
                 >
                   <TableCell>{feed.name}</TableCell>
                   <TableCell>{feed.feedId}</TableCell>
+                  <TableCell>
+                    {formatUSD(BigInt(feed.savedPrice ?? 0))}
+                  </TableCell>
+                  <TableCell>
+                    {formatUSD(BigInt(feed.latestReport?.latestPrice ?? 0))}
+                  </TableCell>
                   <TableCell>
                     <Form
                       method="post"

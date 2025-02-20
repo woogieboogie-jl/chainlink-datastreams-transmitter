@@ -18,7 +18,7 @@ export default function Feeds() {
       if (revalidator.state === 'idle') {
         revalidator.revalidate();
       }
-    }, 5000);
+    }, 1000);
     return () => {
       clearInterval(intervalId);
     };

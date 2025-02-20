@@ -38,3 +38,9 @@ export async function startStreams() {
 export async function stopStreams() {
   return await fetch(`${url}/stop`, postOptions());
 }
+
+export async function fetchLatestPrice(feedId: string) {
+  const result = await fetch(`${url}/latest/${feedId}`);
+  const data: { latestPrice?: string } = await result.json();
+  return data;
+}
