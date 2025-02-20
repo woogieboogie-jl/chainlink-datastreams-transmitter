@@ -60,7 +60,7 @@ export default function Index() {
               rel="noopener noreferrer"
               className={cn(buttonVariants({ variant: 'link' }), 'p-0 h-auto')}
             >
-              Chainlink documentation
+              Chainlink Data Streams documentation
             </a>{' '}
             for a list of supported streams.
           </CardDescription>
@@ -114,7 +114,7 @@ export default function Index() {
             to="/feed/new"
             className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
           >
-            Add new feed <Plus />
+            Add new data feed <Plus />
           </Link>
         </CardFooter>
       </Card>
@@ -124,7 +124,8 @@ export default function Index() {
             <CardTitle className="text-2xl font-semibold">Schedule</CardTitle>
             <CardDescription>
               Set the interval to check for price changes and write it on-chain.
-              Represented as cron expression with seconds granularity.
+              It is represented as a cron expression with granularity in
+              seconds.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -181,12 +182,13 @@ export default function Index() {
           <CardHeader>
             <CardTitle className="text-2xl font-semibold">Contract</CardTitle>
             <CardDescription>
-              Your contract where the price changes will be stored.
+              The contract address and function that will be invoked when feed
+              price data changes.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="w-full flex gap-2 items-center pt-2 truncate">
-              <span className="w-24">Address:</span>
+              <span className="w-24">Contract address:</span>
               <span className="truncate font-mono">
                 {contractAddress.contract}
               </span>
@@ -211,8 +213,8 @@ export default function Index() {
           <CardHeader>
             <CardTitle>Price delta</CardTitle>
             <CardDescription>
-              Set the price deviation. Only changes equal or greater will be
-              written on-chain
+              Set the price deviation. Only changes that are equal to or greater
+              will be written on-chain.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -239,9 +241,10 @@ export default function Index() {
           <CardHeader>
             <CardTitle>Gas cap</CardTitle>
             <CardDescription>
-              Set the maximum amount of gas you are willing to spend for a
-              transaction. If the estimated gas is greater then the transaction
-              will be canceled. Set in WEI (the smallest unit on the chain)
+              Set the maximum amount of gas you are willing to spend on a
+              transaction. If the estimated gas is greater, the transaction will
+              be canceled. The value is set in WEI (the smallest unit on the
+              chain).
             </CardDescription>
           </CardHeader>
           <CardContent>
