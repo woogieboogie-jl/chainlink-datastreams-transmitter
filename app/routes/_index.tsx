@@ -53,7 +53,7 @@ export async function loader() {
             savedPrice: await getSavedReportBenchmarkPrice(feedId),
             latestReport: await fetchLatestPrice(feedId),
             status: await fetchStatus(feedId),
-          }))
+          })),
         );
       })(),
       getInterval(),
@@ -260,7 +260,7 @@ export default function Index() {
           <CardContent>
             <p>
               <strong>{`${formatEther(
-                BigInt(priceDelta ?? 0)
+                BigInt(priceDelta ?? 0),
               )} (${priceDelta})`}</strong>
             </p>
             <Form
@@ -290,7 +290,7 @@ export default function Index() {
           <CardContent>
             <p>
               <strong>{`${formatEther(
-                BigInt(gasCap ?? 0)
+                BigInt(gasCap ?? 0),
               )} ETH (${gasCap} WEI)`}</strong>
             </p>
             <Form
@@ -317,7 +317,15 @@ function Status({ status }: { status?: number | string }) {
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger className="size-3 rounded-full bg-yellow-500 animate-pulse" />
+          <TooltipTrigger>
+            <span className="inline-flex items-center rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-700 ring-1 ring-yellow-600/20 ring-inset">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-500 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-yellow-500"></span>
+              </span>
+              <span className="ml-1">Connecting</span>
+            </span>
+          </TooltipTrigger>
           <TooltipContent>
             <p>Connecting</p>
           </TooltipContent>
@@ -329,7 +337,15 @@ function Status({ status }: { status?: number | string }) {
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger className="size-3 rounded-full bg-green-500" />
+          <TooltipTrigger>
+            <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+              </span>
+              <span className="ml-1">Running</span>
+            </span>
+          </TooltipTrigger>
           <TooltipContent>
             <p>Running</p>
           </TooltipContent>
@@ -341,7 +357,15 @@ function Status({ status }: { status?: number | string }) {
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger className="size-3 rounded-full bg-orange-500 animate-pulse" />
+          <TooltipTrigger>
+            <span className="inline-flex items-center rounded-md bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-orange-600/20 ring-inset">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-500 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-500"></span>
+              </span>
+              <span className="ml-1">Stopping</span>
+            </span>
+          </TooltipTrigger>
           <TooltipContent>
             <p>Stopping</p>
           </TooltipContent>
@@ -352,7 +376,15 @@ function Status({ status }: { status?: number | string }) {
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger className="size-3 rounded-full bg-red-500" />
+        <TooltipTrigger>
+          <span className="inline-flex items-center rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-red-600/20 ring-inset">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+            </span>
+            <span className="ml-1">Stopped</span>
+          </span>
+        </TooltipTrigger>
         <TooltipContent>
           <p>Stopped</p>
         </TooltipContent>
