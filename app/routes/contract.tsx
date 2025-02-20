@@ -156,15 +156,51 @@ export default function Contract() {
             <br />
             Valid arguments:
             <ul className="list-disc list-inside">
-              <li>feedId</li>
-              <li>validFromTimestamp</li>
-              <li>observationsTimestamp</li>
-              <li>nativeFee</li>
-              <li>linkFee</li>
-              <li>expiresAt</li>
-              <li>price</li>
-              <li>bid</li>
-              <li>ask</li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  feedId
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  validFromTimestamp
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  observationsTimestamp
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  nativeFee
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  linkFee
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  expiresAt
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  price
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  bid
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  ask
+                </span>
+              </li>
             </ul>
             See documentation for{' '}
             <a
