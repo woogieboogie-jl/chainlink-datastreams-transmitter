@@ -12,12 +12,13 @@ import {
   setFunctionName,
 } from 'server/store';
 import { isAddress, zeroAddress } from 'viem';
-import { Button } from '~/components/ui/button';
+import { Button, buttonVariants } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { Textarea } from '~/components/ui/textarea';
+import { cn } from '~/lib/utils';
 
 enum Intent {
   CONTRACT = 'CONTRACT',
@@ -124,10 +125,14 @@ export default function Contract() {
       <Card>
         <CardHeader>
           <CardTitle>Function</CardTitle>
+          <div className="text-sm text-muted-foreground pt-2">
+            Enter the name of the contract function to be called to store report
+            result data on-chain.
+          </div>
         </CardHeader>
         <CardContent>
           <div className="w-full flex gap-2 items-center pt-2 truncate">
-            <span className="w-24">Method:</span>
+            <span className="w-24">Selected function:</span>
             <span className="truncate font-mono">{functionName}</span>
           </div>
           <Form method="post" className="space-y-4" id="function-form">
@@ -144,10 +149,37 @@ export default function Contract() {
       <Card>
         <CardHeader>
           <CardTitle>Function arguments</CardTitle>
+          <div className="text-sm text-muted-foreground pt-2">
+            Enter report arguments field names in the sequense the contract
+            expects them to be passed in the selected method, separated by comma
+            &#40;, &#41;
+            <br />
+            Valid arguments:
+            <ul className="list-disc list-inside">
+              <li>feedId</li>
+              <li>validFromTimestamp</li>
+              <li>observationsTimestamp</li>
+              <li>nativeFee</li>
+              <li>linkFee</li>
+              <li>expiresAt</li>
+              <li>price</li>
+              <li>bid</li>
+              <li>ask</li>
+            </ul>
+            See documentation for{' '}
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(buttonVariants({ variant: 'link' }), 'p-0 h-auto')}
+              href="https://docs.chain.link/data-streams/reference/report-schema"
+            >
+              Data Streams Report Schemas
+            </a>
+          </div>
         </CardHeader>
         <CardContent>
           <div>
-            Arguments:
+            Selected arguments:
             <br />
             <ul className="list-disc list-inside font-mono">
               {args.map((arg, i) => (
@@ -160,23 +192,6 @@ export default function Contract() {
             <div>
               <Label htmlFor="args">Args</Label>
               <Input name="args" placeholder="Enter arguments " />
-              <div className="text-sm text-muted-foreground pt-2">
-                Enter arguments names in the sequense the contract expects,
-                separated by comma &#40;, &#41;
-                <br />
-                Valid arguments:
-                <ul className="list-disc list-inside">
-                  <li>feedId</li>
-                  <li>validFromTimestamp</li>
-                  <li>observationsTimestamp</li>
-                  <li>nativeFee</li>
-                  <li>linkFee</li>
-                  <li>expiresAt</li>
-                  <li>price</li>
-                  <li>bid</li>
-                  <li>ask</li>
-                </ul>
-              </div>
             </div>
             <Button type="submit">Submit</Button>
           </Form>
