@@ -22,7 +22,7 @@ export function Navigation({
           <img src="/chainlink.svg" alt="cl" className="size-10" />
         </Link>
         <h1 className="hidden lg:block leading text-3xl font-semibold">
-          Datastreams
+          Broadcaster
         </h1>
         <div className="grow" />
         <ChainInfo

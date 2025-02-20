@@ -13,7 +13,7 @@ import {
 } from 'server/store';
 import { formatUSD } from 'server/utils';
 import { formatEther } from 'viem';
-import { fetchLatestPrice } from '~/api';
+import { fetchLatestPrice, fetchStatus } from '~/api';
 import { Button, buttonVariants } from '~/components/ui/button';
 import {
   Card,
@@ -33,6 +33,12 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '~/components/ui/tooltip';
 import { cn } from '~/lib/utils';
 
 export async function loader() {
@@ -46,6 +52,7 @@ export async function loader() {
             name: await getFeedName(feedId),
             savedPrice: await getSavedReportBenchmarkPrice(feedId),
             latestReport: await fetchLatestPrice(feedId),
+            status: await fetchStatus(feedId),
           }))
         );
       })(),
@@ -101,6 +108,7 @@ export default function Index() {
                 <TableHead>Feed ID</TableHead>
                 <TableHead>Saved price</TableHead>
                 <TableHead>Last reported</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Remove</TableHead>
               </TableRow>
             </TableHeader>
@@ -116,7 +124,10 @@ export default function Index() {
                     {formatUSD(BigInt(feed.savedPrice ?? 0))}
                   </TableCell>
                   <TableCell>
-                    {formatUSD(BigInt(feed.latestReport?.latestPrice ?? 0))}
+                    {formatUSD(BigInt(feed.latestReport ?? 0))}
+                  </TableCell>
+                  <TableCell>
+                    <Status status={feed.status} />
                   </TableCell>
                   <TableCell>
                     <Form
@@ -146,12 +157,45 @@ export default function Index() {
           </Table>
         </CardContent>
         <CardFooter>
-          <Link
-            to="/feed/new"
-            className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
-          >
-            Add new data feed <Plus />
-          </Link>
+          <div className="flex space-x-4">
+            <Form
+              method="post"
+              action="schedule/start"
+              onSubmit={(event) => {
+                const response = confirm(`Start all data streams`);
+                if (!response) {
+                  event.preventDefault();
+                }
+              }}
+            >
+              <Button
+                type="submit"
+                className="bg-green-600 hover:bg-green-600/90"
+              >
+                Start <Play />
+              </Button>
+            </Form>
+            <Form
+              method="post"
+              action="schedule/stop"
+              onSubmit={(event) => {
+                const response = confirm(`Stop all data streams`);
+                if (!response) {
+                  event.preventDefault();
+                }
+              }}
+            >
+              <Button type="submit" className="bg-red-600 hover:bg-red-600/90">
+                Stop <Pause />
+              </Button>
+            </Form>
+            <Link
+              to="/feed/new"
+              className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
+            >
+              Add new data feed <Plus />
+            </Link>
+          </div>
         </CardFooter>
       </Card>
       <div className="grid md:grid-cols-2 gap-10">
@@ -168,50 +212,14 @@ export default function Index() {
             <p>
               Pattern: <strong>{interval}</strong>
             </p>
+          </CardContent>
+          <CardFooter>
             <Link
               to="/schedule/new"
               className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
             >
               Set new pattern
             </Link>
-          </CardContent>
-          <CardFooter>
-            <div className="flex space-x-4">
-              <Form
-                method="post"
-                action="schedule/start"
-                onSubmit={(event) => {
-                  const response = confirm(`Start all data streams`);
-                  if (!response) {
-                    event.preventDefault();
-                  }
-                }}
-              >
-                <Button
-                  type="submit"
-                  className="bg-green-600 hover:bg-green-600/90"
-                >
-                  Start <Play />
-                </Button>
-              </Form>
-              <Form
-                method="post"
-                action="schedule/stop"
-                onSubmit={(event) => {
-                  const response = confirm(`Stop all data streams`);
-                  if (!response) {
-                    event.preventDefault();
-                  }
-                }}
-              >
-                <Button
-                  type="submit"
-                  className="bg-red-600 hover:bg-red-600/90"
-                >
-                  Stop <Pause />
-                </Button>
-              </Form>
-            </div>
           </CardFooter>
         </Card>
         <Card>
@@ -301,5 +309,54 @@ export default function Index() {
         </Card>
       </div>
     </>
+  );
+}
+
+function Status({ status }: { status?: number | string }) {
+  if (status === 0)
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="size-3 rounded-full bg-yellow-500 animate-pulse" />
+          <TooltipContent>
+            <p>Connecting</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+
+  if (status === 1)
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="size-3 rounded-full bg-green-500" />
+          <TooltipContent>
+            <p>Running</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+
+  if (status === 2)
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="size-3 rounded-full bg-orange-500 animate-pulse" />
+          <TooltipContent>
+            <p>Stopping</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger className="size-3 rounded-full bg-red-500" />
+        <TooltipContent>
+          <p>Stopped</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

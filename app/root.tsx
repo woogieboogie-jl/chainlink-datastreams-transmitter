@@ -19,8 +19,8 @@ import {
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Datastreams Scheduler' },
-    { name: 'description', content: 'Chainlink Datastreams Scheduler' },
+    { title: 'Datastreams Broadcaster' },
+    { name: 'description', content: 'Chainlink Datastreams Broadcaster' },
   ];
 };
 

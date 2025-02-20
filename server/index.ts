@@ -228,6 +228,15 @@ router.get('/latest/:feedId', async (req, res) => {
   res.send({ latestPrice: latestReport?.benchmarkPrice.toString() });
 });
 
+router.get('/status/:feedId', async (req, res) => {
+  const feedId = req.params.feedId;
+  const job = jobs.find((j) => j.feedId === feedId);
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const status = job?.consumer.ws?.readyState;
+  res.send({ status });
+});
+
 app.use('/api', router);
 
 // handle SSR requests
