@@ -86,7 +86,7 @@ export default function Schedule() {
             <Label htmlFor="interval">Cron pattern</Label>
             <Input
               name="interval"
-              placeholder="* * * * * *"
+              placeholder="* * * * *"
               value={intervalInput}
               onChange={(e) => setIntervalInput(e.target.value)}
             />
