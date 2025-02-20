@@ -5,6 +5,7 @@ import express from 'express';
 import morgan from 'morgan';
 import { CronJob, CronTime } from 'cron';
 import type ChainlinkDatastreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
+import { CronExpressionParser } from 'cron-parser';
 import { logger } from 'server/services/logger.js';
 import {
   executeContract as executeWriteContract,
@@ -86,24 +87,31 @@ async function getBuild() {
 const router = express.Router();
 
 router.post('/interval', async (req, res) => {
-  const interval: string = req.body.interval;
+  try {
+    const interval: string = req.body.interval;
+    if (!interval) throw new Error('New interval input is missing');
 
-  if (!interval) {
-    logger.warn('⚠ New interval invalid input', { body: req.body });
+    const cronExpression = CronExpressionParser.parse(interval);
+    const parsedInterval = cronExpression.stringify(true);
+
+    setInterval(parsedInterval);
+    if (jobs.length > 0)
+      jobs.forEach(({ job }) => job.setTime(new CronTime(parsedInterval)));
+
+    if (jobs.length < 1) {
+      const feeds = await getFeeds();
+      initJobs({ feeds, interval: parsedInterval });
+    }
+
+    logger.info(`📢 New interval has been set ${parsedInterval}`, {
+      interval: parsedInterval,
+    });
+    res.send({ interval: parsedInterval });
+  } catch (err) {
+    logger.warn('⚠ New interval invalid input', { body: req.body, err });
     res.status(400);
-    return res.send({ warning: 'New interval invalid input' });
+    return res.send({ warning: 'Invalid input' });
   }
-  setInterval(interval);
-  if (jobs.length > 0)
-    jobs.forEach(({ job }) => job.setTime(new CronTime(interval)));
-
-  if (jobs.length < 1) {
-    const feeds = await getFeeds();
-    initJobs({ feeds, interval });
-  }
-
-  logger.info(`📢 New interval has been set ${interval}`, { interval });
-  res.send({ interval });
 });
 
 router.post('/feeds/add', async (req, res) => {
@@ -324,17 +332,21 @@ function createCronJob(feedId: string, interval: string) {
 }
 
 function initJobs({ feeds, interval }: { feeds: string[]; interval: string }) {
-  jobs.push(
-    ...feeds.map((feedId) => {
-      const consumer = createDatastream([feedId]);
-      consumer.on('report', async (report: StreamReport) => {
-        setLatestReport(report);
-      });
-      return {
-        feedId,
-        job: createCronJob(feedId, interval),
-        consumer,
-      };
-    })
-  );
+  try {
+    jobs.push(
+      ...feeds.map((feedId) => {
+        const consumer = createDatastream([feedId]);
+        consumer.on('report', async (report: StreamReport) => {
+          setLatestReport(report);
+        });
+        return {
+          feedId,
+          job: createCronJob(feedId, interval),
+          consumer,
+        };
+      })
+    );
+  } catch (error) {
+    logger.error('ERROR', error);
+  }
 }

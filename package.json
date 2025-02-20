@@ -27,6 +27,7 @@
     "clsx": "^2.1.1",
     "compression": "^1.7.4",
     "cron": "^3.5.0",
+    "cron-parser": "^5.0.3",
     "cross-env": "^7.0.3",
     "express": "^4.19.2",
     "ioredis": "^5.5.0",
