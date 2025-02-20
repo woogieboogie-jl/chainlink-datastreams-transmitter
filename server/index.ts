@@ -4,6 +4,7 @@ import compression from 'compression';
 import express from 'express';
 import morgan from 'morgan';
 import { CronJob, CronTime } from 'cron';
+import type ChainlinkDatastreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
 import { logger } from 'server/services/logger.js';
 import {
   executeContract as executeWriteContract,
@@ -12,7 +13,6 @@ import {
 import { ReportV3, StreamReport } from 'server/types.js';
 import { abs, formatUSD, isPositive } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
-import { cdc } from './services/datastreams.js';
 import {
   addFeed,
   getAbi,
@@ -31,6 +31,7 @@ import {
   setSavedReport,
 } from './store.js';
 import { schedule } from './services/limiter.js';
+import { createDatastream } from './services/datastreams.js';
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -84,7 +85,7 @@ async function getBuild() {
 
 const router = express.Router();
 
-router.post('/interval', (req, res) => {
+router.post('/interval', async (req, res) => {
   const interval: string = req.body.interval;
 
   if (!interval) {
@@ -93,7 +94,14 @@ router.post('/interval', (req, res) => {
     return res.send({ warning: 'New interval invalid input' });
   }
   setInterval(interval);
-  jobs.forEach(({ job }) => job.setTime(new CronTime(interval)));
+  if (jobs.length > 0)
+    jobs.forEach(({ job }) => job.setTime(new CronTime(interval)));
+
+  if (jobs.length < 1) {
+    const feeds = await getFeeds();
+    initJobs({ feeds, interval });
+  }
+
   logger.info(`📢 New interval has been set ${interval}`, { interval });
   res.send({ interval });
 });
@@ -122,8 +130,15 @@ router.post('/feeds/add', async (req, res) => {
     res.status(400);
     return res.send({ warning: 'Interval missing' });
   }
-  jobs.push({ feedId, job: createCronJob(feedId, interval) });
-  await cdc.subscribeTo(feedId);
+  const consumer = createDatastream([feedId]);
+  consumer.on('report', async (report: StreamReport) => {
+    setLatestReport(report);
+  });
+  jobs.push({
+    feedId,
+    job: createCronJob(feedId, interval),
+    consumer,
+  });
   logger.info(`📢 New feed ${name} has been added`, { feed: { name, feedId } });
   res.send(await getFeeds());
 });
@@ -153,7 +168,7 @@ router.post('/feeds/remove', async (req, res) => {
   }
 
   const name = await getFeedName(feedId);
-  await cdc.unsubscribeFrom(feedId);
+  await job.consumer.unsubscribeFrom(feedId);
   job.job.stop();
   await removeFeed(feedId);
   jobs.splice(jobs.indexOf(job), 1);
@@ -173,15 +188,28 @@ router.get('/logs', async (req, res) => {
 });
 
 router.post('/start', async (req, res) => {
-  const feeds = await getFeeds();
-  await cdc.subscribeTo(feeds);
-  logger.info('🏁 All streams have been started', { feeds });
+  await Promise.all(
+    jobs.map(async ({ consumer, feedId, job }) => {
+      await consumer.subscribeTo([feedId]);
+      job.start();
+    })
+  );
+  const feeds = jobs.map(({ feedId }) => feedId);
+  logger.info('🏁 All streams have been started', {
+    feeds,
+  });
   res.send({ feeds });
 });
 
 router.post('/stop', async (req, res) => {
-  const feeds = [...cdc.feeds];
-  await cdc.unsubscribeFrom(feeds);
+  await Promise.all(
+    jobs.map(async ({ consumer, job }) => {
+      const feeds = [...consumer.feeds];
+      await consumer.unsubscribeFrom(feeds);
+      job.stop();
+    })
+  );
+  const feeds = jobs.map(({ feedId }) => feedId);
   logger.info('🛑 All streams have been stoped', { feeds });
   res.send({ feedsStopped: feeds });
 });
@@ -203,7 +231,11 @@ app.all(
 );
 
 const port = process.env.PORT || 3000;
-const jobs: { job: CronJob<null, null>; feedId: string }[] = [];
+const jobs: {
+  job: CronJob<null, null>;
+  feedId: string;
+  consumer: ChainlinkDatastreamsConsumer;
+}[] = [];
 
 app.listen(port, async () => {
   logger.info(`🚀 running at http://localhost:${port}`);
@@ -213,21 +245,13 @@ app.listen(port, async () => {
     logger.warn('⚠ Interval is missing. Set interval and try again');
     return;
   }
-  await cdc.subscribeTo(feeds);
-  jobs.push(
-    ...feeds.map((feedId) => ({
-      feedId,
-      job: createCronJob(feedId, interval),
-    }))
-  );
+
+  initJobs({ feeds, interval });
+
   logger.info('🏁 Streams have been started', { feeds });
 });
 
 // https://docs.chain.link/data-streams/crypto-streams?network=arbitrum&page=1#testnet-crypto-streams
-
-cdc.on('report', async (report: StreamReport) => {
-  setLatestReport(report);
-});
 
 async function dataUpdater({ report }: { report: StreamReport }) {
   try {
@@ -296,5 +320,21 @@ function createCronJob(feedId: string, interval: string) {
     },
     null,
     true
+  );
+}
+
+function initJobs({ feeds, interval }: { feeds: string[]; interval: string }) {
+  jobs.push(
+    ...feeds.map((feedId) => {
+      const consumer = createDatastream([feedId]);
+      consumer.on('report', async (report: StreamReport) => {
+        setLatestReport(report);
+      });
+      return {
+        feedId,
+        job: createCronJob(feedId, interval),
+        consumer,
+      };
+    })
   );
 }
