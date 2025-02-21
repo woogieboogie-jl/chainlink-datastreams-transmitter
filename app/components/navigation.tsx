@@ -18,7 +18,7 @@ export function Navigation({
   return (
     <header className="w-full shrink-0 sticky top-0 z-50 bg-card backdrop-blur-sm shadow-md">
       <nav className="container mx-auto flex py-4 items-center px-4 md:px-10 ">
-        <Link to="/">
+        <Link className="flex" to="/">
           <img src="/chainlink.svg" alt="cl" className="size-10" />
           <h1 className="hidden lg:block leading text-3xl font-semibold">
             Data Streams Broadcaster
