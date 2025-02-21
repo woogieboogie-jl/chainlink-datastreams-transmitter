@@ -10,7 +10,7 @@ export async function action({ request }: ActionFunctionArgs) {
     logger.warn('⚠ Invalid gas cap', { data });
     return redirect('/');
   }
-  setGasCap(gasCap);
+  await setGasCap(gasCap);
   logger.info(`📢 New gas cap has been set ${gasCap}`, { gasCap });
   return redirect('/');
 }

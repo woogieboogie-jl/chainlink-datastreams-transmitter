@@ -25,11 +25,11 @@ export async function action({ request }: ActionFunctionArgs) {
     testnet: data.testnet,
   };
 
-  if (!chain) {
-    logger.warn('⚠ Invalid chain input', { data });
-    return null;
-  }
   try {
+    if (!chain) {
+      logger.warn('⚠ Invalid chain input', { data });
+      return null;
+    }
     if (!chain.id || isNaN(Number(chain.id))) {
       logger.warn('⚠ Invalid chain id', { chain });
       return null;

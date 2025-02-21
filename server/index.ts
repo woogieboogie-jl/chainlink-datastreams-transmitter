@@ -27,6 +27,7 @@ import {
   getPriceDelta,
   getSavedReportBenchmarkPrice,
   removeFeed,
+  seedConfig,
   setInterval,
   setLatestReport,
   setSavedReport,
@@ -34,6 +35,7 @@ import {
 import { schedule } from './services/limiter.js';
 import { createDatastream } from './services/datastreams.js';
 import { getReportPrice } from '~/lib/utils.js';
+import { config } from './config/config.js';
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -263,6 +265,7 @@ const jobs: {
 
 app.listen(port, async () => {
   logger.info(`🚀 running at http://localhost:${port}`);
+  await seedConfig(config);
   const feeds = await getFeeds();
   const interval = await getInterval();
   if (!interval) {
