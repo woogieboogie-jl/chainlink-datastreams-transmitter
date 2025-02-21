@@ -33,6 +33,7 @@ import {
 } from './store.js';
 import { schedule } from './services/limiter.js';
 import { createDatastream } from './services/datastreams.js';
+import { getReportPrice } from '~/lib/utils.js';
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -225,7 +226,7 @@ router.post('/stop', async (req, res) => {
 router.get('/latest/:feedId', async (req, res) => {
   const feedId = req.params.feedId;
   const latestReport = getLatestReport(feedId);
-  res.send({ latestPrice: latestReport?.benchmarkPrice.toString() });
+  res.send({ latestPrice: getReportPrice(latestReport).toString() });
 });
 
 router.get('/status/:feedId', async (req, res) => {
@@ -309,7 +310,7 @@ async function dataUpdater({ report }: { report: StreamReport }) {
       await setSavedReport(report);
       logger.info(
         `💾 Price stored | ${await getFeedName(report.feedId)}: ${formatUSD(
-          report.benchmarkPrice
+          getReportPrice(report)
         )}$`,
         { report }
       );
@@ -324,7 +325,7 @@ function createCronJob(feedId: string, interval: string) {
     interval,
     async function () {
       const report = getLatestReport(feedId);
-      const latestBenchmarkPrice = report?.benchmarkPrice;
+      const latestBenchmarkPrice = getReportPrice(report);
       if (!latestBenchmarkPrice) return;
       const savedBenchmarkPrice = await getSavedReportBenchmarkPrice(feedId);
       const diff = latestBenchmarkPrice - BigInt(savedBenchmarkPrice ?? 0);

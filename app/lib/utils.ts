@@ -1,13 +1,14 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from 'clsx';
+import { StreamReport } from 'server/types';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function detectSchemaVersion(feedId: string) {
-    // Remove the '0x' prefix if present
-  if (feedId.startsWith("0x")) {
+  // Remove the '0x' prefix if present
+  if (feedId.startsWith('0x')) {
     feedId = feedId.slice(2);
   }
 
@@ -17,3 +18,10 @@ export function detectSchemaVersion(feedId: string) {
   // Convert hex to a number and return with 'v' prefix
   return `v${parseInt(firstTwoBytesHex, 16)}`;
 }
+
+export const getReportPrice = (report?: StreamReport) =>
+  report?.version === 'v3'
+    ? report.benchmarkPrice
+    : report?.version === 'v4'
+    ? report.price
+    : BigInt(0);

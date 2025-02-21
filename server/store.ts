@@ -11,6 +11,7 @@ import {
   setList,
   setValue,
 } from './services/redis';
+import { getReportPrice } from '~/lib/utils';
 
 const latestReports: { [key: string]: StreamReport } = {};
 
@@ -31,7 +32,7 @@ const setLatestReport = (report: StreamReport) =>
 const getSavedReportBenchmarkPrice = async (feedId: string) =>
   await getValue(`price:${feedId}`);
 const setSavedReport = async (report: StreamReport) =>
-  await setValue(`price:${report.feedId}`, report.benchmarkPrice.toString());
+  await setValue(`price:${report.feedId}`, getReportPrice(report).toString());
 const getFeeds = async () => await getSet('feeds');
 const getFeedName = async (feedId: string) => await getValue(`name:${feedId}`);
 const addFeed = async (feed: { feedId: string; name: string }) => {
