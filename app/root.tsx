@@ -10,6 +10,7 @@ import type { LinksFunction, MetaFunction } from '@remix-run/node';
 
 import './tailwind.css';
 import { Navigation } from './components/navigation';
+import { Footer } from './components/footer';
 import {
   accountAddress,
   getBalance,
@@ -62,6 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ScrollRestoration />
         <Scripts />
       </body>
+      <Footer />
     </html>
   );
 }
