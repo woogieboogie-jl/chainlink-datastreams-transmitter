@@ -88,7 +88,7 @@ export default function Index() {
         <CardHeader>
           <CardTitle>Data streams</CardTitle>
           <CardDescription>
-            The price feeds you are subscribed to. Check{' '}
+            The feeds you are subscribed to. Check{' '}
             <a
               href="https://docs.chain.link/data-streams/crypto-streams"
               target="_blank"
@@ -106,7 +106,7 @@ export default function Index() {
               <TableRow>
                 <TableHead>Stream</TableHead>
                 <TableHead>Feed ID</TableHead>
-                <TableHead>Schema Version</TableHead>
+                <TableHead>Report Schema</TableHead>
                 <TableHead>Saved price</TableHead>
                 <TableHead>Last reported</TableHead>
                 <TableHead>Status</TableHead>
