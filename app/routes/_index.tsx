@@ -1,5 +1,5 @@
 import { Form, Link, useLoaderData, useRevalidator } from '@remix-run/react';
-import { Power, Play, Plus, Trash2Icon } from 'lucide-react';
+import { Power, Play, Plus, Trash2Icon, Pencil } from 'lucide-react';
 import { useEffect } from 'react';
 import {
   getContractAddress,
@@ -152,6 +152,7 @@ export default function Index() {
                         variant="ghost"
                         name="feedId"
                         value={feed.feedId}
+                        className="hover:text-red-500 hover:ring-1 hover:ring-red-500"
                       >
                         <Trash2Icon className="size-6" />
                       </Button>
@@ -225,6 +226,7 @@ export default function Index() {
               to="/schedule/new"
               className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
             >
+              <Pencil />
               Set new pattern
             </Link>
           </CardFooter>
@@ -252,7 +254,7 @@ export default function Index() {
               to="/contract"
               className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
             >
-              Edit contract settings
+              <Pencil /> Edit contract settings
             </Link>
           </CardFooter>
         </Card>
