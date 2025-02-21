@@ -3,7 +3,7 @@
         <img src="https://raw.githubusercontent.com/smartcontractkit/chainlink/develop/docs/logo-chainlink-blue.svg" width="225" alt="Chainlink logo">
     </a>
 
-[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/smartcontractkit/ccip-javascript-sdk/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-GPL-blue)](https://github.com/smartcontractkit/ccip-javascript-sdk/blob/main/LICENSE)
 [![Data Streams Documentation](https://img.shields.io/static/v1?label=data-streams-docs&message=latest&color=blue)](https://docs.chain.link/data-streams/)
 </div>
 
