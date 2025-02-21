@@ -1,5 +1,5 @@
 import { Form, Link, useLoaderData, useRevalidator } from '@remix-run/react';
-import { Pause, Play, Plus, Trash2Icon } from 'lucide-react';
+import { Power, Play, Plus, Trash2Icon } from 'lucide-react';
 import { useEffect } from 'react';
 import {
   getContractAddress,
@@ -178,7 +178,7 @@ export default function Index() {
                 type="submit"
                 className="bg-green-600 hover:bg-green-600/90"
               >
-                Start <Play />
+                <Play /> Start
               </Button>
             </Form>
             <Form
@@ -192,14 +192,15 @@ export default function Index() {
               }}
             >
               <Button type="submit" className="bg-red-600 hover:bg-red-600/90">
-                Stop <Pause />
+                <Power /> Stop
               </Button>
             </Form>
             <Link
               to="/feed/new"
               className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
             >
-              Add new data feed <Plus />
+              <Plus />
+              Add new data stream
             </Link>
           </div>
         </CardFooter>
