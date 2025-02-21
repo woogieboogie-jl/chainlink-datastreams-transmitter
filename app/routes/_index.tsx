@@ -39,7 +39,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '~/components/ui/tooltip';
-import { cn } from '~/lib/utils';
+import { cn, detectSchemaVersion } from '~/lib/utils';
 
 export async function loader() {
   const [feeds, interval, priceDelta, gasCap, contractAddress, functionName] =
@@ -106,6 +106,7 @@ export default function Index() {
               <TableRow>
                 <TableHead>Stream</TableHead>
                 <TableHead>Feed ID</TableHead>
+                <TableHead>Schema Version</TableHead>
                 <TableHead>Saved price</TableHead>
                 <TableHead>Last reported</TableHead>
                 <TableHead>Status</TableHead>
@@ -120,6 +121,11 @@ export default function Index() {
                 >
                   <TableCell>{feed.name}</TableCell>
                   <TableCell>{feed.feedId}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-600/20 ring-inset">
+                      {detectSchemaVersion(feed.feedId)}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     {formatUSD(BigInt(feed.savedPrice ?? 0))}
                   </TableCell>
