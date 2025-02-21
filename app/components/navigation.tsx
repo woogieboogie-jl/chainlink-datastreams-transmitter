@@ -20,10 +20,10 @@ export function Navigation({
       <nav className="container mx-auto flex py-4 items-center px-4 md:px-10 ">
         <Link to="/">
           <img src="/chainlink.svg" alt="cl" className="size-10" />
+          <h1 className="hidden lg:block leading text-3xl font-semibold">
+            Data Streams Broadcaster
+          </h1>
         </Link>
-        <h1 className="hidden lg:block leading text-3xl font-semibold">
-          Data Streams Broadcaster
-        </h1>
         <div className="grow" />
         <ChainInfo
           address={address}
