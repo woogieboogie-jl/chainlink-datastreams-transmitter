@@ -38,7 +38,7 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export default function App() {
   const { address, chain, balance, linkBalance } =
     useLoaderData<typeof loader>();
 
@@ -58,7 +58,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           linkBalance={linkBalance}
         />
         <main className="container mx-auto flex flex-col p-4 md:p-10 gap-10">
-          {children}
+          <Outlet />
         </main>
         <ScrollRestoration />
         <Scripts />
@@ -75,8 +75,4 @@ export async function loader() {
     getLinkBalance(),
   ]);
   return { chain, balance, linkBalance, address: accountAddress };
-}
-
-export default function App() {
-  return <Outlet />;
 }
