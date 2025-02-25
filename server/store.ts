@@ -68,6 +68,20 @@ const removeChain = async (chainId: string) => {
   await deleteValue(`chain:${chainId}`);
   await removeFromSet('chains', chainId);
 };
+const getVeriifierAddresses = async () => await getSet('verifiers');
+const getVeriifierAddress = async (chainId: string) =>
+  await getValue(`verifier:${chainId}`);
+const addVerifierAddress = async (
+  chainId: number | string,
+  verifierAddress: Address
+) => {
+  await setValue(`verifier:${chainId}`, verifierAddress);
+  await addToSet('verifiers', chainId);
+};
+const removeVerifierAddress = async (chainId: string) => {
+  await deleteValue(`verifier:${chainId}`);
+  await removeFromSet('verifiers', chainId);
+};
 const getSeed = async () => getValue('seed');
 const setSeed = async () => setValue('seed', new Date().toString());
 
@@ -92,42 +106,42 @@ const seedConfig = async (config: Config) => {
       config.chains.map(async (chain) => {
         if (!chain) {
           logger.warn('⚠ Invalid chain input', { chain });
-          return null;
+          return;
         }
         if (!chain.id || isNaN(Number(chain.id))) {
           logger.warn('⚠ Invalid chain id', { chain });
-          return null;
+          return;
         }
         if (!chain.name) {
           logger.warn('⚠ Chain name is missing', { chain });
-          return null;
+          return;
         }
         if (!chain.nativeCurrency) {
           logger.warn('⚠ Native currency object is missing', { chain });
-          return null;
+          return;
         }
         if (!chain.nativeCurrency.name) {
           logger.warn('⚠ Chain native currency name is missing', { chain });
-          return null;
+          return;
         }
         if (!chain.nativeCurrency.symbol) {
           logger.warn('⚠ Chain native currency symbol is missing', { chain });
-          return null;
+          return;
         }
         if (
           !chain.nativeCurrency.decimals ||
           isNaN(Number(chain.nativeCurrency.decimals))
         ) {
           logger.warn('⚠ Invalid chain native currency decimals', { chain });
-          return null;
+          return;
         }
         if (!chain.rpcUrls) {
           logger.warn('⚠ RPC urls object is missing', { chain });
-          return null;
+          return;
         }
         if (!chain.rpcUrls.default) {
           logger.warn('⚠ Default RPC urls object is missing', { chain });
-          return null;
+          return;
         }
         if (
           !chain.rpcUrls.default.http ||
@@ -135,11 +149,29 @@ const seedConfig = async (config: Config) => {
           !chain.rpcUrls.default.http[0]
         ) {
           logger.warn('⚠ Default http RPC url is missing', { chain });
-          return null;
+          return;
         }
 
         await addChain(chain.id.toString(), JSON.stringify(chain));
         logger.info(`📢 New chain has been added`, { chain });
+      })
+    );
+
+    await Promise.all(
+      config.verifierAddresses.map(async (verifier) => {
+        if (!verifier.chainId || isNaN(Number(verifier.chainId))) {
+          logger.warn('⚠ Invalid verifier chain id', { verifier });
+          return;
+        }
+        if (!isAddress(verifier.address) && verifier.address === zeroAddress) {
+          logger.warn('⚠ Invalid verifier contract address', { verifier });
+          return;
+        }
+        await addVerifierAddress(verifier.chainId, verifier.address);
+        logger.info(
+          `📢 Verifier contract has been added for chain with ID ${verifier.chainId}`,
+          { verifier }
+        );
       })
     );
 
@@ -248,5 +280,9 @@ export {
   getChain,
   addChain,
   removeChain,
+  getVeriifierAddresses,
+  getVeriifierAddress,
+  addVerifierAddress,
+  removeVerifierAddress,
   seedConfig,
 };

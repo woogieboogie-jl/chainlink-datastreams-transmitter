@@ -41,6 +41,7 @@ export type Config = {
   abi: Abi;
   chainId: number;
   chains: Chain[];
+  verifierAddresses: { chainId: number; address: Address }[];
   contractAddress: Address;
   feeds: { name: string; feedId: string }[];
   functionName: string;

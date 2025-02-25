@@ -1,4 +1,5 @@
-import { Address } from 'viem';
+import { getVeriifierAddress, getVeriifierAddresses } from 'server/store';
+import { Address, isAddress } from 'viem';
 import {
   arbitrum,
   arbitrumSepolia,
@@ -21,7 +22,7 @@ import {
   worldchainSepolia,
 } from 'viem/chains';
 
-export const verifiers: Record<number, Address> = {
+const verifiers: Record<number, Address> = {
   [arbitrum.id]: '0x478Aa2aC9F6D65F84e09D9185d126c3a17c2a93C',
   [arbitrumSepolia.id]: '0x2ff010DEbC1297f19579B4246cad07bd24F2488A',
   [avalanche.id]: '0x79BAa65505C6682F16F9b2C7F8afEBb1821BE3f6',
@@ -42,3 +43,34 @@ export const verifiers: Record<number, Address> = {
   [worldchain.id]: '0x65eaE24251C5707D5aCBF7461A49fe87CB1bE4c7',
   [worldchainSepolia.id]: '0x2482A390bE58b3cBB6Df72dB2e950Db20256e55E',
 };
+
+const getCustomVerifiers = async () => {
+  const verifiersList = await getVeriifierAddresses();
+  return await Promise.all(
+    verifiersList.map(async (chainId) => ({
+      chainId,
+      address: await getVeriifierAddress(chainId),
+    }))
+  );
+};
+
+export const getAllVerifiers = async (): Promise<
+  {
+    chainId: string;
+    address: string | null;
+    default?: boolean;
+  }[]
+> => [
+  ...Object.entries(verifiers).map(([chainId, address]) => ({
+    chainId,
+    address,
+    default: true,
+  })),
+  ...(await getCustomVerifiers()),
+];
+
+export async function getVerifier(chainId: string): Promise<Address> {
+  const customVerifier = await getVeriifierAddress(chainId);
+  if (customVerifier && isAddress(customVerifier)) return customVerifier;
+  return verifiers[Number(chainId)];
+}

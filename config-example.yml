@@ -24,6 +24,11 @@ chains:
       'rpcUrls': { 'default': { 'http': ['https://sepolia.base.org'] } },
       'testnet': 'true',
     }
+verifierAddresses:
+  - chainId: 995
+    address: '0x...'
+  - chainId: 84532
+    address: '0x...'
 contractAddress: '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
 functionName: 'set'
 functionArgs:

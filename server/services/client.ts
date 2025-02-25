@@ -18,13 +18,13 @@ import { ReportV3, ReportV4, StreamReport } from '../types';
 import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
 import { getAllChains } from '../config/chains';
-import { verifiers } from '../config/verifiers';
 import {
   getChainId,
   getContractAddress,
   getGasCap,
   setChainId,
 } from 'server/store';
+import { getVerifier } from 'server/config/verifiers';
 
 const getAccount = () => {
   try {
@@ -137,7 +137,12 @@ async function getContractAddresses() {
       logger.warn('⚠️ No chainId provided');
       return;
     }
-    const verifierProxyAddress = verifiers[Number(chainId)];
+    const verifierProxyAddress = await getVerifier(chainId);
+    console.log(verifierProxyAddress);
+    if (!verifierProxyAddress) {
+      logger.warn('⚠️ No verifier address provided');
+      return;
+    }
 
     const feeManagerAddress = await publicClient.readContract({
       address: verifierProxyAddress,

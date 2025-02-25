@@ -53,7 +53,7 @@ export async function loader() {
             savedPrice: await getSavedReportBenchmarkPrice(feedId),
             latestReport: await fetchLatestPrice(feedId),
             status: await fetchStatus(feedId),
-          })),
+          }))
         );
       })(),
       getInterval(),
@@ -269,7 +269,7 @@ export default function Index() {
           <CardContent>
             <p>
               <strong>{`${formatEther(
-                BigInt(priceDelta ?? 0),
+                BigInt(priceDelta ?? 0)
               )} (${priceDelta})`}</strong>
             </p>
             <Form
@@ -299,7 +299,7 @@ export default function Index() {
           <CardContent>
             <p>
               <strong>{`${formatEther(
-                BigInt(gasCap ?? 0),
+                BigInt(gasCap ?? 0)
               )} ETH (${gasCap} WEI)`}</strong>
             </p>
             <Form
@@ -315,6 +315,23 @@ export default function Index() {
               <Button type="submit">Submit</Button>
             </Form>
           </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Verifier Contracts</CardTitle>
+            <CardDescription>
+              The addresses of the contracts responsible for reports
+              verification.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link
+              to="/verifiers"
+              className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
+            >
+              <Pencil /> Verifier addresses
+            </Link>
+          </CardFooter>
         </Card>
       </div>
     </>
