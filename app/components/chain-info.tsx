@@ -34,7 +34,7 @@ export function ChainInfo({
         <span className="truncate">{address}</span>
         <ChevronDown className="size-4 shrink-0" />
       </DialogTrigger>
-      <DialogContent className="px-0 gap-2">
+      <DialogContent className="px-0 gap-2" aria-describedby={undefined}>
         <VisuallyHidden>
           <DialogTitle>Token balances</DialogTitle>
         </VisuallyHidden>

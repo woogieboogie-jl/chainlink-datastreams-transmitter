@@ -50,20 +50,20 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="min-h-screen bg-background text-foreground">
+      <body className="min-h-screen bg-background text-foreground flex flex-col">
         <Navigation
           address={address}
           chain={chain}
           balance={balance}
           linkBalance={linkBalance}
         />
-        <main className="container mx-auto flex flex-col p-4 md:p-10 gap-10">
+        <main className="container mx-auto flex flex-col p-4 md:p-10 gap-10 grow">
           <Outlet />
         </main>
         <ScrollRestoration />
         <Scripts />
+        <Footer />
       </body>
-      <Footer />
     </html>
   );
 }
