@@ -1,10 +1,14 @@
 import {
+  isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  useNavigate,
+  useRouteError,
 } from '@remix-run/react';
 import type { LinksFunction, MetaFunction } from '@remix-run/node';
 
@@ -17,6 +21,16 @@ import {
   getCurrentChain,
   getLinkBalance,
 } from 'server/services/client';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from './components/ui/card';
+import { Button, buttonVariants } from './components/ui/button';
+import { ChevronLeft, Home } from 'lucide-react';
 
 export const meta: MetaFunction = () => {
   return [
@@ -75,4 +89,119 @@ export async function loader() {
     getLinkBalance(),
   ]);
   return { chain, balance, linkBalance, address: accountAddress };
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const navigate = useNavigate();
+  if (isRouteErrorResponse(error)) {
+    return (
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <Meta />
+          <Links />
+        </head>
+        <body className="min-h-screen bg-background text-foreground flex flex-col">
+          <main className="container mx-auto flex flex-col p-4 md:p-10 gap-10 grow">
+            <Card>
+              <CardHeader>
+                <CardTitle>{error.status}</CardTitle>
+                <CardDescription>{error.statusText}</CardDescription>
+              </CardHeader>
+              <CardContent>{error.data}</CardContent>
+              <CardFooter className="space-x-4">
+                <Link to="/" className={buttonVariants({ variant: 'default' })}>
+                  <Home />
+                  Home
+                </Link>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => navigate(-1)}
+                >
+                  <ChevronLeft /> Back
+                </Button>
+              </CardFooter>
+            </Card>
+          </main>
+          <Scripts />
+        </body>
+      </html>
+    );
+  } else if (error instanceof Error) {
+    return (
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <Meta />
+          <Links />
+        </head>
+        <body className="min-h-screen bg-background text-foreground flex flex-col">
+          <main className="container mx-auto flex flex-col p-4 md:p-10 gap-10 grow">
+            <Card>
+              <CardHeader>
+                <CardTitle>Error</CardTitle>
+                <CardDescription>{error.message}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>The stack trace is:</p>
+                <pre>{error.stack}</pre>
+              </CardContent>
+              <CardFooter className="space-x-4">
+                <Link to="/" className={buttonVariants({ variant: 'default' })}>
+                  <Home />
+                  Home
+                </Link>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => navigate(-1)}
+                >
+                  <ChevronLeft /> Back
+                </Button>
+              </CardFooter>
+            </Card>
+          </main>
+          <Scripts />
+        </body>
+      </html>
+    );
+  } else {
+    return (
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <Meta />
+          <Links />
+        </head>
+        <body className="min-h-screen bg-background text-foreground flex flex-col">
+          <main className="container mx-auto flex flex-col p-4 md:p-10 gap-10 grow">
+            <Card>
+              <CardHeader>
+                <CardTitle>Unknown Error</CardTitle>
+              </CardHeader>
+              <CardFooter className="space-x-4">
+                <Link to="/" className={buttonVariants({ variant: 'default' })}>
+                  <Home />
+                  Home
+                </Link>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => navigate(-1)}
+                >
+                  <ChevronLeft /> Back
+                </Button>
+              </CardFooter>
+            </Card>
+          </main>
+          <Scripts />
+        </body>
+      </html>
+    );
+  }
 }
