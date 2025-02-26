@@ -1,13 +1,19 @@
 services:
-  # app:
-  #   build: .
-  #   ports:
-  #     - '3000:3000'
-  #   environment:
-  #     - PORT=3000
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      - PORT=3000
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+      - DATASTREAMS_HOSTNAME=${DATASTREAMS_HOSTNAME}
+      - DATASTREAMS_WS_HOSTNAME=${DATASTREAMS_WS_HOSTNAME}
+      - DATASTREAMS_CLIENT_ID=${DATASTREAMS_CLIENT_ID}
+      - DATASTREAMS_CLIENT_SECRET=${DATASTREAMS_CLIENT_SECRET}
   redis:
     image: redis:latest
-    container_name: redis-data
     command: redis-server --save 60 1 --appendonly yes --requirepass ${REDIS_PASSWORD}
     ports:
       - '6379:6379'

@@ -5,6 +5,7 @@ dotenv.config();
 
 const redis = new Redis({
   password: process.env.REDIS_PASSWORD,
+  host: process.env.REDIS_HOST || '127.0.0.1',
 });
 
 export const setValue = async (key: string, value: string | number) =>
