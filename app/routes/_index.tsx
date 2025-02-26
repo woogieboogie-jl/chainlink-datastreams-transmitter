@@ -1,11 +1,9 @@
 import { Form, Link, useLoaderData, useRevalidator } from '@remix-run/react';
-import { Power, Play, Plus, Trash2Icon, Pencil } from 'lucide-react';
+import { Power, Play, Plus, Trash2Icon, Pencil, FilePen } from 'lucide-react';
 import { useEffect } from 'react';
 import {
-  getContractAddress,
   getFeedName,
   getFeeds,
-  getFunctionName,
   getGasCap,
   getInterval,
   getPriceDelta,
@@ -42,31 +40,28 @@ import {
 import { cn, detectSchemaVersion } from '~/lib/utils';
 
 export async function loader() {
-  const [feeds, interval, priceDelta, gasCap, contractAddress, functionName] =
-    await Promise.all([
-      (async function () {
-        const feedsIds = await getFeeds();
-        return await Promise.all(
-          feedsIds.map(async (feedId) => ({
-            feedId,
-            name: await getFeedName(feedId),
-            savedPrice: await getSavedReportBenchmarkPrice(feedId),
-            latestReport: await fetchLatestPrice(feedId),
-            status: await fetchStatus(feedId),
-          }))
-        );
-      })(),
-      getInterval(),
-      getPriceDelta(),
-      getGasCap(),
-      getContractAddress(),
-      getFunctionName(),
-    ]);
-  return { feeds, interval, priceDelta, gasCap, contractAddress, functionName };
+  const [feeds, interval, priceDelta, gasCap] = await Promise.all([
+    (async function () {
+      const feedsIds = await getFeeds();
+      return await Promise.all(
+        feedsIds.map(async (feedId) => ({
+          feedId,
+          name: await getFeedName(feedId),
+          savedPrice: await getSavedReportBenchmarkPrice(feedId),
+          latestReport: await fetchLatestPrice(feedId),
+          status: await fetchStatus(feedId),
+        }))
+      );
+    })(),
+    getInterval(),
+    getPriceDelta(),
+    getGasCap(),
+  ]);
+  return { feeds, interval, priceDelta, gasCap };
 }
 
 export default function Index() {
-  const { feeds, interval, priceDelta, gasCap, contractAddress, functionName } =
+  const { feeds, interval, priceDelta, gasCap } =
     useLoaderData<typeof loader>();
 
   const revalidator = useRevalidator();
@@ -107,6 +102,7 @@ export default function Index() {
                 <TableHead>Stream</TableHead>
                 <TableHead>Feed ID</TableHead>
                 <TableHead>Report Schema</TableHead>
+                <TableHead>Contract</TableHead>
                 <TableHead>Saved price</TableHead>
                 <TableHead>Last reported</TableHead>
                 <TableHead>Status</TableHead>
@@ -125,6 +121,17 @@ export default function Index() {
                     <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-600/20 ring-inset">
                       {detectSchemaVersion(feed.feedId)}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <Link
+                      to={`/contract/${feed.feedId}`}
+                      className={cn(
+                        buttonVariants({ variant: 'ghost', size: 'icon' }),
+                        'hover:text-primary hover:ring-1 hover:ring-primary'
+                      )}
+                    >
+                      <FilePen className="size-6" />
+                    </Link>
                   </TableCell>
                   <TableCell>
                     {formatUSD(BigInt(feed.savedPrice ?? 0))}
@@ -233,28 +240,18 @@ export default function Index() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-semibold">Contract</CardTitle>
+            <CardTitle>Verifier Contracts</CardTitle>
             <CardDescription>
-              The contract address and function that will be invoked when feed
-              price data changes.
+              The addresses of the contracts responsible for reports
+              verification.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="w-full flex gap-2 items-center pt-2 truncate">
-              <span className="w-32">Contract address:</span>
-              <span className="truncate font-mono">{contractAddress}</span>
-            </div>
-            <div className="w-full flex gap-2 items-center pt-2 truncate">
-              <span className="w-32">Function:</span>
-              <span className="truncate font-mono">{functionName}</span>
-            </div>
-          </CardContent>
           <CardFooter>
             <Link
-              to="/contract"
+              to="/verifiers"
               className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
             >
-              <Pencil /> Edit contract settings
+              <Pencil /> Verifier addresses
             </Link>
           </CardFooter>
         </Card>
@@ -315,23 +312,6 @@ export default function Index() {
               <Button type="submit">Submit</Button>
             </Form>
           </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Verifier Contracts</CardTitle>
-            <CardDescription>
-              The addresses of the contracts responsible for reports
-              verification.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Link
-              to="/verifiers"
-              className={cn(buttonVariants({ variant: 'default' }), 'w-fit')}
-            >
-              <Pencil /> Verifier addresses
-            </Link>
-          </CardFooter>
         </Card>
       </div>
     </>

@@ -36,6 +36,7 @@ import { schedule } from './services/limiter.js';
 import { createDatastream } from './services/datastreams.js';
 import { getReportPrice } from '~/lib/utils.js';
 import { config } from './config/config.js';
+import { isHex } from 'viem';
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -121,7 +122,7 @@ router.post('/feeds/add', async (req, res) => {
   const name: string = req.body.name;
   const feedId: string = req.body.feedId;
 
-  if (!name || !feedId) {
+  if (!name || !feedId || !isHex(feedId)) {
     logger.warn('⚠ Add feed invalid input', { body: req.body });
     res.status(400);
     return res.send({ warning: 'Add feed invalid input' });
@@ -283,16 +284,17 @@ app.listen(port, async () => {
 async function dataUpdater({ report }: { report: StreamReport }) {
   try {
     const verifiedReport = await verifyReport(report);
+    const { feedId } = report;
     if (!verifiedReport) {
       logger.warn(`🛑 Verified report is missing | Aborting`);
       return;
     }
-    const functionName = await getFunctionName();
+    const functionName = await getFunctionName(feedId);
     if (!functionName) {
       logger.warn(`🛑 Function name is missing | Aborting`);
       return;
     }
-    const abi = await getAbi();
+    const abi = await getAbi(feedId);
     if (!abi) {
       logger.warn(`🛑 Contract ABI is missing | Aborting`);
       return;
@@ -302,7 +304,7 @@ async function dataUpdater({ report }: { report: StreamReport }) {
       report: verifiedReport as ReportV3,
       abi: JSON.parse(abi),
       functionName,
-      functionArgs: await getFunctionArgs(),
+      functionArgs: await getFunctionArgs(feedId),
     });
     if (transaction?.status) {
       logger.info(`ℹ️ Transaction status: ${transaction?.status}`, {
@@ -312,7 +314,7 @@ async function dataUpdater({ report }: { report: StreamReport }) {
     if (transaction?.status === 'success') {
       await setSavedReport(report);
       logger.info(
-        `💾 Price stored | ${await getFeedName(report.feedId)}: ${formatUSD(
+        `💾 Price stored | ${await getFeedName(feedId)}: ${formatUSD(
           getReportPrice(report)
         )}$`,
         { report }

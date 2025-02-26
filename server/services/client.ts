@@ -138,7 +138,6 @@ async function getContractAddresses() {
       return;
     }
     const verifierProxyAddress = await getVerifier(chainId);
-    console.log(verifierProxyAddress);
     if (!verifierProxyAddress) {
       logger.warn('⚠️ No verifier address provided');
       return;

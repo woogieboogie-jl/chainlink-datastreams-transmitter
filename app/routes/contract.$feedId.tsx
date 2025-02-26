@@ -1,9 +1,11 @@
-import { ActionFunctionArgs } from '@remix-run/node';
+import { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { Form, useLoaderData, useNavigate } from '@remix-run/react';
 import { logger } from 'server/services/logger';
 import {
   getAbi,
   getContractAddress,
+  getFeedExists,
+  getFeedName,
   getFunctionArgs,
   getFunctionName,
   setAbi,
@@ -27,7 +29,20 @@ enum Intent {
   ARGS = 'ARGS',
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
+  const feedId = params.feedId;
+  if (!feedId) {
+    logger.warn('⚠ Feed ID is missing', { params });
+    return null;
+  }
+  const isValidFeedId = await getFeedExists(feedId);
+  if (!isValidFeedId) {
+    logger.warn(
+      `⚠ Feed ID ${feedId} is not valid. First add it to the list of streams`,
+      { params }
+    );
+    return null;
+  }
   const formData = await request.formData();
   const { intent, ...data } = Object.fromEntries(formData);
   if (intent === Intent.CONTRACT) {
@@ -36,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
       logger.warn('⚠ Invalid contract address', { data });
       return null;
     }
-    await setContractAddress(contract);
+    await setContractAddress(feedId, contract);
     logger.info(`📢 New contract has been set ${contract}`, { contract });
     return null;
   }
@@ -52,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
       logger.error('ERROR', error);
       return null;
     }
-    await setAbi(abi);
+    await setAbi(feedId, abi);
     logger.info(`📢 New abi has been set`, { abi });
     return null;
   }
@@ -62,7 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
       logger.warn('⚠ Invalid functionName input', { data });
       return null;
     }
-    await setFunctionName(functionName);
+    await setFunctionName(feedId, functionName);
     logger.info(`📢 New function has been set ${functionName}`, {
       functionName,
     });
@@ -75,7 +90,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return null;
     }
     const newArgs = args.split(',').map((a) => a.trim());
-    await setFunctionArgs(newArgs);
+    await setFunctionArgs(feedId, newArgs);
     logger.info(`📢 New set of arguments has been set ${newArgs.join(', ')}`, {
       functionArgs: args,
     });
@@ -86,22 +101,43 @@ export async function action({ request }: ActionFunctionArgs) {
   return null;
 }
 
-export async function loader() {
-  const [contract, abi, functionName, args] = await Promise.all([
-    getContractAddress(),
-    getAbi(),
-    getFunctionName(),
-    getFunctionArgs(),
+export async function loader({ params }: LoaderFunctionArgs) {
+  const feedId = params.feedId;
+  if (!feedId) {
+    throw new Response(null, {
+      status: 404,
+      statusText: 'Not Found',
+    });
+  }
+  const isValidFeedId = await getFeedExists(feedId);
+  if (!isValidFeedId) {
+    throw new Response(null, {
+      status: 404,
+      statusText: `Feed ${feedId} not found`,
+    });
+  }
+
+  const [contract, abi, functionName, args, feedName] = await Promise.all([
+    getContractAddress(feedId),
+    getAbi(feedId),
+    getFunctionName(feedId),
+    getFunctionArgs(feedId),
+    getFeedName(feedId),
   ]);
-  return { contract, abi, functionName, args };
+  return { contract, abi, functionName, args, feedName };
 }
 
 export default function Contract() {
   const navigate = useNavigate();
-  const { contract, abi, functionName, args } = useLoaderData<typeof loader>();
+  const { contract, abi, functionName, args, feedName } =
+    useLoaderData<typeof loader>();
 
   return (
     <>
+      <h1 className="leading text-2xl font-semibold">
+        {`Feed ${feedName} on-chain settings`}
+      </h1>
+
       <Card>
         <CardHeader>
           <CardTitle>Contract address</CardTitle>
@@ -132,7 +168,7 @@ export default function Contract() {
         </CardHeader>
         <CardContent>
           <div className="w-full flex gap-2 items-center pt-2 truncate">
-            <span className="w-24">Selected function:</span>
+            <span>Selected function:</span>
             <span className="truncate font-mono">{functionName}</span>
           </div>
           <Form method="post" className="space-y-4" id="function-form">

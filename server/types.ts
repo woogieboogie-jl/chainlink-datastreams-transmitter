@@ -38,14 +38,20 @@ export type Feed = { name: string; feedId: string };
 export type Interval = { interval: string };
 
 export type Config = {
-  abi: Abi;
   chainId: number;
   chains: Chain[];
   verifierAddresses: { chainId: number; address: Address }[];
-  contractAddress: Address;
-  feeds: { name: string; feedId: string }[];
-  functionName: string;
-  functionArgs: string[];
+  feeds: {
+    name: string;
+    feedId: Hex;
+  }[];
+  targetContracts: {
+    feedId: Hex;
+    address: Address;
+    abi: Abi;
+    functionName: string;
+    functionArgs: string[];
+  }[];
   gasCap: string;
   interval: string;
   priceDelta: string;

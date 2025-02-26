@@ -1,4 +1,4 @@
-import { Address, isAddress, zeroAddress } from 'viem';
+import { Address, isAddress, isHex, zeroAddress } from 'viem';
 import { Config, StreamReport } from './types';
 import {
   addToSet,
@@ -17,17 +17,9 @@ import CronExpressionParser from 'cron-parser';
 
 const latestReports: { [key: string]: StreamReport } = {};
 
-const getFunctionName = async () => await getValue('functionName');
-const setFunctionName = async (functionName: string) =>
-  await setValue('functionName', functionName);
 const getInterval = async () => await getValue('interval');
 const setInterval = async (interval: string) =>
   await setValue('interval', interval);
-const getFunctionArgs = async () => await getList('functionArgs');
-const setFunctionArgs = async (functionArgs: string[]) =>
-  await setList('functionArgs', functionArgs);
-const getAbi = async () => await getValue('abi');
-const setAbi = async (abi: string) => await setValue('abi', abi);
 const getLatestReport = (feedId: string) => latestReports[feedId];
 const setLatestReport = (report: StreamReport) =>
   (latestReports[report.feedId] = report);
@@ -53,9 +45,6 @@ const setPriceDelta = async (priceDelta: string) =>
 const getChainId = async () => await getValue('chainId');
 const setChainId = async (chainId: number | string) =>
   await setValue('chainId', chainId);
-const getContractAddress = async () => await getValue('contractAddress');
-const setContractAddress = async (address: Address) =>
-  await setValue('contractAddress', address);
 const getGasCap = async () => await getValue('gasCap');
 const setGasCap = async (gasCap: string) => await setValue('gasCap', gasCap);
 const getChains = async () => await getSet('chains');
@@ -84,6 +73,22 @@ const removeVerifierAddress = async (chainId: string) => {
 };
 const getSeed = async () => getValue('seed');
 const setSeed = async () => setValue('seed', new Date().toString());
+
+const getFunctionName = async (feedId?: string) =>
+  await getValue(`functionName:${feedId}`);
+const setFunctionName = async (feedId: string, functionName: string) =>
+  await setValue(`functionName:${feedId}`, functionName);
+const getFunctionArgs = async (feedId?: string) =>
+  await getList(`functionArgs:${feedId}`);
+const setFunctionArgs = async (feedId: string, functionArgs: string[]) =>
+  await setList(`functionArgs:${feedId}`, functionArgs);
+const getAbi = async (feedId?: string) => await getValue(`abi:${feedId}`);
+const setAbi = async (feedId: string, abi: string) =>
+  await setValue(`abi:${feedId}`, abi);
+const getContractAddress = async (feedId?: string) =>
+  await getValue(`contractAddress:${feedId}`);
+const setContractAddress = async (feedId: string, address: Address) =>
+  await setValue(`contractAddress:${feedId}`, address);
 
 const seedConfig = async (config: Config) => {
   try {
@@ -163,7 +168,7 @@ const seedConfig = async (config: Config) => {
           logger.warn('⚠ Invalid verifier chain id', { verifier });
           return;
         }
-        if (!isAddress(verifier.address) && verifier.address === zeroAddress) {
+        if (!isAddress(verifier.address) || verifier.address === zeroAddress) {
           logger.warn('⚠ Invalid verifier contract address', { verifier });
           return;
         }
@@ -182,37 +187,55 @@ const seedConfig = async (config: Config) => {
       });
     }
 
-    if (
-      isAddress(config.contractAddress) &&
-      config.contractAddress !== zeroAddress
-    ) {
-      await setContractAddress(config.contractAddress);
-      logger.info(`📢 New contract has been set ${config.contractAddress}`, {
-        contractAddress: config.contractAddress,
-      });
-    }
-
-    if (config.abi) {
-      await setAbi(JSON.stringify(config.abi));
-      logger.info(`📢 ABI has been set`, { abi: config.abi });
-    }
-
-    if (config.functionName) {
-      await setFunctionName(config.functionName);
-      logger.info(`📢 New function has been set ${config.functionName}`, {
-        functionName: config.functionName,
-      });
-    }
-
-    if (config.functionArgs && config.functionArgs.length > 0) {
-      await setFunctionArgs(config.functionArgs);
-      logger.info(
-        `📢 Set of arguments has been set ${config.functionArgs.join(', ')}`,
-        {
-          functionArgs: config.functionArgs,
+    await Promise.all(
+      config.targetContracts.map(async (contract) => {
+        try {
+          const { feedId, address, abi, functionArgs, functionName } = contract;
+          if (!feedId || !isHex(feedId)) {
+            logger.warn('⚠ Contract feedId invalid input', contract);
+            return;
+          }
+          if (isAddress(address) && address !== zeroAddress) {
+            await setContractAddress(feedId, address);
+            logger.info(
+              `📢 Contract ${address} has been set for feed ${feedId}`,
+              {
+                feedId,
+                address,
+              }
+            );
+          }
+          if (abi) {
+            await setAbi(feedId, JSON.stringify(abi));
+            logger.info(`📢 ABI has been set for feed ${feedId}`, {
+              feedId,
+              abi,
+            });
+          }
+          if (functionName) {
+            await setFunctionName(feedId, functionName);
+            logger.info(
+              `📢 New function ${functionName} has been set for feed ${feedId}`,
+              {
+                feedId,
+                functionName,
+              }
+            );
+          }
+          if (functionArgs && functionArgs.length > 0) {
+            await setFunctionArgs(feedId, functionArgs);
+            logger.info(
+              `📢 Set of arguments ${functionArgs.join(
+                ', '
+              )} has been set for feed ${feedId}`,
+              { feedId, functionArgs }
+            );
+          }
+        } catch (error) {
+          logger.error('ERROR', { error });
         }
-      );
-    }
+      })
+    );
 
     if (!isNaN(Number(config.gasCap))) {
       await setGasCap(config.gasCap);
