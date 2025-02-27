@@ -108,13 +108,13 @@ Before setting up the Broadcaster, ensure you have the required dependencies ins
 To make setting environment variables easier there is a `.env.example` file in the root folder of this project. You can copy it to a new `.env` file and replace the values with your own.
 
 | Name                        | Description                                                                                                                                   |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `REDIS_PASSWORD`            | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis password.                    |
 | `PRIVATE_KEY`               | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. |
 | `DATASTREAMS_HOSTNAME`      | Chainlink Data Streams Hostname.                                                                                                              |
 | `DATASTREAMS_WS_HOSTNAME`   | WebSocket Hostname for Data Streams.                                                                                                          |
 | `DATASTREAMS_CLIENT_ID`     | Client ID for authentication.                                                                                                                 |
-| `DATASTREAMS_CLIENT_SECRET` | Client Secret for authentication.                                                                                                             |     |
+| `DATASTREAMS_CLIENT_SECRET` | Client Secret for authentication.                                                                                                             |  |
 
 > [!NOTE]
 > All other user configurations are stored locally using Redis, eliminating the need for separate configuration files. This ensures fast access and persistence across sessions without manual file handling. Only sensitive configurations, such as API keys and database credentials, are managed separately in the `.env` file. The application automatically loads and updates configurations in Redis as needed. Users do not need to manually edit or maintain configuration files, simplifying setup and deployment.
