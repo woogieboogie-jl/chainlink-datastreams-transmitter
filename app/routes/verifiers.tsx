@@ -12,7 +12,7 @@ import { Plus, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { getAllChains } from 'server/config/chains';
 import { defaultVerifiers, getCustomVerifiers } from 'server/config/verifiers';
-import { Button } from '~/components/ui/button';
+import { Button, buttonVariants } from '~/components/ui/button';
 import {
   Card,
   CardContent,
@@ -40,6 +40,7 @@ import {
 } from '~/components/ui/table';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
+import { cn } from '~/lib/utils';
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
@@ -83,7 +84,7 @@ export async function loader() {
       ([chainId, address]) => ({
         chainId,
         address,
-      })
+      }),
     ),
   };
 }
@@ -100,26 +101,53 @@ export default function Verifiers() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Default verifier Addresses</CardTitle>
+          <CardTitle>Data Streams Verifier Network Addresses</CardTitle>
+          <CardDescription>
+            This contract verifies the signature from the DON to
+            cryptographically guarantee that the report has not been altered
+            from the time that the DON reached consensus to the point where you
+            use the data in your application. Check out up-to-date contract
+            addresses and more information in{' '}
+            <a
+              href="https://docs.chain.link/data-streams/crypto-streams?page=1#streams-verifier-network-addresses"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(buttonVariants({ variant: 'link' }), 'p-0 h-auto')}
+            >
+              Streams Verifiers Documentation
+            </a>{' '}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table className="border-separate border-spacing-y-2">
+          <Label className="text-xl">Mainnet</Label>
+          <Table className="border-separate border-spacing-y-2 mb-6">
             <TableHeader>
               <TableRow>
-                <TableHead>Chain ID</TableHead>
+                <TableHead className="min-w-48 max-w-48">Chain ID</TableHead>
                 <TableHead>Verifier address</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {defaultVerifiers
+                .filter((verifier) => {
+                  const chain = chains.find(
+                    (chain) => chain.id === Number(verifier.chainId),
+                  );
+                  return (
+                    chain &&
+                    (!Object.prototype.hasOwnProperty.call(chain, 'testnet') ||
+                      chain.testnet === undefined ||
+                      chain.testnet === false)
+                  );
+                })
                 .sort((a, b) =>
                   (
                     chains.find((chain) => chain.id === Number(a.chainId))
                       ?.name ?? ''
                   ).localeCompare(
                     chains.find((chain) => chain.id === Number(b.chainId))
-                      ?.name ?? ''
-                  )
+                      ?.name ?? '',
+                  ),
                 )
                 .map((verifier, i) => (
                   <TableRow
@@ -129,7 +157,52 @@ export default function Verifiers() {
                     <TableCell>
                       {
                         chains.find(
-                          (chain) => chain.id === Number(verifier.chainId)
+                          (chain) => chain.id === Number(verifier.chainId),
+                        )?.name
+                      }
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      {verifier.address}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+
+          <Label className="text-xl">Testnet</Label>
+          <Table className="border-separate border-spacing-y-2">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-48 max-w-48">Chain ID</TableHead>
+                <TableHead>Verifier address</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {defaultVerifiers
+                .filter(
+                  (verifier) =>
+                    chains.find(
+                      (chain) => chain.id === Number(verifier.chainId),
+                    )?.testnet === true,
+                )
+                .sort((a, b) =>
+                  (
+                    chains.find((chain) => chain.id === Number(a.chainId))
+                      ?.name ?? ''
+                  ).localeCompare(
+                    chains.find((chain) => chain.id === Number(b.chainId))
+                      ?.name ?? '',
+                  ),
+                )
+                .map((verifier, i) => (
+                  <TableRow
+                    key={i}
+                    className="rounded-md ring-1 ring-inset ring-gray-300 bg-background [&_td:last-child]:rounded-r-md [&_td:first-child]:rounded-l-md"
+                  >
+                    <TableCell>
+                      {
+                        chains.find(
+                          (chain) => chain.id === Number(verifier.chainId),
                         )?.name
                       }
                     </TableCell>
@@ -144,7 +217,7 @@ export default function Verifiers() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Custom verifier Addresses</CardTitle>
+          <CardTitle>Custom Verifier Addresses</CardTitle>
           <CardDescription>
             If a custom verifier contract is not set for a certain chain the
             default one will be used.
@@ -154,9 +227,9 @@ export default function Verifiers() {
           <Table className="border-separate border-spacing-y-2">
             <TableHeader>
               <TableRow>
-                <TableHead>Chain ID</TableHead>
+                <TableHead className="min-w-60">Chain ID</TableHead>
                 <TableHead>Verifier address</TableHead>
-                <TableHead>Remove</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -167,8 +240,8 @@ export default function Verifiers() {
                       ?.name ?? ''
                   ).localeCompare(
                     chains.find((chain) => chain.id === Number(b.chainId))
-                      ?.name ?? ''
-                  )
+                      ?.name ?? '',
+                  ),
                 )
                 .map((verifier, i) => (
                   <TableRow
@@ -178,7 +251,7 @@ export default function Verifiers() {
                     <TableCell>
                       {
                         chains.find(
-                          (chain) => chain.id === Number(verifier.chainId)
+                          (chain) => chain.id === Number(verifier.chainId),
                         )?.name
                       }
                     </TableCell>
@@ -194,16 +267,17 @@ export default function Verifiers() {
                           const response = confirm(
                             `Delete verifier contract ${verifier.address} for ${
                               chains.find(
-                                (chain) => chain.id === Number(verifier.chainId)
+                                (chain) =>
+                                  chain.id === Number(verifier.chainId),
                               )?.name
-                            }?`
+                            }?`,
                           );
                           if (!response) {
                             return;
                           }
                           submit(
                             { chainId: verifier.chainId },
-                            { method: 'delete' }
+                            { method: 'delete' },
                           );
                         }}
                       >
@@ -233,7 +307,7 @@ export default function Verifiers() {
                     <div>
                       {
                         chains.find(
-                          (chain) => chain.id === Number(chainIdInput)
+                          (chain) => chain.id === Number(chainIdInput),
                         )?.name
                       }
                     </div>
@@ -290,7 +364,7 @@ export default function Verifiers() {
               onClick={() => {
                 submit(
                   { chainId: chainIdInput, address: addressInput },
-                  { method: 'post' }
+                  { method: 'post' },
                 );
                 if (!warning) {
                   setAddressInput('');
