@@ -13,7 +13,7 @@ import {
 } from './services/redis';
 import { getReportPrice } from '~/lib/utils';
 import { logger } from './services/logger';
-import CronExpressionParser from 'cron-parser';
+import { CronExpressionParser } from 'cron-parser';
 
 const latestReports: { [key: string]: StreamReport } = {};
 
