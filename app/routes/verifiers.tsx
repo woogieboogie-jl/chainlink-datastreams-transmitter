@@ -11,11 +11,12 @@ import {
 import { Plus, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { getAllChains } from 'server/config/chains';
-import { getAllVerifiers } from 'server/config/verifiers';
+import { defaultVerifiers, getCustomVerifiers } from 'server/config/verifiers';
 import { Button } from '~/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -71,17 +72,27 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function loader() {
-  const [verifiers, chains] = await Promise.all([
-    getAllVerifiers(),
+  const [chains, customVerifiers] = await Promise.all([
     getAllChains(),
+    getCustomVerifiers(),
   ]);
-  return { verifiers, chains };
+  return {
+    chains,
+    customVerifiers,
+    defaultVerifiers: Object.entries(defaultVerifiers).map(
+      ([chainId, address]) => ({
+        chainId,
+        address,
+      })
+    ),
+  };
 }
 
 export default function Verifiers() {
   const navigate = useNavigate();
   const submit = useSubmit();
-  const { verifiers, chains } = useLoaderData<typeof loader>();
+  const { chains, customVerifiers, defaultVerifiers } =
+    useLoaderData<typeof loader>();
   const warning = useActionData<typeof action>();
   const [chainIdInput, setChainIdInput] = useState('');
   const [addressInput, setAddressInput] = useState('');
@@ -89,7 +100,55 @@ export default function Verifiers() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Verifier Addresses</CardTitle>
+          <CardTitle>Default verifier Addresses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table className="border-separate border-spacing-y-2">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Chain ID</TableHead>
+                <TableHead>Verifier address</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {defaultVerifiers
+                .sort((a, b) =>
+                  (
+                    chains.find((chain) => chain.id === Number(a.chainId))
+                      ?.name ?? ''
+                  ).localeCompare(
+                    chains.find((chain) => chain.id === Number(b.chainId))
+                      ?.name ?? ''
+                  )
+                )
+                .map((verifier, i) => (
+                  <TableRow
+                    key={i}
+                    className="rounded-md ring-1 ring-inset ring-gray-300 bg-background [&_td:last-child]:rounded-r-md [&_td:first-child]:rounded-l-md"
+                  >
+                    <TableCell>
+                      {
+                        chains.find(
+                          (chain) => chain.id === Number(verifier.chainId)
+                        )?.name
+                      }
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      {verifier.address}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Custom verifier Addresses</CardTitle>
+          <CardDescription>
+            If a custom verifier contract is not set for a certain chain the
+            default one will be used.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table className="border-separate border-spacing-y-2">
@@ -101,7 +160,7 @@ export default function Verifiers() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {verifiers
+              {customVerifiers
                 .sort((a, b) =>
                   (
                     chains.find((chain) => chain.id === Number(a.chainId))
@@ -127,34 +186,29 @@ export default function Verifiers() {
                       {verifier.address}
                     </TableCell>
                     <TableCell>
-                      {!verifier.default && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="hover:text-red-500 hover:ring-1 hover:ring-red-500"
-                          onClick={() => {
-                            const response = confirm(
-                              `Delete verifier contract ${
-                                verifier.address
-                              } for ${
-                                chains.find(
-                                  (chain) =>
-                                    chain.id === Number(verifier.chainId)
-                                )?.name
-                              }?`
-                            );
-                            if (!response) {
-                              return;
-                            }
-                            submit(
-                              { chainId: verifier.chainId },
-                              { method: 'delete' }
-                            );
-                          }}
-                        >
-                          <Trash2Icon className="size-6" />
-                        </Button>
-                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="hover:text-red-500 hover:ring-1 hover:ring-red-500"
+                        onClick={() => {
+                          const response = confirm(
+                            `Delete verifier contract ${verifier.address} for ${
+                              chains.find(
+                                (chain) => chain.id === Number(verifier.chainId)
+                              )?.name
+                            }?`
+                          );
+                          if (!response) {
+                            return;
+                          }
+                          submit(
+                            { chainId: verifier.chainId },
+                            { method: 'delete' }
+                          );
+                        }}
+                      >
+                        <Trash2Icon className="size-6" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

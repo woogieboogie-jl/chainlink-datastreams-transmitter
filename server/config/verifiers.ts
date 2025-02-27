@@ -22,7 +22,7 @@ import {
   worldchainSepolia,
 } from 'viem/chains';
 
-const verifiers: Record<number, Address> = {
+export const defaultVerifiers: Record<number, Address> = {
   [arbitrum.id]: '0x478Aa2aC9F6D65F84e09D9185d126c3a17c2a93C',
   [arbitrumSepolia.id]: '0x2ff010DEbC1297f19579B4246cad07bd24F2488A',
   [avalanche.id]: '0x79BAa65505C6682F16F9b2C7F8afEBb1821BE3f6',
@@ -44,7 +44,7 @@ const verifiers: Record<number, Address> = {
   [worldchainSepolia.id]: '0x2482A390bE58b3cBB6Df72dB2e950Db20256e55E',
 };
 
-const getCustomVerifiers = async () => {
+export const getCustomVerifiers = async () => {
   const verifiersList = await getVeriifierAddresses();
   return await Promise.all(
     verifiersList.map(async (chainId) => ({
@@ -61,7 +61,7 @@ export const getAllVerifiers = async (): Promise<
     default?: boolean;
   }[]
 > => [
-  ...Object.entries(verifiers).map(([chainId, address]) => ({
+  ...Object.entries(defaultVerifiers).map(([chainId, address]) => ({
     chainId,
     address,
     default: true,
@@ -72,5 +72,5 @@ export const getAllVerifiers = async (): Promise<
 export async function getVerifier(chainId: string): Promise<Address> {
   const customVerifier = await getVeriifierAddress(chainId);
   if (customVerifier && isAddress(customVerifier)) return customVerifier;
-  return verifiers[Number(chainId)];
+  return defaultVerifiers[Number(chainId)];
 }
