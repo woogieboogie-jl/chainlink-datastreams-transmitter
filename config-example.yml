@@ -8,22 +8,19 @@ gasCap: '150000'
 interval: '*/30 * * * * *'
 priceDelta: '10000000000000000'
 chains:
-  - {
-      'id': 995,
-      'name': '🔥 5ireChain',
-      'nativeCurrency':
-        { 'decimals': 18, 'name': '5ire Token', 'symbol': '5IRE' },
-      'rpcUrls': { 'default': { 'http': ['https://rpc.5ire.network'] } },
-      'testnet': '',
-    }
-  - {
-      'id': 84532,
-      'name': 'Base Sepolia Custom',
-      'nativeCurrency':
-        { 'decimals': 18, 'name': 'Sepolia Ether', 'symbol': 'ETH' },
-      'rpcUrls': { 'default': { 'http': ['https://sepolia.base.org'] } },
-      'testnet': 'true',
-    }
+  - id: 995
+    name: '🔥 5ireChain'
+    currencyName: '5ire Token'
+    currencySymbol: '5IRE'
+    currencyDecimals: 18
+    rpc: 'https://rpc.5ire.network'
+  - id: 84532
+    name: 'Base Sepolia Custom'
+    currencyName: 'Sepoloa Ether'
+    currencySymbol: 'ETH'
+    currencyDecimals: 18
+    rpc: 'https://sepolia.base.org'
+    testnet: true
 verifierAddresses:
   - chainId: 995
     address: '0x...'

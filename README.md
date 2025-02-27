@@ -5,6 +5,7 @@
 
 [![License](https://img.shields.io/badge/license-GPL-blue)](https://github.com/smartcontractkit/ccip-javascript-sdk/blob/main/LICENSE)
 [![Data Streams Documentation](https://img.shields.io/static/v1?label=data-streams-docs&message=latest&color=blue)](https://docs.chain.link/data-streams/)
+
 </div>
 
 # Chainlink Data Streams Broadcaster
@@ -14,6 +15,7 @@
 Chainlink Data Streams Broadcaster is a service that bridges off-chain data streams with on-chain smart contracts. It continuously monitors off-chain price updates and pushes them on-chain based on predefined conditions such as price deviations or time intervals.
 
 ### Key Features:
+
 - Retrieves and verifies price data from Chainlink Data Streams.
 - Writes verified prices to on-chain smart contracts.
 - Supports containerized deployment with Docker.
@@ -58,7 +60,7 @@ graph TD
     B -->|2.Retrieves Verified Reports at set interval or deviation| C[Streams Verifier Contract]
     B -->|3.Writes Prices on-chain to data feeds contract| D[ETH/USD]
     B -->|3.Writes Prices on-chain to data feeds contract| E[BTC/USD]
-    
+
     subgraph Blockchain
         C --> D
         C --> E
@@ -72,11 +74,13 @@ graph TD
 Before setting up the Broadcaster, ensure you have the required dependencies installed.
 
 ### Prerequisites
+
 - **Docker & Docker Compose**: [Install Docker](https://docs.docker.com/get-docker/)
 - **Node.js & npm**: [Install Node.js](https://nodejs.org/)
 - **Redis** (Optional for local development): [Install Redis](https://redis.io/docs/getting-started/)
 
 ### Installation Steps
+
 1. Clone the repository:
    ```sh
    git clone https://github.com/hackbg/chainlink-datastreams-broadcaster.git
@@ -96,6 +100,7 @@ Before setting up the Broadcaster, ensure you have the required dependencies ins
    docker compose up -d
    ```
 6. Access the frontend of the application at http://localhost:3000
+
 ---
 
 ## Environment Variables
@@ -103,13 +108,13 @@ Before setting up the Broadcaster, ensure you have the required dependencies ins
 To make setting environment variables easier there is a `.env.example` file in the root folder of this project. You can copy it to a new `.env` file and replace the values with your own.
 
 | Name                        | Description                                                                                                                                   |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | `REDIS_PASSWORD`            | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis password.                    |
 | `PRIVATE_KEY`               | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. |
 | `DATASTREAMS_HOSTNAME`      | Chainlink Data Streams Hostname.                                                                                                              |
 | `DATASTREAMS_WS_HOSTNAME`   | WebSocket Hostname for Data Streams.                                                                                                          |
 | `DATASTREAMS_CLIENT_ID`     | Client ID for authentication.                                                                                                                 |
-| `DATASTREAMS_CLIENT_SECRET` | Client Secret for authentication.                                                                                                             |  |
+| `DATASTREAMS_CLIENT_SECRET` | Client Secret for authentication.                                                                                                             |     |
 
 > [!NOTE]
 > All other user configurations are stored locally using Redis, eliminating the need for separate configuration files. This ensures fast access and persistence across sessions without manual file handling. Only sensitive configurations, such as API keys and database credentials, are managed separately in the `.env` file. The application automatically loads and updates configurations in Redis as needed. Users do not need to manually edit or maintain configuration files, simplifying setup and deployment.
@@ -123,6 +128,7 @@ Although configurations are stored in Redis, an example YAML configuration is pr
 Using a YAML file for configuration also makes it possible to replicate a specific setup by copying the file across different instances of the Broadcaster. This ensures that deployments remain consistent and eliminates the need for repeated manual configuration when scaling the service.
 
 ### YAML Configuration
+
 ```yaml
 # List of Chainlink Data feeds that the broadcaster will subscribe to
 feeds:
@@ -145,17 +151,15 @@ interval: '* * * * * *'
 priceDelta: '10000000000000000'
 # Additional EVM chains can be added in this configuration.
 chains:
-  # Each additional chain should be added to the configuration as a json with the following structure.
+  # Each additional chain should be added to the configuration with the following mandatory properties: id, name, currencyName, currencySymbol, currencyDecimals, rpc.
   # Optional: Set the `testnet` property to 'true' if this is a test network.
   # Removing this property makes the broadcaster consider the network a mainnet.
-  - {
-      'id': 84532,
-      'name': 'Base Sepolia Custom',
-      'nativeCurrency':
-        { 'decimals': 18, 'name': 'Sepolia Ether', 'symbol': 'ETH' },
-      'rpcUrls': { 'default': { 'http': ['https://sepolia.base.org'] } },
-      'testnet': '',
-  }
+  - id: 995
+    name: '🔥 5ireChain'
+    currencyName: '5ire Token'
+    currencySymbol: '5IRE'
+    currencyDecimals: 18
+    rpc: 'https://rpc.5ire.network'
 # List the Data Streams verifier contract address for each custom chain
 verifierAddresses:
   - chainId: 84532
@@ -176,11 +180,11 @@ targetContracts:
       - 'price'
       - 'bid'
       - 'ask'
-    abi:
-      [...]
+    abi: [...]
 ```
 
 ### Example YAML Configuration
+
 ```yaml
 feeds:
   - name: 'AVAX/USD'
@@ -192,22 +196,19 @@ gasCap: '150000'
 interval: '*/30 * * * * *'
 priceDelta: '10000000000000000'
 chains:
-  - {
-      'id': 995,
-      'name': '🔥 5ireChain',
-      'nativeCurrency':
-        { 'decimals': 18, 'name': '5ire Token', 'symbol': '5IRE' },
-      'rpcUrls': { 'default': { 'http': ['https://rpc.5ire.network'] } },
-      'testnet': '',
-    }
-  - {
-      'id': 84532,
-      'name': 'Base Sepolia Custom',
-      'nativeCurrency':
-        { 'decimals': 18, 'name': 'Sepolia Ether', 'symbol': 'ETH' },
-      'rpcUrls': { 'default': { 'http': ['https://sepolia.base.org'] } },
-      'testnet': 'true',
-    }
+  - id: 995
+    name: '🔥 5ireChain'
+    currencyName: '5ire Token'
+    currencySymbol: '5IRE'
+    currencyDecimals: 18
+    rpc: 'https://rpc.5ire.network'
+  - id: 84532
+    name: 'Base Sepolia Custom'
+    currencyName: 'Sepoloa Ether'
+    currencySymbol: 'ETH'
+    currencyDecimals: 18
+    rpc: 'https://sepolia.base.org'
+    testnet: true
 verifierAddresses:
   - chainId: 995
     address: '0x...'
@@ -275,19 +276,21 @@ targetContracts:
 ```
 
 ### Key Configuration Parameters
+
 - `feeds` - List of price feeds with unique `feedId`s.
 - `chainId`: Target blockchain network ID.
 - `gasCap`: Maximum gas limit for transactions.
 - `interval`: Cron expression defining data update frequency.
 - `priceDelta`: Minimum price deviation before an update is triggered.
 - `chains`: List of supported blockchain networks with RPC URLs.
-- `verifierAddresses`: The Data Streams verifier contracts for any custom chains added to the config. 
+- `verifierAddresses`: The Data Streams verifier contracts for any custom chains added to the config.
 - `targetContracts`: The smart contracts to interact with.
   - `functionName`: Name of the smart contract function to call.
   - `functionArgs`: List of required arguments for the contract function.
   - `abi`: Function definition used for contract interactions.
 
 To apply changes, restart the Broadcaster using:
+
 ```sh
 docker compose restart
 ```
@@ -301,6 +304,7 @@ The entire application is containerized and is designed to be run using the prov
 Before starting the application, ensure that all necessary environment variables are set in the `.env` file. Missing variables may cause services to fail or behave unexpectedly.
 
 ### Running with Docker Compose
+
 1. Ensure the `.env` file is present and you've added the necessary environment variables.
 2. Start the service:
    ```sh
@@ -312,6 +316,7 @@ Before starting the application, ensure that all necessary environment variables
    ```
 
 ### Production Deployment
+
 - Modify `docker-compose.yml` to set up persistent storage and environment variables.
 - If the service is going to be accessible externally consider running it behind a reverse proxy like Nginx.
 
@@ -322,6 +327,7 @@ Before starting the application, ensure that all necessary environment variables
 The Broadcaster provides a UI for managing feeds. It is automatically enabled if you start the broadcaster using the Docker compose file as mentioned in the instructions above.
 
 To start it manually outside of the docker setup:
+
 1. Start the UI service using:
    ```sh
    npm run dev
@@ -336,11 +342,13 @@ To start it manually outside of the docker setup:
 ## Logging
 
 The application supports different logging levels:
+
 - **INFO**: General system status.
 - **DEBUG**: Detailed debugging output.
 - **ERROR**: Critical failures.
 
 Logs can be accessed via:
+
 ```sh
 docker logs -f broadcaster
 ```
@@ -350,6 +358,7 @@ docker logs -f broadcaster
 ## Testing Commands
 
 After deployment, verify the setup with:
+
 - Verify logs:
   ```sh
   docker logs broadcaster
@@ -360,6 +369,7 @@ After deployment, verify the setup with:
 ## Troubleshooting
 
 ### Common Issues & Fixes
+
 - **Service not starting?**
   - Ensure `.env` file is correctly configured.
   - Run `docker compose logs` for errors.
@@ -414,12 +424,12 @@ Then run the app in production mode:
 npm start
 ```
 
-
 ## Styling
 
 This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever css framework you prefer. See the [Vite docs on css](https://vitejs.dev/guide/features.html#css) for more information.
 
 ## License
+
 This project is licensed under the GNU General Public License (GPL). This means you are free to use, modify, and distribute the software, provided that any derivative work is also licensed under the GPL.
 
 By contributing to this project, you agree that your contributions will be governed by the same license. For full details, see the LICENSE file.

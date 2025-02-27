@@ -1,5 +1,5 @@
 import { Report } from '@hackbg/chainlink-datastreams-consumer';
-import { Abi, Address, Chain, Hex } from 'viem';
+import { Abi, Address, Hex } from 'viem';
 
 export type StreamReport = Report & {
   validFromTimestamp: bigint;
@@ -39,7 +39,15 @@ export type Interval = { interval: string };
 
 export type Config = {
   chainId: number;
-  chains: Chain[];
+  chains: {
+    id: number | string;
+    name: string;
+    currencyName: string;
+    currencySymbol: string;
+    currencyDecimals: number | string;
+    rpc: string;
+    testnet: string | boolean;
+  }[];
   verifierAddresses: { chainId: number; address: Address }[];
   feeds: {
     name: string;

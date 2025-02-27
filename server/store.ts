@@ -108,7 +108,20 @@ const seedConfig = async (config: Config) => {
     );
 
     await Promise.all(
-      config.chains.map(async (chain) => {
+      config.chains.map(async (data) => {
+        const chain = {
+          id: Number(data.id),
+          name: data.name,
+          nativeCurrency: {
+            decimals: Number(data.currencyDecimals),
+            name: data.currencyName,
+            symbol: data.currencySymbol,
+          },
+          rpcUrls: {
+            default: { http: [data.rpc] },
+          },
+          testnet: data.testnet,
+        };
         if (!chain) {
           logger.warn('⚠ Invalid chain input', { chain });
           return;
