@@ -1,6 +1,7 @@
 import { Form, Link, useLoaderData, useRevalidator } from '@remix-run/react';
+import CronExpressionParser from 'cron-parser';
 import { Power, Play, Plus, Trash2Icon, Pencil, FilePen } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   getFeedName,
   getFeeds,
@@ -65,17 +66,28 @@ export default function Index() {
     useLoaderData<typeof loader>();
 
   const revalidator = useRevalidator();
+  const [nextThree, setNextThree] = useState<string[]>([]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (revalidator.state === 'idle') {
         revalidator.revalidate();
+        if (!interval) {
+          setNextThree([]);
+          return;
+        }
+        try {
+          const parsedInterval = CronExpressionParser.parse(interval);
+          setNextThree(parsedInterval.take(3).map((date) => date.toString()));
+        } catch (err) {
+          setNextThree([]);
+        }
       }
     }, 5000);
     return () => {
       clearInterval(intervalId);
     };
-  }, [revalidator]);
+  }, [interval, revalidator]);
 
   return (
     <>
@@ -227,6 +239,14 @@ export default function Index() {
             <p>
               Pattern: <strong>{interval}</strong>
             </p>
+            {nextThree.length > 0 && (
+              <div className="text-muted-foreground italic">
+                <p className="font-semibold">Next three execution dates:</p>
+                {nextThree.map((n, i) => (
+                  <p key={i}>{n}</p>
+                ))}
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <Link
