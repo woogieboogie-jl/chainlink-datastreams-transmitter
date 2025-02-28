@@ -117,7 +117,9 @@ To make setting environment variables easier there is a `.env.example` file in t
 | `DATASTREAMS_CLIENT_SECRET` | Client Secret for authentication.                                                                                                             |  |
 
 > [!NOTE]
-> All other user configurations are stored locally using Redis, eliminating the need for separate configuration files. This ensures fast access and persistence across sessions without manual file handling. Only sensitive configurations, such as API keys and database credentials, are managed separately in the `.env` file. The application automatically loads and updates configurations in Redis as needed. Users do not need to manually edit or maintain configuration files, simplifying setup and deployment.
+> All other user configurations are stored locally using Redis file eliminating the need for separate configuration files. This ensures fast access and persistence across sessions without manual file handling. Only sensitive configurations, such as API keys and database credentials, are managed separately in the `.env` file. The application automatically loads and updates configurations in Redis as needed. Users do not need to manually edit or maintain configuration files, simplifying setup and deployment.
+> 
+> Optional: The initial configurations can also be seeded by providing a `config.yml` file. See the `config-example.yml` and section below for more details.
 
 ---
 
