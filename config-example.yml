@@ -6,7 +6,7 @@ feeds:
 chainId: 43113
 gasCap: '150000'
 interval: '*/30 * * * * *'
-priceDelta: '10000000000000000'
+priceDeltaPercentage: 0.01
 chains:
   - id: 995
     name: '🔥 5ireChain'
