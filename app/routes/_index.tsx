@@ -277,17 +277,15 @@ export default function Index() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Price delta</CardTitle>
+            <CardTitle>Price delta percentage</CardTitle>
             <CardDescription>
-              Set the price deviation. Only changes that are equal to or greater
-              will be written on-chain.
+              Set the price deviation. Only changes that are with equal to or
+              greater percentage difference will be written on-chain.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p>
-              <strong>{`${formatEther(
-                BigInt(priceDelta ?? 0)
-              )} (${priceDelta})`}</strong>
+              <strong>{`${priceDelta ?? 0}%`}</strong>
             </p>
             <Form
               method="post"
@@ -297,7 +295,13 @@ export default function Index() {
             >
               <div>
                 <Label htmlFor="priceDelta">New price delta</Label>
-                <Input name="priceDelta" type="number" step="0.0001" min="0" />
+                <Input
+                  name="priceDelta"
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  placeholder="0.0001%"
+                />
               </div>
               <Button type="submit">Submit</Button>
             </Form>

@@ -62,5 +62,5 @@ export type Config = {
   }[];
   gasCap: string;
   interval: string;
-  priceDelta: string;
+  priceDeltaPercentage: number | string;
 };

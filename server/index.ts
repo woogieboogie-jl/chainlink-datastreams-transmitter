@@ -12,7 +12,7 @@ import {
   verifyReport,
 } from 'server/services/client.js';
 import { ReportV3, StreamReport } from 'server/types.js';
-import { abs, formatUSD, isPositive } from 'server/utils.js';
+import { formatUSD, isPositive } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
 import {
   addFeed,
@@ -334,14 +334,25 @@ function createCronJob(feedId: string, interval: string) {
       if (!latestBenchmarkPrice) return;
       const savedBenchmarkPrice = await getSavedReportBenchmarkPrice(feedId);
       const diff = latestBenchmarkPrice - BigInt(savedBenchmarkPrice ?? 0);
+      const percentDiff =
+        !savedBenchmarkPrice ||
+        isNaN(Number(savedBenchmarkPrice)) ||
+        Number(savedBenchmarkPrice) !== 0
+          ? 100
+          : Number(
+              ((latestBenchmarkPrice - BigInt(savedBenchmarkPrice)) *
+                1000000n) /
+                BigInt(savedBenchmarkPrice)
+            ) / 10000;
       const priceDelta = await getPriceDelta();
-      if (abs(diff) < BigInt(priceDelta ?? 0)) return;
+      console.log(priceDelta);
+      // if (Math.abs(percentDiff) < Number(priceDelta ?? 0)) return;
       logger.info(
         `🚨 Price deviation detected | ${await getFeedName(
           report.feedId
         )}: ${formatUSD(latestBenchmarkPrice)}$ | ${
           isPositive(diff) ? '📈' : '📉'
-        } ${isPositive(diff) ? '+' : ''}${formatUSD(diff)}$`,
+        } ${isPositive(diff) ? '+' : ''}${percentDiff}% (${formatUSD(diff)}$)`,
         report
       );
 

@@ -152,9 +152,9 @@ gasCap: '150000'
 # It is represented as a cron expression with granularity in seconds.
 # Tip: You can build and verify your cron expression easily using helpers such as https://crontab.guru
 interval: '* * * * * *'
-# The price deviation. Only changes that are equal to or greater
-# compared to the configured value will be written on-chain.
-priceDelta: '10000000000000000'
+# The price deviation. Only changes that are with
+# equal to or greater percentage difference will be written on-chain.
+priceDeltaPercentage: 0.01
 # Additional EVM chains can be added in this configuration.
 chains:
   # Each additional chain should be added to the configuration with the following mandatory properties: id, name, currencyName, currencySymbol, currencyDecimals, rpc.
@@ -200,7 +200,7 @@ feeds:
 chainId: 43113
 gasCap: '150000'
 interval: '*/30 * * * * *'
-priceDelta: '10000000000000000'
+priceDeltaPercentage: 0.01
 chains:
   - id: 995
     name: '🔥 5ireChain'
@@ -287,7 +287,7 @@ targetContracts:
 - `chainId`: Target blockchain network ID.
 - `gasCap`: Maximum gas limit for transactions.
 - `interval`: Cron expression defining data update frequency.
-- `priceDelta`: Minimum price deviation before an update is triggered.
+- `priceDeltaPercentage`: Minimum price deviation percent before an update is triggered.
 - `chains`: List of supported blockchain networks with RPC URLs.
 - `verifierAddresses`: The Data Streams verifier contracts for any custom chains added to the config.
 - `targetContracts`: The smart contracts to interact with.
