@@ -355,6 +355,8 @@ Logs can be accessed via:
 docker logs -f broadcaster
 ```
 
+The application stores logs in the `logs` directory to maintain an audit trail of user actions and configuration changes. They can also be used for troubleshooting..
+
 ---
 
 ## Testing Commands
