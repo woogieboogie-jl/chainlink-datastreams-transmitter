@@ -90,7 +90,7 @@ Before setting up the Broadcaster, ensure you have the required dependencies ins
    ```sh
    cp .env.example .env
    ```
-3. Update the `.env` file with your configuration details (explained below).
+3. Update the `.env` file with your credential details (explained below) and optionally provide a `config.yml` file following the examples below.
 4. Install dependencies:
    ```sh
    npm install
