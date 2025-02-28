@@ -51,7 +51,7 @@ export async function loader() {
           savedPrice: await getSavedReportBenchmarkPrice(feedId),
           latestReport: await fetchLatestPrice(feedId),
           status: await fetchStatus(feedId),
-        }))
+        })),
       );
     })(),
     getInterval(),
@@ -139,7 +139,7 @@ export default function Index() {
                       to={`/contract/${feed.feedId}`}
                       className={cn(
                         buttonVariants({ variant: 'ghost', size: 'icon' }),
-                        'hover:text-primary hover:ring-1 hover:ring-primary'
+                        'hover:text-primary hover:ring-1 hover:ring-primary',
                       )}
                     >
                       <FilePen className="size-6" />
@@ -279,8 +279,11 @@ export default function Index() {
           <CardHeader>
             <CardTitle>Price delta percentage</CardTitle>
             <CardDescription>
-              Set the price deviation. Only changes that are with equal to or
-              greater percentage difference will be written on-chain.
+              Set the price deviation threshold. Only changes that meet or
+              exceed the specified percentage difference will be recorded
+              on-chain. This applies in both directions. For example, if you set
+              the threshold to 5%, only changes equal to or more than +5% or -5%
+              will be considered valid deviations.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -320,7 +323,7 @@ export default function Index() {
           <CardContent>
             <p>
               <strong>{`${formatEther(
-                BigInt(gasCap ?? 0)
+                BigInt(gasCap ?? 0),
               )} ETH (${gasCap} WEI)`}</strong>
             </p>
             <Form

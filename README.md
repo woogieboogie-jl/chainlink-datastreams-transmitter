@@ -152,8 +152,10 @@ gasCap: '150000'
 # It is represented as a cron expression with granularity in seconds.
 # Tip: You can build and verify your cron expression easily using helpers such as https://crontab.guru
 interval: '* * * * * *'
-# The price deviation. Only changes that are with
-# equal to or greater percentage difference will be written on-chain.
+# The price deviation threshold.
+# Only changes that meet or exceed the specified percentage difference will be recorded on-chain.
+# This applies in both directions. For example, if you set the threshold to 5%,
+# only changes equal to or more than +5% or -5% will be considered valid deviations.
 priceDeltaPercentage: 0.01
 # Additional EVM chains can be added in this configuration.
 chains:
