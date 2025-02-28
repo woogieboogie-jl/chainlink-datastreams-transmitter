@@ -393,7 +393,7 @@ For development, you can either use the provided docker-compose setup or run ser
 docker compose up -d --build
 ```
 
-> ![NOTE]
+> [!NOTE]
 > Using the `--build` flag in the above command ensures the changes you've made to the project are present in the newly built docker image.
 
 If you prefer running the application locally, ensure that Redis is installed and running. Then, install dependencies and start the application:
