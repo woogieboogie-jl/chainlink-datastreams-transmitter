@@ -91,6 +91,10 @@ Before setting up the Broadcaster, ensure you have the required dependencies ins
    cp .env.example .env
    ```
 3. Update the `.env` file with your credential details (explained below) and optionally provide a `config.yml` file following the examples below.
+
+> [!TIP]
+> To ensure you won't miss any of the needed variables to be set - you can copy the provided `.env.example` and `config-example.yml` to `.env` and `config.yml` respectively and only fill in the details.
+
 4. Install dependencies:
    ```sh
    npm install
