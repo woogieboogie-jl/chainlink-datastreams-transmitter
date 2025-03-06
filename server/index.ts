@@ -345,8 +345,7 @@ function createCronJob(feedId: string, interval: string) {
                 BigInt(savedBenchmarkPrice)
             ) / 10000;
       const priceDelta = await getPriceDelta();
-      console.log(priceDelta);
-      // if (Math.abs(percentDiff) < Number(priceDelta ?? 0)) return;
+      if (Math.abs(percentDiff) < Number(priceDelta ?? 0)) return;
       logger.info(
         `🚨 Price deviation detected | ${await getFeedName(
           report.feedId

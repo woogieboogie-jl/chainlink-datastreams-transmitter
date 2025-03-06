@@ -40,7 +40,7 @@ const removeFeed = async (feedId: string) => {
 const getFeedExists = async (feedId: string) =>
   await isSetMember('feeds', feedId);
 const getPriceDelta = async () => await getValue('priceDelta');
-const setPriceDelta = async (priceDelta: string) =>
+const setPriceDelta = async (priceDelta: string | number) =>
   await setValue('priceDelta', priceDelta);
 const getChainId = async () => await getValue('chainId');
 const setChainId = async (chainId: number | string) =>
@@ -272,11 +272,17 @@ const seedConfig = async (config: Config) => {
       }
     }
 
-    if (config.priceDelta && !isNaN(Number(config.priceDelta))) {
-      await setPriceDelta(config.priceDelta);
-      logger.info(`📢 Price delta has been set ${config.priceDelta}`, {
-        priceDelta: config.priceDelta,
-      });
+    if (
+      config.priceDeltaPercentage &&
+      !isNaN(Number(config.priceDeltaPercentage))
+    ) {
+      await setPriceDelta(config.priceDeltaPercentage);
+      logger.info(
+        `📢 Price delta has been set ${config.priceDeltaPercentage}`,
+        {
+          priceDelta: config.priceDeltaPercentage,
+        }
+      );
     }
 
     await setSeed();
