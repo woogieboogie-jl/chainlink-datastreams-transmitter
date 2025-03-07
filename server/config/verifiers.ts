@@ -80,3 +80,13 @@ export async function getVerifier(chainId: string) {
   }
   return verifier;
 }
+
+export const defaultSolanaVerifiers: Record<
+  string,
+  { verifierProgramID: string; accessControllerAccount: string }
+> = {
+  ['devnet']: {
+    verifierProgramID: 'Gt9S41PtjR58CbG9JhJ3J6vxesqrNAswbWYbLNTMZA3c',
+    accessControllerAccount: '7mSn5MoBjyRLKoJShgkep8J17ueGG8rYioVAiSg5YWMF',
+  },
+};

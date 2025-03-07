@@ -48,18 +48,31 @@ const setChainId = async (chainId: number | string) =>
   await setValue('chainId', chainId);
 const getGasCap = async () => await getValue('gasCap');
 const setGasCap = async (gasCap: string) => await setValue('gasCap', gasCap);
-const getChains = async () => await getSet('chains');
-const getChain = async (chainId: string) => await getValue(`chain:${chainId}`);
-const addChain = async (chainId: string, chain: string) => {
-  await setValue(`chain:${chainId}`, chain);
-  await addToSet('chains', chainId);
+const getEVMChains = async () => await getSet('chains-evm');
+const getEVMChain = async (chainId: string) =>
+  await getValue(`chian-evm:${chainId}`);
+const addEVMChain = async (chainId: string, chain: string) => {
+  await setValue(`chian-evm:${chainId}`, chain);
+  await addToSet('chains-evm', chainId);
 };
-const removeChain = async (chainId: string) => {
-  await deleteValue(`chain:${chainId}`);
-  await removeFromSet('chains', chainId);
+const removeEVMChain = async (chainId: string) => {
+  await deleteValue(`chian-evm:${chainId}`);
+  await removeFromSet('chains-evm', chainId);
 };
-const getVerifierAddresses = async () => await getSet('verifiers');
-const getVerifierAddress = async (chainId: string) =>
+const getSolanaChains = async () => await getSet('chains-solana');
+const getSolanaChain = async (cluster: string) =>
+  await getValue(`chian-solana:${cluster}`);
+const addSolanaChain = async (cluster: string, chain: string) => {
+  await setValue(`chian-solana:${cluster}`, chain);
+  await addToSet('chains-solana', cluster);
+};
+const removeSolanaChain = async (cluster: string) => {
+  await deleteValue(`chian-solana:${cluster}`);
+  await removeFromSet('chains-solana', cluster);
+};
+
+const getVeriifierAddresses = async () => await getSet('verifiers');
+const getVeriifierAddress = async (chainId: string) =>
   await getValue(`verifier:${chainId}`);
 const addVerifierAddress = async (
   chainId: number | string,
@@ -107,6 +120,8 @@ const setSkipVerify = async (
   chainId: string,
   skipVerify: string
 ) => await setValue(`skipVerify:${feedId}:${chainId}`, skipVerify);
+const getVm = async () => await getValue('vm');
+const setVm = async (vm: 'evm' | 'svm') => setValue('vm', vm);
 
 const seedConfig = async (config: Config) => {
   try {
@@ -125,8 +140,16 @@ const seedConfig = async (config: Config) => {
       { feeds: config.feeds }
     );
 
+    if (!config.vm || (config.vm !== 'evm' && config.vm !== 'svm')) {
+      await setVm('evm');
+      logger.info(`📢 No valid VM setting provided, setting to EVM`);
+    } else {
+      await setVm(config.vm);
+      logger.info(`📢 VM set to ${config.vm.toUpperCase()}`);
+    }
+
     await Promise.all(
-      config.chains.map(async (data) => {
+      config.chainsEVM.map(async (data) => {
         const chain = {
           id: Number(data.id),
           name: data.name,
@@ -188,7 +211,7 @@ const seedConfig = async (config: Config) => {
           return;
         }
 
-        await addChain(chain.id.toString(), JSON.stringify(chain));
+        await addEVMChain(chain.id.toString(), JSON.stringify(chain));
         logger.info(`📢 New chain has been added`, { chain });
       })
     );
@@ -378,13 +401,15 @@ export {
   setSkipVerify,
   getGasCap,
   setGasCap,
-  getChains,
-  getChain,
-  addChain,
-  removeChain,
-  getVerifierAddresses,
-  getVerifierAddress,
+  getEVMChains as getChains,
+  getEVMChain as getChain,
+  addEVMChain as addChain,
+  removeEVMChain as removeChain,
+  getVeriifierAddresses,
+  getVeriifierAddress,
   addVerifierAddress,
   removeVerifierAddress,
   seedConfig,
+  getVm,
+  setVm,
 };

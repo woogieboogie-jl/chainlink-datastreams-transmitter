@@ -75,3 +75,11 @@ export const getAllChains = async () => {
   ];
   return chains;
 };
+
+export const solanaRpcs = [
+  {
+    cluster: 'devnet',
+    name: 'Solana Devnet',
+    rpcUrl: 'https://api.devnet.solana.com',
+  },
+];

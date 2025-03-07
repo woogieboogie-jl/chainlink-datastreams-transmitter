@@ -20,7 +20,7 @@ import {
   getTokenBalance,
   getCurrentChain,
   getLinkBalance,
-} from 'server/services/client';
+} from 'server/services/clientEvm';
 import {
   Card,
   CardContent,
