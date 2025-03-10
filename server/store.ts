@@ -46,28 +46,31 @@ const setPriceDelta = async (priceDelta: string | number) =>
 const getChainId = async () => await getValue('chainId');
 const setChainId = async (chainId: number | string) =>
   await setValue('chainId', chainId);
+const getCluster = async () => await getValue('cluster');
+const setCluster = async (cluster: string) =>
+  await setValue('cluster', cluster);
 const getGasCap = async () => await getValue('gasCap');
 const setGasCap = async (gasCap: string) => await setValue('gasCap', gasCap);
 const getEVMChains = async () => await getSet('chains-evm');
 const getEVMChain = async (chainId: string) =>
-  await getValue(`chian-evm:${chainId}`);
+  await getValue(`chain-evm:${chainId}`);
 const addEVMChain = async (chainId: string, chain: string) => {
-  await setValue(`chian-evm:${chainId}`, chain);
+  await setValue(`chain-evm:${chainId}`, chain);
   await addToSet('chains-evm', chainId);
 };
 const removeEVMChain = async (chainId: string) => {
-  await deleteValue(`chian-evm:${chainId}`);
+  await deleteValue(`chain-evm:${chainId}`);
   await removeFromSet('chains-evm', chainId);
 };
 const getSolanaChains = async () => await getSet('chains-solana');
 const getSolanaChain = async (cluster: string) =>
-  await getValue(`chian-solana:${cluster}`);
+  await getValue(`chain-solana:${cluster}`);
 const addSolanaChain = async (cluster: string, chain: string) => {
-  await setValue(`chian-solana:${cluster}`, chain);
+  await setValue(`chain-solana:${cluster}`, chain);
   await addToSet('chains-solana', cluster);
 };
 const removeSolanaChain = async (cluster: string) => {
-  await deleteValue(`chian-solana:${cluster}`);
+  await deleteValue(`chain-solana:${cluster}`);
   await removeFromSet('chains-solana', cluster);
 };
 
@@ -395,6 +398,8 @@ export {
   setPriceDelta,
   getChainId,
   setChainId,
+  getCluster,
+  setCluster,
   getContractAddress,
   setContractAddress,
   getSkipVerify,
@@ -405,6 +410,10 @@ export {
   getEVMChain as getChain,
   addEVMChain as addChain,
   removeEVMChain as removeChain,
+  getSolanaChains,
+  getSolanaChain,
+  addSolanaChain,
+  removeSolanaChain,
   getVeriifierAddresses,
   getVeriifierAddress,
   addVerifierAddress,
