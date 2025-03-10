@@ -2,7 +2,6 @@ import { buttonVariants } from '~/components/ui/button';
 import { Link } from '@remix-run/react';
 import { SquareTerminal } from 'lucide-react';
 import { ChainInfo } from './chain-info';
-import { Address } from 'viem';
 
 export function Navigation({
   address,
@@ -10,8 +9,8 @@ export function Navigation({
   balance,
   linkBalance,
 }: {
-  address: Address;
-  chain?: { chainId?: number; name?: string };
+  address: string;
+  chain?: { chainId?: string; name?: string };
   balance?: { value: string; symbol?: string };
   linkBalance?: { value: string; symbol?: string };
 }) {

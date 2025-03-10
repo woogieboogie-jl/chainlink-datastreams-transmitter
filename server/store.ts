@@ -123,7 +123,13 @@ const setSkipVerify = async (
   chainId: string,
   skipVerify: string
 ) => await setValue(`skipVerify:${feedId}:${chainId}`, skipVerify);
-const getVm = async () => await getValue('vm');
+const getVm = async () => {
+  const vm = await getValue('vm');
+  if (vm === 'svm') {
+    return vm;
+  }
+  return 'evm';
+};
 const setVm = async (vm: 'evm' | 'svm') => setValue('vm', vm);
 
 const seedConfig = async (config: Config) => {

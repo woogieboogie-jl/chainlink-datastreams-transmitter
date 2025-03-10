@@ -67,7 +67,7 @@ export const getCustomChains = async () => {
     .filter((chain) => chain !== null);
 };
 
-export const getAllChains = async () => {
+export const getAllEVMChains = async () => {
   const customChains = await getCustomChains();
   const chains: readonly [Chain, ...Chain[]] = [
     ...defaultChains,
@@ -81,6 +81,7 @@ const solanaChains = [
     cluster: 'devnet',
     name: 'Solana Devnet',
     rpcUrl: 'https://api.devnet.solana.com',
+    testnet: true,
   },
 ];
 
@@ -98,6 +99,7 @@ const getCustomSolanaChains = async () => {
           cluster: string;
           name: string;
           rpcUrl: string;
+          testnet?: boolean;
         };
       } catch (error) {
         logger.error('ERROR', error);
@@ -110,4 +112,28 @@ const getCustomSolanaChains = async () => {
 export const getAllSolanaChains = async () => {
   const customChains = await getCustomSolanaChains();
   return [...solanaChains, ...customChains];
+};
+
+export const getAllChains = async () => {
+  const evmChains = await getAllEVMChains();
+  const solanaChains = await getAllSolanaChains();
+  return [
+    ...evmChains.map((c) => ({
+      id: c.id.toString(),
+      name: c.name,
+      testnet: c.testnet,
+      vm: 'evm',
+    })),
+    ...solanaChains.map((c) => ({
+      id: c.cluster,
+      name: c.name,
+      testnet: c.testnet,
+      vm: 'svm',
+    })),
+  ] as {
+    id: string;
+    name: string;
+    testnet?: boolean;
+    vm: 'evm' | 'svm';
+  }[];
 };

@@ -21,6 +21,8 @@ const getPublicKey = () => {
   if (keypair) return keypair.publicKey;
 };
 
+export const accountAddress = getPublicKey()?.toBase58();
+
 async function getConnection() {
   const cluster = await getCluster();
   if (!cluster) {
@@ -51,14 +53,30 @@ export async function getBalance() {
     }
     const balance = await connection.getBalance(publicKey);
     return {
-      value: balance / LAMPORTS_PER_SOL,
+      value: `${balance / LAMPORTS_PER_SOL}`,
       symbol: 'SOL',
     };
   } catch (error) {
     logger.error('ERROR', { error });
     return {
-      value: 0,
+      value: '0',
       symbol: '',
     };
   }
+}
+
+export async function getCurrentChain() {
+  const cluster = await getCluster();
+  if (!cluster) {
+    logger.warn('⚠️ No cluster provided');
+    return;
+  }
+  const chains = await getAllSolanaChains();
+  const chain = chains.find((chain) => chain.cluster === cluster);
+  if (!chain || !chain.rpcUrl) {
+    logger.warn('⚠️ Invalid chain', { cluster });
+    setCluster('');
+    return;
+  }
+  return { chainId: chain.cluster, name: chain.name };
 }

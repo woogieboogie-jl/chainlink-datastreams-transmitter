@@ -91,3 +91,4 @@ targetChains:
               'type': 'function',
             },
           ]
+cluster: 'devnet'

@@ -10,7 +10,7 @@ import {
 } from '@remix-run/react';
 import { Plus, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
-import { getAllChains } from 'server/config/chains';
+import { getAllEVMChains } from 'server/config/chains';
 import { defaultVerifiers, getCustomVerifiers } from 'server/config/verifiers';
 import { Button, buttonVariants } from '~/components/ui/button';
 import {
@@ -74,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export async function loader() {
   const [chains, customVerifiers] = await Promise.all([
-    getAllChains(),
+    getAllEVMChains(),
     getCustomVerifiers(),
   ]);
   return {

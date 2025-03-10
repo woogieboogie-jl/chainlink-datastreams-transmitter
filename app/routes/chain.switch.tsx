@@ -22,18 +22,22 @@ import {
 } from '~/components/ui/card';
 import { Plus } from 'lucide-react';
 import { getAllChains } from 'server/config/chains';
-import { getChainId, setChainId } from 'server/store';
+import { setChainId, setCluster, setVm } from 'server/store';
 import { logger } from 'server/services/logger';
+import { getCurrentChainId } from 'server/services/client';
 
 export async function loader() {
-  const [chainId, chains] = await Promise.all([getChainId(), getAllChains()]);
+  const [chainId, chains] = await Promise.all([
+    getCurrentChainId(),
+    getAllChains(),
+  ]);
   return { chainId, chains };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const data = Object.fromEntries(formData) as { chainId: string };
-  const chainId = Number(data.chainId);
+  const chainId = data.chainId;
   if (!chainId) {
     logger.warn('⚠ Chain id invalid input', { data });
     return null;
@@ -46,8 +50,18 @@ export async function action({ request }: ActionFunctionArgs) {
     return null;
   }
 
-  setChainId(chainId);
-  logger.info(`📢 Chain switched to ${chain.name}`, { chain });
+  await setVm(chain.vm);
+
+  if (chain.vm === 'svm') {
+    await setCluster(chainId);
+  } else {
+    setChainId(chainId);
+  }
+
+  logger.info(
+    `📢 Chain switched to ${chain.name} on ${chain.vm.toUpperCase()}`,
+    { chain }
+  );
   return null;
 }
 
@@ -63,7 +77,7 @@ export default function SwitchChain() {
       <CardHeader>
         <CardTitle>Switch chain</CardTitle>
         <CardDescription>{`${
-          chains.find((chain) => chain.id === Number(chainId))?.name
+          chains.find((chain) => chain.id === chainId)?.name
         } (${chainId})`}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -72,10 +86,7 @@ export default function SwitchChain() {
             <SelectTrigger className="w-[180px]">
               <SelectValue asChild placeholder="Select Chain">
                 <div>
-                  {
-                    chains.find((chain) => chain.id === Number(chainInput))
-                      ?.name
-                  }
+                  {chains.find((chain) => chain.id === chainInput)?.name}
                 </div>
               </SelectValue>
             </SelectTrigger>

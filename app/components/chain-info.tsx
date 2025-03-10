@@ -1,4 +1,3 @@
-import { Address } from 'viem';
 import { Root as VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import {
   Dialog,
@@ -18,8 +17,8 @@ export function ChainInfo({
   balance,
   linkBalance,
 }: {
-  address: Address;
-  chain?: { chainId?: number; name?: string };
+  address: string;
+  chain?: { chainId?: string; name?: string };
   balance?: { value: string; symbol?: string };
   linkBalance?: { value: string; symbol?: string };
 }) {

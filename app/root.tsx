@@ -16,11 +16,11 @@ import './tailwind.css';
 import { Navigation } from './components/navigation';
 import { Footer } from './components/footer';
 import {
-  accountAddress,
   getTokenBalance,
   getCurrentChain,
+  getAddress,
   getLinkBalance,
-} from 'server/services/clientEvm';
+} from 'server/services/client';
 import {
   Card,
   CardContent,
@@ -53,7 +53,7 @@ export const links: LinksFunction = () => [
 ];
 
 export default function App() {
-  const { address, chain, balance, linkBalance } =
+  const { chain, balance, linkBalance, address } =
     useLoaderData<typeof loader>();
 
   return (
@@ -83,12 +83,13 @@ export default function App() {
 }
 
 export async function loader() {
-  const [chain, balance, linkBalance] = await Promise.all([
+  const [chain, balance, linkBalance, address] = await Promise.all([
     getCurrentChain(),
     getTokenBalance(),
     getLinkBalance(),
+    getAddress(),
   ]);
-  return { chain, balance, linkBalance, address: accountAddress };
+  return { chain, balance, linkBalance, address };
 }
 
 export function ErrorBoundary() {
