@@ -1,6 +1,6 @@
 import { printError } from '../utils';
 import { logger } from '../services/logger';
-import { getChain, getChains } from '../store';
+import { getChain, getChains, getSolanaChain, getSolanaChains } from '../store';
 import { defineChain } from 'viem';
 import {
   arbitrum,
@@ -76,10 +76,38 @@ export const getAllChains = async () => {
   return chains;
 };
 
-export const solanaRpcs = [
+const solanaChains = [
   {
     cluster: 'devnet',
     name: 'Solana Devnet',
     rpcUrl: 'https://api.devnet.solana.com',
   },
 ];
+
+const getCustomSolanaChains = async () => {
+  const chainsList = await getSolanaChains();
+  return (
+    await Promise.all(
+      chainsList.map(async (cluster) => await getSolanaChain(cluster))
+    )
+  )
+    .filter((cluster) => cluster !== null)
+    .map((chain) => {
+      try {
+        return JSON.parse(chain) as {
+          cluster: string;
+          name: string;
+          rpcUrl: string;
+        };
+      } catch (error) {
+        logger.error('ERROR', error);
+        return null;
+      }
+    })
+    .filter((chain) => chain !== null);
+};
+
+export const getAllSolanaChains = async () => {
+  const customChains = await getCustomSolanaChains();
+  return [...solanaChains, ...customChains];
+};
