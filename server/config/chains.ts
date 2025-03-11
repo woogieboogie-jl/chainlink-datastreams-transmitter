@@ -1,6 +1,11 @@
 import { printError } from '../utils';
 import { logger } from '../services/logger';
-import { getChain, getChains, getSolanaChain, getSolanaChains } from '../store';
+import {
+  getEVMChain,
+  getEVMChains,
+  getSolanaChain,
+  getSolanaChains,
+} from '../store';
 import { defineChain } from 'viem';
 import {
   arbitrum,
@@ -47,11 +52,11 @@ export const defaultChains: readonly [Chain, ...Chain[]] = [
   worldchainSepolia,
 ];
 
-export const getCustomChains = async () => {
-  const chainsList = await getChains();
+export const getCustomEVMChains = async () => {
+  const chainsList = await getEVMChains();
   return (
     await Promise.all(
-      chainsList.map(async (chainId) => await getChain(chainId))
+      chainsList.map(async (chainId) => await getEVMChain(chainId))
     )
   )
     .filter((chain) => chain !== null)
@@ -68,7 +73,7 @@ export const getCustomChains = async () => {
 };
 
 export const getAllEVMChains = async () => {
-  const customChains = await getCustomChains();
+  const customChains = await getCustomEVMChains();
   const chains: readonly [Chain, ...Chain[]] = [
     ...defaultChains,
     ...customChains,

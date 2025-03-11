@@ -7,10 +7,7 @@ import { CronJob, CronTime } from 'cron';
 import type ChainlinkDataStreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
 import { CronExpressionParser } from 'cron-parser';
 import { logger } from 'server/services/logger.js';
-import {
-  executeContract as executeWriteContract,
-  verifyReport,
-} from 'server/services/clientEvm.js';
+import { executeContract as executeWriteContract } from 'server/services/clientEvm.js';
 import { ReportV3, StreamReport } from 'server/types.js';
 import { formatUSD, isPositive, printError } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
@@ -39,6 +36,7 @@ import { createDatastream } from './services/datastreams.js';
 import { getReportPrice } from '~/lib/utils.js';
 import { config } from './config/config.js';
 import { isHex } from 'viem';
+import { verifyReport } from './services/client.js';
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'

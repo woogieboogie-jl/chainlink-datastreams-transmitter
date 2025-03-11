@@ -15,3 +15,8 @@ function bigIntReplacer(key: string, value: unknown) {
   }
   return value;
 }
+
+export function base64ToHex(base64: string): string {
+  const binary = Buffer.from(base64, 'base64');
+  return binary.toString('hex');
+}

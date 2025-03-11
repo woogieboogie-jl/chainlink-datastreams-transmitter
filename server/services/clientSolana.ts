@@ -1,8 +1,22 @@
-import { Connection, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+} from '@solana/web3.js';
+import * as anchor from '@coral-xyz/anchor';
+import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
 import bs58 from 'bs58';
+import * as snappy from 'snappy';
 import { logger } from './logger';
 import { getCluster, setCluster } from 'server/store';
 import { getAllSolanaChains } from 'server/config/chains';
+import { ReportV3, ReportV4, StreamReport } from 'server/types';
+import idl from 'server/config/idl.json';
+import { Verifier } from 'server/config/idlType';
+import { decodeAbiParameters } from 'viem';
+import { getSolanaVerifier } from 'server/config/verifiers';
+import { base64ToHex } from 'server/utils';
 
 const getKeyPair = () => {
   try {
@@ -79,4 +93,203 @@ export async function getCurrentChain() {
     return;
   }
   return { chainId: chain.cluster, name: chain.name };
+}
+
+export async function getVerifierProgram() {
+  const cluster = await getCluster();
+  if (!cluster) {
+    logger.warn('⚠️ No cluster provided');
+    return;
+  }
+  const verifier = getSolanaVerifier(cluster);
+  if (
+    !verifier ||
+    !verifier.verifierProgramID ||
+    !verifier.accessControllerAccount
+  ) {
+    logger.warn('⚠️ Invalid verifier', { cluster });
+    return;
+  }
+  const { verifierProgramID, accessControllerAccount } = verifier;
+  return {
+    verifierProgramID,
+    accessControllerAccount,
+  };
+}
+
+export async function verifyReport(report: StreamReport) {
+  try {
+    const keypair = getKeyPair();
+    if (!keypair) {
+      logger.error('‼️ Account is missing');
+      return;
+    }
+    const wallet = new Wallet(keypair);
+    const connection = await getConnection();
+
+    if (!connection) {
+      logger.warn('⚠️ Invalid connection');
+      return;
+    }
+
+    const provider = new AnchorProvider(connection, wallet, {
+      commitment: 'confirmed',
+    });
+    anchor.setProvider(provider);
+    const program = new Program(idl as Verifier, provider);
+
+    const [, reportData] = decodeAbiParameters(
+      [
+        { type: 'bytes32[3]', name: '' },
+        { type: 'bytes', name: 'reportData' },
+      ],
+      report.rawReport
+    );
+
+    const reportVersion = reportData.charAt(5);
+    if (reportVersion !== '3' && reportVersion !== '4') {
+      logger.warn('⚠️ Invalid report version', { report });
+      return;
+    }
+
+    const cleanHexString = report.rawReport.startsWith('0x')
+      ? report.rawReport.slice(2)
+      : report.rawReport;
+
+    if (!/^[0-9a-fA-F]+$/.test(cleanHexString)) {
+      logger.warn('⚠️ Invalid hex string format', { report });
+      return;
+    }
+
+    const signedReport = new Uint8Array(
+      cleanHexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
+    );
+
+    const compressedReport = await snappy.compress(Buffer.from(signedReport));
+
+    const verifier = await getVerifierProgram();
+
+    if (
+      !verifier ||
+      !verifier.verifierProgramID ||
+      !verifier.accessControllerAccount
+    ) {
+      logger.warn('⚠️ Invalid verifier program', { verifier });
+      return;
+    }
+    const { verifierProgramID, accessControllerAccount } = verifier;
+
+    const verifierAccount = PublicKey.findProgramAddressSync(
+      [Buffer.from('verifier')],
+      new PublicKey(verifierProgramID)
+    );
+    const configAccount = PublicKey.findProgramAddressSync(
+      [signedReport.slice(0, 32)],
+      new PublicKey(verifierProgramID)
+    );
+    const tx = await program.methods
+      .verify(compressedReport)
+      .accounts({
+        verifierAccount: verifierAccount[0],
+        accessController: new PublicKey(accessControllerAccount),
+        configAccount: configAccount[0],
+      })
+      .rpc({ commitment: 'confirmed' });
+
+    const txDetails = await provider.connection.getTransaction(tx, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0,
+    });
+
+    if (
+      !txDetails?.meta?.logMessages ||
+      txDetails?.meta?.logMessages.length === 0
+    ) {
+      logger.warn('⚠️ No log messages found in transaction details', {
+        txDetails,
+      });
+      return;
+    }
+
+    for (const log of txDetails.meta.logMessages) {
+      if (log.includes('Program return') || log.includes('Program consumed')) {
+        const verifiedReportData = log.split(' ')[3];
+        if (reportVersion === '3') {
+          const [
+            feedId,
+            validFromTimestamp,
+            observationsTimestamp,
+            nativeFee,
+            linkFee,
+            expiresAt,
+            price,
+            bid,
+            ask,
+          ] = decodeAbiParameters(
+            [
+              { type: 'bytes32', name: 'feedId' },
+              { type: 'uint32', name: 'validFromTimestamp' },
+              { type: 'uint32', name: 'observationsTimestamp' },
+              { type: 'uint192', name: 'nativeFee' },
+              { type: 'uint192', name: 'linkFee' },
+              { type: 'uint32', name: 'expiresAt' },
+              { type: 'int192', name: 'price' },
+              { type: 'int192', name: 'bid' },
+              { type: 'int192', name: 'ask' },
+            ],
+            `0x${base64ToHex(verifiedReportData)}`
+          );
+          const verifiedReport: ReportV3 = {
+            feedId,
+            validFromTimestamp,
+            observationsTimestamp,
+            nativeFee,
+            linkFee,
+            expiresAt,
+            price,
+            bid,
+            ask,
+          };
+          return verifiedReport;
+        }
+        if (reportVersion === '4') {
+          const [
+            feedId,
+            validFromTimestamp,
+            observationsTimestamp,
+            nativeFee,
+            linkFee,
+            expiresAt,
+            price,
+            marketStatus,
+          ] = decodeAbiParameters(
+            [
+              { type: 'bytes32', name: 'feedId' },
+              { type: 'uint32', name: 'validFromTimestamp' },
+              { type: 'uint32', name: 'observationsTimestamp' },
+              { type: 'uint192', name: 'nativeFee' },
+              { type: 'uint192', name: 'linkFee' },
+              { type: 'uint32', name: 'expiresAt' },
+              { type: 'int192', name: 'price' },
+              { type: 'uint32', name: 'marketStatus' },
+            ],
+            `0x${base64ToHex(verifiedReportData)}`
+          );
+          const verifiedReport: ReportV4 = {
+            feedId,
+            validFromTimestamp,
+            observationsTimestamp,
+            nativeFee,
+            linkFee,
+            expiresAt,
+            price,
+            marketStatus,
+          };
+          return verifiedReport;
+        }
+      }
+    }
+  } catch (error) {
+    logger.error('ERROR', { error });
+  }
 }

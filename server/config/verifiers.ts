@@ -87,6 +87,10 @@ export const defaultSolanaVerifiers: Record<
 > = {
   ['devnet']: {
     verifierProgramID: 'Gt9S41PtjR58CbG9JhJ3J6vxesqrNAswbWYbLNTMZA3c',
-    accessControllerAccount: '7mSn5MoBjyRLKoJShgkep8J17ueGG8rYioVAiSg5YWMF',
+    accessControllerAccount: '2k3DsgwBoqrnvXKVvd7jX7aptNxdcRBdcd5HkYsGgbrb',
   },
+};
+
+export const getSolanaVerifier = (cluster: string) => {
+  return defaultSolanaVerifiers[cluster];
 };
