@@ -24,7 +24,7 @@ import {
   getGasCap,
   setChainId,
 } from 'server/store';
-import { getVerifier } from 'server/config/verifiers';
+import { getEVMVerifier } from 'server/config/verifiers';
 
 const getAccount = () => {
   try {
@@ -137,7 +137,7 @@ async function getContractAddresses() {
       logger.warn('⚠️ No chainId provided');
       return;
     }
-    const verifierProxyAddress = await getVerifier(chainId);
+    const verifierProxyAddress = await getEVMVerifier(chainId);
     if (!verifierProxyAddress) {
       logger.warn('⚠️ No verifier address provided');
       return;

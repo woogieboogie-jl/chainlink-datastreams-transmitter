@@ -101,7 +101,7 @@ export async function getVerifierProgram() {
     logger.warn('⚠️ No cluster provided');
     return;
   }
-  const verifier = getSolanaVerifier(cluster);
+  const verifier = await getSolanaVerifier(cluster);
   if (
     !verifier ||
     !verifier.verifierProgramID ||

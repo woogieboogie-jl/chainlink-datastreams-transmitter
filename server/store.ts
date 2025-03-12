@@ -74,20 +74,33 @@ const removeSolanaChain = async (cluster: string) => {
   await removeFromSet('chains-solana', cluster);
 };
 
-const getVeriifierAddresses = async () => await getSet('verifiers');
-const getVeriifierAddress = async (chainId: string) =>
-  await getValue(`verifier:${chainId}`);
-const addVerifierAddress = async (
+const getEVMVerifierAddresses = async () => await getSet('verifiers-evm');
+const getEVMVerifierAddress = async (chainId: string) =>
+  await getValue(`verifier-evm:${chainId}`);
+const addEVMVerifierAddress = async (
   chainId: number | string,
   verifierAddress: Address
 ) => {
-  await setValue(`verifier:${chainId}`, verifierAddress);
-  await addToSet('verifiers', chainId);
+  await setValue(`verifier-evm:${chainId}`, verifierAddress);
+  await addToSet('verifiers-evm', chainId);
 };
-const removeVerifierAddress = async (chainId: string) => {
-  await deleteValue(`verifier:${chainId}`);
-  await removeFromSet('verifiers', chainId);
+const removeEVMVerifierAddress = async (chainId: string) => {
+  await deleteValue(`verifier-evm:${chainId}`);
+  await removeFromSet('verifiers-evm', chainId);
 };
+
+const getSolanaVerifierPrograms = async () => await getSet('verifiers-solana');
+const getSolanaVerifierProgram = async (cluster: string) =>
+  await getValue(`verifier-solana:${cluster}`);
+const addSolanaVerifierProgram = async (cluster: string, verifier: string) => {
+  await setValue(`verifier-solana:${cluster}`, verifier);
+  await addToSet('verifiers-solana', cluster);
+};
+const removeSolanaVerifierProgram = async (cluster: string) => {
+  await deleteValue(`verifier-solana:${cluster}`);
+  await removeFromSet('verifiers-solana', cluster);
+};
+
 const getSeed = async () => getValue('seed');
 const setSeed = async () => setValue('seed', new Date().toString());
 
@@ -239,7 +252,7 @@ const seedConfig = async (config: Config) => {
             logger.warn('⚠ Invalid verifier contract address', { verifier });
             return;
           }
-          await addVerifierAddress(verifier.chainId, verifier.address);
+          await addEVMVerifierAddress(verifier.chainId, verifier.address);
           logger.info(
             `📢 Verifier contract has been added for chain with ID ${verifier.chainId}`,
             { verifier }
@@ -420,10 +433,14 @@ export {
   getSolanaChain,
   addSolanaChain,
   removeSolanaChain,
-  getVeriifierAddresses,
-  getVeriifierAddress,
-  addVerifierAddress,
-  removeVerifierAddress,
+  getEVMVerifierAddresses,
+  getEVMVerifierAddress,
+  addEVMVerifierAddress,
+  removeEVMVerifierAddress,
+  getSolanaVerifierPrograms,
+  getSolanaVerifierProgram,
+  addSolanaVerifierProgram,
+  removeSolanaVerifierProgram,
   seedConfig,
   getVm,
   setVm,

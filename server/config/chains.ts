@@ -83,6 +83,11 @@ export const getAllEVMChains = async () => {
 
 const solanaChains = [
   {
+    cluster: 'mainnet-beta',
+    name: 'Solana Mainnet',
+    rpcUrl: 'https://api.mainnet-beta.solana.com',
+  },
+  {
     cluster: 'devnet',
     name: 'Solana Devnet',
     rpcUrl: 'https://api.devnet.solana.com',

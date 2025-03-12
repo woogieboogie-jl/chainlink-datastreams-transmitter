@@ -1,5 +1,9 @@
-import { logger } from '../services/logger';
-import { getVerifierAddress, getVerifierAddresses } from '../store';
+import {
+  getEVMVerifierAddress,
+  getEVMVerifierAddresses,
+  getSolanaVerifierProgram,
+  getSolanaVerifierPrograms,
+} from 'server/store';
 import { Address, isAddress } from 'viem';
 import {
   arbitrum,
@@ -23,7 +27,7 @@ import {
   worldchainSepolia,
 } from 'viem/chains';
 
-export const defaultVerifiers: Record<number, Address> = {
+export const defaultEVMVerifiers: Record<number, Address> = {
   [arbitrum.id]: '0x478Aa2aC9F6D65F84e09D9185d126c3a17c2a93C',
   [arbitrumSepolia.id]: '0x2ff010DEbC1297f19579B4246cad07bd24F2488A',
   [avalanche.id]: '0x79BAa65505C6682F16F9b2C7F8afEBb1821BE3f6',
@@ -45,52 +49,80 @@ export const defaultVerifiers: Record<number, Address> = {
   [worldchainSepolia.id]: '0x2482A390bE58b3cBB6Df72dB2e950Db20256e55E',
 };
 
-export const getCustomVerifiers = async () => {
-  const verifiersList = await getVerifierAddresses();
+export const getCustomEVMVerifiers = async () => {
+  const verifiersList = await getEVMVerifierAddresses();
   return await Promise.all(
     verifiersList.map(async (chainId) => ({
       chainId,
-      address: await getVerifierAddress(chainId),
+      address: await getEVMVerifierAddress(chainId),
     }))
   );
 };
 
-export const getAllVerifiers = async (): Promise<
+export const getAllEVMVerifiers = async (): Promise<
   {
     chainId: string;
     address: string | null;
     default?: boolean;
   }[]
 > => [
-  ...Object.entries(defaultVerifiers).map(([chainId, address]) => ({
+  ...Object.entries(defaultEVMVerifiers).map(([chainId, address]) => ({
     chainId,
     address,
     default: true,
   })),
-  ...(await getCustomVerifiers()),
+  ...(await getCustomEVMVerifiers()),
 ];
 
-export async function getVerifier(chainId: string) {
-  const customVerifier = await getVerifierAddress(chainId);
+export async function getEVMVerifier(chainId: string): Promise<Address> {
+  const customVerifier = await getEVMVerifierAddress(chainId);
   if (customVerifier && isAddress(customVerifier)) return customVerifier;
-  const verifier = defaultVerifiers[Number(chainId)];
-  if (!verifier) {
-    logger.warn(`Verifier not found for chainId: ${chainId}`);
-    return;
-  }
-  return verifier;
+  return defaultEVMVerifiers[Number(chainId)];
 }
 
 export const defaultSolanaVerifiers: Record<
   string,
   { verifierProgramID: string; accessControllerAccount: string }
 > = {
+  ['mainnet-beta']: {
+    verifierProgramID: 'Gt9S41PtjR58CbG9JhJ3J6vxesqrNAswbWYbLNTMZA3c',
+    accessControllerAccount: '7mSn5MoBjyRLKoJShgkep8J17ueGG8rYioVAiSg5YWMF',
+  },
   ['devnet']: {
     verifierProgramID: 'Gt9S41PtjR58CbG9JhJ3J6vxesqrNAswbWYbLNTMZA3c',
     accessControllerAccount: '2k3DsgwBoqrnvXKVvd7jX7aptNxdcRBdcd5HkYsGgbrb',
   },
 };
 
-export const getSolanaVerifier = (cluster: string) => {
+export const getCustomSolanaVerifiers = async (): Promise<
+  {
+    cluster: string;
+    verifierProgramID?: string;
+    accessControllerAccount?: string;
+  }[]
+> => {
+  const verifiersList = await getSolanaVerifierPrograms();
+  return await Promise.all(
+    verifiersList.map(async (cluster) => {
+      const verifierProgram = await getSolanaVerifierProgram(cluster);
+      if (!verifierProgram) return { cluster };
+      return {
+        cluster,
+        ...(JSON.parse(verifierProgram) as {
+          verifierProgramID: string;
+          accessControllerAccount: string;
+        }),
+      };
+    })
+  );
+};
+
+export const getSolanaVerifier = async (cluster: string) => {
+  const customVerifier = await getSolanaVerifierProgram(cluster);
+  if (customVerifier)
+    return JSON.parse(customVerifier) as {
+      verifierProgramID: string;
+      accessControllerAccount: string;
+    };
   return defaultSolanaVerifiers[cluster];
 };
