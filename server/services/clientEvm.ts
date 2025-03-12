@@ -19,8 +19,11 @@ import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
 import { getAllEVMChains } from '../config/chains';
 import {
+  getAbi,
   getChainId,
   getContractAddress,
+  getFunctionArgs,
+  getFunctionName,
   getGasCap,
   setChainId,
 } from 'server/store';
@@ -38,14 +41,8 @@ export const accountAddress = getAccount()?.address ?? zeroAddress;
 
 export async function executeContract({
   report,
-  abi,
-  functionName,
-  functionArgs,
 }: {
-  report: ReportV3;
-  abi: Abi;
-  functionName: string;
-  functionArgs: string[];
+  report: ReportV3 | ReportV4;
 }) {
   try {
     const account = getAccount();
@@ -54,31 +51,45 @@ export async function executeContract({
       return;
     }
 
+    const { feedId } = report;
+
+    console.log('feedId', feedId);
+
+    const functionName = await getFunctionName(feedId);
+    if (!functionName) {
+      logger.warn(`🛑 Function name is missing | Aborting`);
+      return;
+    }
+    console.log(functionName);
+    const abiJson = await getAbi(feedId);
+    if (!abiJson) {
+      logger.warn(`🛑 Contract ABI is missing | Aborting`);
+      return;
+    }
+
+    const abi = JSON.parse(abiJson) as Abi;
+
     if (!abi || abi.length === 0) {
       logger.warn('⚠️ No abi provided');
       return;
     }
-    if (!functionName || functionName.length === 0) {
-      logger.warn('⚠️ No functionName provided');
+
+    const functionArgs = await getFunctionArgs(feedId);
+    const args = functionArgs.map((arg) => report[arg as keyof unknown]);
+
+    const address = await getContractAddress(report.feedId);
+    if (!address || !isAddress(address)) {
+      logger.warn(`🛑 Contract address is missing | Aborting`);
       return;
     }
-    if (!functionArgs || functionArgs.length === 0) {
-      logger.warn('⚠️ No args provided');
-      return;
-    }
-
-    logger.info('📝 Prepared verification transaction', report);
-
-    const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
-
-    const address = await getContractAddress();
-    if (!address || !isAddress(address)) return;
     const clients = await getClients();
     if (!clients || !clients.publicClient || !clients.walletClient) {
       logger.warn('⚠️ Invalid clients', { clients });
       return;
     }
     const { publicClient, walletClient } = clients;
+    logger.info('📝 Prepared verification transaction', report);
+
     const gas = await publicClient.estimateContractGas({
       account,
       address,
