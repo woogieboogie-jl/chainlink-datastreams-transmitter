@@ -62,11 +62,6 @@ export async function verifyReport(report: StreamReport) {
 }
 
 export async function dataUpdater({ report }: { report: StreamReport }) {
-  const vm = await getVm();
-  if (vm === 'svm') {
-    console.log('will implenet it later');
-    return;
-  }
   try {
     const verifiedReport = await verifyReport(report);
     if (!verifiedReport) {
@@ -76,6 +71,11 @@ export async function dataUpdater({ report }: { report: StreamReport }) {
     logger.info(`✅ Report verified | ${await getFeedName(report.feedId)}`, {
       verifiedReport,
     });
+    const vm = await getVm();
+    if (vm === 'svm') {
+      console.log('will implenet it later');
+      return;
+    }
     const transaction = await executeEVMContract({
       report: verifiedReport,
     });

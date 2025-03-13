@@ -54,8 +54,14 @@ export type Config = {
     cluster: string;
     name: string;
     rpcUrl: string;
+    testnet: string | boolean;
   }[];
-  verifierAddresses: { chainId: number; address: Address }[];
+  verifierAddressesEVM: { chainId: number; address: Address }[];
+  verifierProgramsSolana: {
+    cluster: string;
+    verifierProgramID: string;
+    accessControllerAccount: string;
+  }[];
   feeds: {
     name: string;
     feedId: Hex;
@@ -71,6 +77,7 @@ export type Config = {
       functionArgs: string[];
     }[];
   }[];
+  targetPrograms: { feedId: Hex }[];
   gasCap: string;
   interval: string;
   priceDeltaPercentage: number | string;

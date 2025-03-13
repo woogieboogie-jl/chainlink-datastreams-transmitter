@@ -7,7 +7,7 @@ chainId: 43113
 gasCap: '150000'
 interval: '*/30 * * * * *'
 priceDeltaPercentage: 0.01
-chains:
+chainsEVM:
   - id: 995
     name: '🔥 5ireChain'
     currencyName: '5ire Token'
@@ -21,7 +21,12 @@ chains:
     currencyDecimals: 18
     rpc: 'https://sepolia.base.org'
     testnet: true
-verifierAddresses:
+chainsSolana:
+  - cluster: 'devnet'
+    name: 'Solana Devnet'
+    rpc: 'https://api.devnet.solana.com'
+    testnet: true
+verifierAddressesEVM:
   - chainId: 995
     address: '0x...'
   - chainId: 84532

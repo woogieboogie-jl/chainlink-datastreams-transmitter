@@ -234,36 +234,97 @@ const seedConfig = async (config: Config) => {
         }
 
         await addEVMChain(chain.id.toString(), JSON.stringify(chain));
-        logger.info(`📢 New chain has been added`, { chain });
+        logger.info(`📢 New chain has been added | ${chain.name}`, { chain });
       })
     );
 
-    config.verifierAddresses &&
-      (await Promise.all(
-        config.verifierAddresses.map(async (verifier) => {
-          if (!verifier.chainId || isNaN(Number(verifier.chainId))) {
-            logger.warn('⚠ Invalid verifier chain id', { verifier });
-            return;
-          }
-          if (
-            !isAddress(verifier.address) ||
-            verifier.address === zeroAddress
-          ) {
-            logger.warn('⚠ Invalid verifier contract address', { verifier });
-            return;
-          }
-          await addEVMVerifierAddress(verifier.chainId, verifier.address);
-          logger.info(
-            `📢 Verifier contract has been added for chain with ID ${verifier.chainId}`,
-            { verifier }
-          );
-        })
-      ));
+    await Promise.all(
+      config.chainsSolana.map(async (data) => {
+        const chain = {
+          cluster: data.cluster,
+          name: data.name,
+          rpcUrl: data.rpcUrl,
+          testnet: data.testnet,
+        };
+        if (!chain) {
+          logger.warn('⚠ Invalid chain input', { chain });
+          return;
+        }
+        if (!chain.cluster) {
+          logger.warn('⚠ Cluster is missing', { chain });
+          return;
+        }
+        if (!chain.name) {
+          logger.warn('⚠ Chain name is missing', { chain });
+          return;
+        }
+        if (!chain.rpcUrl) {
+          logger.warn('⚠ RPC url is missing', { chain });
+          return;
+        }
+
+        await addSolanaChain(chain.cluster, JSON.stringify(chain));
+        logger.info(`📢 New chain has been added | ${chain.name}`, { chain });
+      })
+    );
+
+    await Promise.all(
+      config.verifierAddressesEVM.map(async (verifier) => {
+        if (!verifier.chainId || isNaN(Number(verifier.chainId))) {
+          logger.warn('⚠ Invalid verifier chain id', { verifier });
+          return;
+        }
+        if (!isAddress(verifier.address) || verifier.address === zeroAddress) {
+          logger.warn('⚠ Invalid verifier contract address', { verifier });
+          return;
+        }
+        await addEVMVerifierAddress(verifier.chainId, verifier.address);
+        logger.info(
+          `📢 Verifier contract has been added for chain with ID ${verifier.chainId}`,
+          { verifier }
+        );
+      })
+    );
+
+    await Promise.all(
+      config.verifierProgramsSolana.map(async (verifier) => {
+        if (!verifier.cluster) {
+          logger.warn('⚠ Invalid verifier cluster', { verifier });
+          return;
+        }
+        if (!isAddress(verifier.verifierProgramID)) {
+          logger.warn('⚠ Invalid verifier program ID', { verifier });
+          return;
+        }
+        if (!isAddress(verifier.accessControllerAccount)) {
+          logger.warn('⚠ Invalid access controller account', { verifier });
+          return;
+        }
+        await addSolanaVerifierProgram(
+          verifier.cluster,
+          JSON.stringify({
+            verifierProgramID: verifier.verifierProgramID,
+            accessControllerAccount: verifier.accessControllerAccount,
+          })
+        );
+        logger.info(
+          `📢 Verifier program has been added for cluster ${verifier.cluster}`,
+          { verifier }
+        );
+      })
+    );
 
     if (config.chainId && !isNaN(config.chainId)) {
       await setChainId(config.chainId);
       logger.info(`📢 Chain set to ${config.chainId}`, {
         chainId: config.chainId,
+      });
+    }
+
+    if (config.cluster) {
+      await setCluster(config.cluster);
+      logger.info(`📢 Cluster set to ${config.cluster}`, {
+        cluster: config.cluster,
       });
     }
 
