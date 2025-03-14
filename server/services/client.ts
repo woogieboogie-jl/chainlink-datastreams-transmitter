@@ -14,6 +14,12 @@ import {
   formatUnits,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import {
+  estimateContractGas,
+  simulateContract,
+  waitForTransactionReceipt,
+  writeContract,
+} from 'viem/actions';
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
@@ -79,7 +85,7 @@ export async function executeContract({
       return;
     }
     const { publicClient, walletClient } = clients;
-    const gas = await publicClient.estimateContractGas({
+    const gas = await estimateContractGas(publicClient, {
       account,
       address,
       abi,
@@ -102,7 +108,7 @@ export async function executeContract({
       );
       return;
     }
-    const { request } = await publicClient.simulateContract({
+    const { request } = await simulateContract(publicClient, {
       account,
       address,
       abi,
@@ -111,10 +117,12 @@ export async function executeContract({
     });
     logger.info('ℹ️ Transaction simulated', request);
 
-    const hash = await walletClient.writeContract(request);
+    const hash = await writeContract(walletClient, request);
     logger.info(`⌛️ Sending transaction ${hash} `, hash);
-    return await publicClient.waitForTransactionReceipt({ hash });
+    const txReceipt = await waitForTransactionReceipt(publicClient, { hash });
+    return txReceipt;
   } catch (error) {
+    console.error(error);
     logger.error('ERROR', { error });
   }
 }
