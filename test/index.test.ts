@@ -7,7 +7,7 @@ import {
   expect,
 } from '@jest/globals';
 import { executeContract, verifyReport } from '../server/services/client';
-import { Hex, TransactionReceipt, zeroHash } from 'viem';
+import { Hex, TransactionReceipt, zeroAddress, zeroHash } from 'viem';
 import * as store from '../server/store';
 import * as chains from '../server/config/chains';
 import * as verifiers from '../server/config/verifiers';
@@ -39,6 +39,76 @@ describe('Unit', () => {
   });
 
   describe('verifyReport', () => {
+    it('should abort if private key is missing', async () => {
+      process.env = { NODE_ENV: 'test' };
+      const result = await verifyReport(
+        mockRawReport as unknown as StreamReport
+      );
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if chain id is missing', async () => {
+      getChainIdMock.mockResolvedValue(null);
+      const result = await verifyReport(
+        mockRawReport as unknown as StreamReport
+      );
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if chain is invalid', async () => {
+      getChainIdMock.mockResolvedValue('31336');
+      getAllChainsMock.mockResolvedValue([hardhat]);
+      const result = await verifyReport(
+        mockRawReport as unknown as StreamReport
+      );
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if report is invalid', async () => {
+      getChainIdMock.mockResolvedValue('31337');
+      getAllChainsMock.mockResolvedValue([hardhat]);
+      const result = await verifyReport(
+        mockInvalidRawReport as unknown as StreamReport
+      );
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if contracts are invalid', async () => {
+      getChainIdMock.mockResolvedValue('31337');
+      getAllChainsMock.mockResolvedValue([hardhat]);
+      getVerifierMock.mockResolvedValueOnce(zeroAddress);
+      simulateReadContractMock.mockResolvedValueOnce(zeroAddress);
+      simulateReadContractMock.mockResolvedValueOnce(zeroAddress);
+      simulateReadContractMock.mockResolvedValueOnce(zeroAddress);
+      const result = await verifyReport(
+        mockRawReport as unknown as StreamReport
+      );
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if exceeds gas cap', async () => {
+      getChainIdMock.mockResolvedValue('31337');
+      getAllChainsMock.mockResolvedValue([hardhat]);
+      getVerifierMock.mockResolvedValueOnce(
+        '0xE17A7C6A7c2eF0Cb859578aa1605f8Bc2434A365'
+      );
+      simulateReadContractMock.mockResolvedValueOnce(
+        '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc'
+      );
+      simulateReadContractMock.mockResolvedValueOnce(
+        '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'
+      );
+      simulateReadContractMock.mockResolvedValueOnce(
+        '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f'
+      );
+      simulateReadContractMock.mockResolvedValueOnce([
+        {
+          assetAddress: '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f',
+          amount: 25000000001n,
+        },
+      ]);
+      estimateContractGasMock.mockResolvedValueOnce(1234n);
+      getGasCapMock.mockResolvedValueOnce(500n.toString());
+      const result = await verifyReport(
+        mockRawReport as unknown as StreamReport
+      );
+      expect(result).toEqual(undefined);
+    });
     it('should verify contract', async () => {
       getChainIdMock.mockResolvedValue('31337');
       getAllChainsMock.mockResolvedValue([hardhat]);
@@ -225,6 +295,19 @@ const mockRawReport = {
   validFromTimestamp: 1741971415n,
   rawReport:
     '0x0006aee203ef23a892e75b579f8c3f26fd933d9ca45de95c2f8ac470f4ddcd76000000000000000000000000000000000000000000000000000000001f3e0011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000026001010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000434a5b30cafe7e853832a458ea1591dc2f5fb5e4cf80b9979b8248065a7ea0000000000000000000000000000000000000000000000000000000067d45fd70000000000000000000000000000000000000000000000000000000067d45fd7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067d5b15700000000000000000000000000000000000000000000000008c6d7bbf74ce0000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000252e35605f977ca4ea98f57457b5dfae41dd0f6131d3e15fef10baf270b2a1c79c3dfc21411f65ab8da6019eceabc8e0b314843850fb4d156c1d97a41d4efb9cd00000000000000000000000000000000000000000000000000000000000000020282325283e17a7053db4e3c65b27620541175700164bc873bb6d2b7420ba5b6569fbce826b3ddb200a2f2896328da36ecd3924686164640687289f290619fe0',
+  nativeFee: 0n,
+  linkFee: 0n,
+  expiresAt: 1742057815n,
+  price: 632430000000000000n,
+  version: 'v3',
+  marketStatus: 2n,
+};
+
+const mockInvalidRawReport = {
+  feedId: '0x000434a5b30cafe7e853832a458ea1591dc2f5fb5e4cf80b9979b8248065a7ea',
+  observationsTimestamp: 1741971415n,
+  validFromTimestamp: 1741971415n,
+  rawReport: zeroHash,
   nativeFee: 0n,
   linkFee: 0n,
   expiresAt: 1742057815n,
