@@ -23,8 +23,8 @@ import {
   getContractAddress,
   getGasCap,
   setChainId,
-} from 'server/store';
-import { getVerifier } from 'server/config/verifiers';
+} from '../store';
+import { getVerifier } from '../config/verifiers';
 
 const getAccount = () => {
   try {
@@ -71,7 +71,7 @@ export async function executeContract({
 
     const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
 
-    const address = await getContractAddress();
+    const address = await getContractAddress(report.feedId);
     if (!address || !isAddress(address)) return;
     const clients = await getClients();
     if (!clients || !clients.publicClient || !clients.walletClient) {

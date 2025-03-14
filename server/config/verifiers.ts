@@ -1,4 +1,4 @@
-import { getVeriifierAddress, getVeriifierAddresses } from 'server/store';
+import { getVeriifierAddress, getVeriifierAddresses } from '../store';
 import { Address, isAddress } from 'viem';
 import {
   arbitrum,

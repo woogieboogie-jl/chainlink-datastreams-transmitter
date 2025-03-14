@@ -1,5 +1,5 @@
-import { logger } from 'server/services/logger';
-import { getChain, getChains } from 'server/store';
+import { logger } from '../services/logger';
+import { getChain, getChains } from '../store';
 import { defineChain } from 'viem';
 import {
   arbitrum,
