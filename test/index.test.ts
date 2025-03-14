@@ -6,12 +6,14 @@ import {
   beforeEach,
   expect,
 } from '@jest/globals';
-import { executeContract } from '../server/services/client';
+import { executeContract, verifyReport } from '../server/services/client';
 import { Hex, TransactionReceipt, zeroHash } from 'viem';
 import * as store from '../server/store';
 import * as chains from '../server/config/chains';
+import * as verifiers from '../server/config/verifiers';
 import * as viemActions from 'viem/actions';
 import { hardhat } from 'viem/chains';
+import { StreamReport } from '../server/types';
 
 const getContractAddressMock = jest.spyOn(store, 'getContractAddress');
 const getChainIdMock = jest.spyOn(store, 'getChainId');
@@ -19,11 +21,13 @@ const getGasCapMock = jest.spyOn(store, 'getGasCap');
 const getAllChainsMock = jest.spyOn(chains, 'getAllChains');
 const estimateContractGasMock = jest.spyOn(viemActions, 'estimateContractGas');
 const simulateContractMock = jest.spyOn(viemActions, 'simulateContract');
-const simulateWriteContract = jest.spyOn(viemActions, 'writeContract');
+const simulateWriteContractMock = jest.spyOn(viemActions, 'writeContract');
+const simulateReadContractMock = jest.spyOn(viemActions, 'readContract');
 const simulateWaitForTransactionReceipt = jest.spyOn(
   viemActions,
   'waitForTransactionReceipt'
 );
+const getVerifierMock = jest.spyOn(verifiers, 'getVerifier');
 
 describe('Unit', () => {
   beforeEach(() => {
@@ -32,6 +36,57 @@ describe('Unit', () => {
   afterEach(() => {
     jest.clearAllMocks();
     process.env = { NODE_ENV: 'test' };
+  });
+
+  describe('verifyReport', () => {
+    it('should verify contract', async () => {
+      getChainIdMock.mockResolvedValue('31337');
+      getAllChainsMock.mockResolvedValue([hardhat]);
+      getVerifierMock.mockResolvedValueOnce(
+        '0xE17A7C6A7c2eF0Cb859578aa1605f8Bc2434A365'
+      );
+      simulateReadContractMock.mockResolvedValueOnce(
+        '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc'
+      );
+      simulateReadContractMock.mockResolvedValueOnce(
+        '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'
+      );
+      simulateReadContractMock.mockResolvedValueOnce(
+        '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f'
+      );
+      simulateReadContractMock.mockResolvedValueOnce([
+        {
+          assetAddress: '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f',
+          amount: 25000000001n,
+        },
+      ]);
+      estimateContractGasMock.mockResolvedValueOnce(1234n);
+      getGasCapMock.mockResolvedValueOnce(5000n.toString());
+      simulateContractMock.mockResolvedValueOnce({
+        request: { address: '0x0000000000000000000000000000000000000000' },
+      } as unknown as viemActions.SimulateContractReturnType);
+      simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
+      simulateWaitForTransactionReceipt.mockResolvedValueOnce(
+        mockTransactionReceipt
+      );
+      estimateContractGasMock.mockResolvedValueOnce(1234n);
+      simulateContractMock.mockResolvedValueOnce({
+        request: { address: '0x0000000000000000000000000000000000000000' },
+        result: mockVerifiedReport,
+      } as unknown as viemActions.SimulateContractReturnType);
+      simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
+      simulateWaitForTransactionReceipt.mockResolvedValueOnce(
+        mockTransactionReceipt
+      );
+
+      const result = await verifyReport(
+        mockRawReport as unknown as StreamReport
+      );
+      expect(result?.feedId).toEqual(
+        '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'
+      );
+      expect(result?.price).toEqual(18854937605278083000n);
+    });
   });
 
   describe('executeContract', () => {
@@ -46,7 +101,7 @@ describe('Unit', () => {
       simulateContractMock.mockResolvedValueOnce({
         request: { address: '0x0000000000000000000000000000000000000000' },
       } as unknown as viemActions.SimulateContractReturnType);
-      simulateWriteContract.mockResolvedValueOnce(zeroHash);
+      simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
       );
@@ -163,3 +218,20 @@ const mockTransactionReceipt: TransactionReceipt = {
   transactionIndex: 0,
   type: 'eip1559',
 };
+
+const mockRawReport = {
+  feedId: '0x000434a5b30cafe7e853832a458ea1591dc2f5fb5e4cf80b9979b8248065a7ea',
+  observationsTimestamp: 1741971415n,
+  validFromTimestamp: 1741971415n,
+  rawReport:
+    '0x0006aee203ef23a892e75b579f8c3f26fd933d9ca45de95c2f8ac470f4ddcd76000000000000000000000000000000000000000000000000000000001f3e0011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000026001010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000434a5b30cafe7e853832a458ea1591dc2f5fb5e4cf80b9979b8248065a7ea0000000000000000000000000000000000000000000000000000000067d45fd70000000000000000000000000000000000000000000000000000000067d45fd7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067d5b15700000000000000000000000000000000000000000000000008c6d7bbf74ce0000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000252e35605f977ca4ea98f57457b5dfae41dd0f6131d3e15fef10baf270b2a1c79c3dfc21411f65ab8da6019eceabc8e0b314843850fb4d156c1d97a41d4efb9cd00000000000000000000000000000000000000000000000000000000000000020282325283e17a7053db4e3c65b27620541175700164bc873bb6d2b7420ba5b6569fbce826b3ddb200a2f2896328da36ecd3924686164640687289f290619fe0',
+  nativeFee: 0n,
+  linkFee: 0n,
+  expiresAt: 1742057815n,
+  price: 632430000000000000n,
+  version: 'v3',
+  marketStatus: 2n,
+};
+
+const mockVerifiedReport =
+  '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c7960000000000000000000000000000000000000000000000000000000067d469860000000000000000000000000000000000000000000000000000000067d46986000000000000000000000000000000000000000000000000000096b8ad3e29ec000000000000000000000000000000000000000000000000004eaa7d28c0f8800000000000000000000000000000000000000000000000000000000067d5bb0600000000000000000000000000000000000000000000000105aa31dab0c127b80000000000000000000000000000000000000000000000010591eed93a6c128c00000000000000000000000000000000000000000000000105c13f644322f1d8';
