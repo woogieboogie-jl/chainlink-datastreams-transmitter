@@ -114,7 +114,7 @@ To make setting environment variables easier there is a `.env.example` file in t
 | Name                        | Description                                                                                                                                   |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `REDIS_PASSWORD`            | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis password.                    |
-| `PRIVATE_KEY`               | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. |
+| `PRIVATE_KEY`               | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. This account will be used to pay for the transaction fees in the respective native currency for the target chain specified.  |
 | `DATASTREAMS_HOSTNAME`      | Chainlink Data Streams Hostname.                                                                                                              |
 | `DATASTREAMS_WS_HOSTNAME`   | WebSocket Hostname for Data Streams.                                                                                                          |
 | `DATASTREAMS_CLIENT_ID`     | Client ID for authentication.                                                                                                                 |
