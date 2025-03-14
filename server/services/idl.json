@@ -1,0 +1,95 @@
+{
+  "address": "zDecnPdGtuXypFqhnUsVJtUT5BCwgdzygyECT1bKGNo",
+  "metadata": {
+    "name": "price_feed",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
+      "accounts": [
+        {
+          "name": "price_feed",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [112, 114, 105, 99, 101, 45, 102, 101, 101, 100]
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_price",
+      "discriminator": [61, 34, 117, 155, 75, 34, 123, 208],
+      "accounts": [
+        {
+          "name": "price_feed",
+          "writable": true
+        },
+        {
+          "name": "signer",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "feed_id",
+          "type": "string"
+        },
+        {
+          "name": "price",
+          "type": "i128"
+        },
+        {
+          "name": "date",
+          "type": "i128"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "PriceFeed",
+      "discriminator": [189, 103, 252, 23, 152, 35, 243, 156]
+    }
+  ],
+  "types": [
+    {
+      "name": "PriceFeed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "feed_id",
+            "type": "string"
+          },
+          {
+            "name": "price",
+            "type": "i128"
+          },
+          {
+            "name": "date",
+            "type": "i128"
+          }
+        ]
+      }
+    }
+  ]
+}

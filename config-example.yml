@@ -7,7 +7,7 @@ chainId: 43113
 gasCap: '150000'
 interval: '*/30 * * * * *'
 priceDeltaPercentage: 0.01
-chainsEVM:
+chains:
   - id: 995
     name: '🔥 5ireChain'
     currencyName: '5ire Token'
@@ -21,12 +21,7 @@ chainsEVM:
     currencyDecimals: 18
     rpc: 'https://sepolia.base.org'
     testnet: true
-chainsSolana:
-  - cluster: 'devnet'
-    name: 'Solana Devnet'
-    rpc: 'https://api.devnet.solana.com'
-    testnet: true
-verifierAddressesEVM:
+verifierAddresses:
   - chainId: 995
     address: '0x...'
   - chainId: 84532
@@ -96,4 +91,116 @@ targetChains:
               'type': 'function',
             },
           ]
-cluster: 'devnet'
+vm: 'evm'
+svm:
+  cluster: 'devnet'
+  chains:
+    - cluster: 'devnet'
+      name: 'Solana Devnet'
+      rpc: 'https://api.devnet.solana.com'
+      testnet: true
+  targetChains:
+    - cluster: 'devnet'
+      targetPrograms:
+        - feedId: '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'
+          instructionName: 'updatePrice'
+          instructionArgs:
+            - name: 'feedId'
+              type: 'string'
+            - name: 'price'
+              type: 'number'
+            - name: 'validFromTimestamp'
+              type: 'number'
+          instructionPDAs:
+            - 'price-feed'
+          idl:
+            {
+              'address': 'zDecnPdGtuXypFqhnUsVJtUT5BCwgdzygyECT1bKGNo',
+              'metadata':
+                {
+                  'name': 'price_feed',
+                  'version': '0.1.0',
+                  'spec': '0.1.0',
+                  'description': 'Created with Anchor',
+                },
+              'instructions':
+                [
+                  {
+                    'name': 'initialize',
+                    'discriminator': [175, 175, 109, 31, 13, 152, 155, 237],
+                    'accounts':
+                      [
+                        {
+                          'name': 'price_feed',
+                          'writable': true,
+                          'pda':
+                            {
+                              'seeds':
+                                [
+                                  {
+                                    'kind': 'const',
+                                    'value':
+                                      [
+                                        112,
+                                        114,
+                                        105,
+                                        99,
+                                        101,
+                                        45,
+                                        102,
+                                        101,
+                                        101,
+                                        100,
+                                      ],
+                                  },
+                                ],
+                            },
+                        },
+                        { 'name': 'signer', 'writable': true, 'signer': true },
+                        {
+                          'name': 'system_program',
+                          'address': '11111111111111111111111111111111',
+                        },
+                      ],
+                    'args': [],
+                  },
+                  {
+                    'name': 'update_price',
+                    'discriminator': [61, 34, 117, 155, 75, 34, 123, 208],
+                    'accounts':
+                      [
+                        { 'name': 'price_feed', 'writable': true },
+                        { 'name': 'signer', 'signer': true },
+                      ],
+                    'args':
+                      [
+                        { 'name': 'feed_id', 'type': 'string' },
+                        { 'name': 'price', 'type': 'i128' },
+                        { 'name': 'date', 'type': 'i128' },
+                      ],
+                  },
+                ],
+              'accounts':
+                [
+                  {
+                    'name': 'PriceFeed',
+                    'discriminator': [189, 103, 252, 23, 152, 35, 243, 156],
+                  },
+                ],
+              'types':
+                [
+                  {
+                    'name': 'PriceFeed',
+                    'type':
+                      {
+                        'kind': 'struct',
+                        'fields':
+                          [
+                            { 'name': 'feed_id', 'type': 'string' },
+                            { 'name': 'price', 'type': 'i128' },
+                            { 'name': 'date', 'type': 'i128' },
+                          ],
+                      },
+                  },
+                ],
+            }

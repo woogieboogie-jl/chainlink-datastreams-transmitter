@@ -136,6 +136,33 @@ const setSkipVerify = async (
   chainId: string,
   skipVerify: string
 ) => await setValue(`skipVerify:${feedId}:${chainId}`, skipVerify);
+
+const getIdl = async (feedId: string, cluster: string) =>
+  await getValue(`idl:${feedId}:${cluster}`);
+const setIdl = async (feedId: string, cluster: string, idl: string) =>
+  await setValue(`idl:${feedId}:${cluster}`, idl);
+const getInstructionName = async (feedId: string, cluster: string) =>
+  await getValue(`instructionName:${feedId}:${cluster}`);
+const setInstructionName = async (
+  feedId: string,
+  cluster: string,
+  instructionName: string
+) => await setValue(`instructionName:${feedId}:${cluster}`, instructionName);
+const getInstrutctionArgs = async (feedId: string, cluster: string) =>
+  await getList(`instructionArgs:${feedId}:${cluster}`);
+const setInstructionArgs = async (
+  feedId: string,
+  chainId: string,
+  instructionArgs: string[]
+) => await setList(`instructionArgs:${feedId}:${chainId}`, instructionArgs);
+const getInstructionPDA = async (feedId: string, cluster: string) =>
+  await getValue(`instructionPDA:${feedId}:${cluster}`);
+const setInstructionPDA = async (
+  feedId: string,
+  cluster: string,
+  instructionPDA: string
+) => await setValue(`instructionPDA:${feedId}:${cluster}`, instructionPDA);
+
 const getVm = async () => {
   const vm = await getValue('vm');
   if (vm === 'svm') {
@@ -171,7 +198,7 @@ const seedConfig = async (config: Config) => {
     }
 
     await Promise.all(
-      config.chainsEVM.map(async (data) => {
+      config.chains.map(async (data) => {
         const chain = {
           id: Number(data.id),
           name: data.name,
@@ -239,37 +266,7 @@ const seedConfig = async (config: Config) => {
     );
 
     await Promise.all(
-      config.chainsSolana.map(async (data) => {
-        const chain = {
-          cluster: data.cluster,
-          name: data.name,
-          rpcUrl: data.rpcUrl,
-          testnet: data.testnet,
-        };
-        if (!chain) {
-          logger.warn('⚠ Invalid chain input', { chain });
-          return;
-        }
-        if (!chain.cluster) {
-          logger.warn('⚠ Cluster is missing', { chain });
-          return;
-        }
-        if (!chain.name) {
-          logger.warn('⚠ Chain name is missing', { chain });
-          return;
-        }
-        if (!chain.rpcUrl) {
-          logger.warn('⚠ RPC url is missing', { chain });
-          return;
-        }
-
-        await addSolanaChain(chain.cluster, JSON.stringify(chain));
-        logger.info(`📢 New chain has been added | ${chain.name}`, { chain });
-      })
-    );
-
-    await Promise.all(
-      config.verifierAddressesEVM.map(async (verifier) => {
+      config.verifierAddresses.map(async (verifier) => {
         if (!verifier.chainId || isNaN(Number(verifier.chainId))) {
           logger.warn('⚠ Invalid verifier chain id', { verifier });
           return;
@@ -286,45 +283,10 @@ const seedConfig = async (config: Config) => {
       })
     );
 
-    await Promise.all(
-      config.verifierProgramsSolana.map(async (verifier) => {
-        if (!verifier.cluster) {
-          logger.warn('⚠ Invalid verifier cluster', { verifier });
-          return;
-        }
-        if (!isAddress(verifier.verifierProgramID)) {
-          logger.warn('⚠ Invalid verifier program ID', { verifier });
-          return;
-        }
-        if (!isAddress(verifier.accessControllerAccount)) {
-          logger.warn('⚠ Invalid access controller account', { verifier });
-          return;
-        }
-        await addSolanaVerifierProgram(
-          verifier.cluster,
-          JSON.stringify({
-            verifierProgramID: verifier.verifierProgramID,
-            accessControllerAccount: verifier.accessControllerAccount,
-          })
-        );
-        logger.info(
-          `📢 Verifier program has been added for cluster ${verifier.cluster}`,
-          { verifier }
-        );
-      })
-    );
-
     if (config.chainId && !isNaN(config.chainId)) {
       await setChainId(config.chainId);
       logger.info(`📢 Chain set to ${config.chainId}`, {
         chainId: config.chainId,
-      });
-    }
-
-    if (config.cluster) {
-      await setCluster(config.cluster);
-      logger.info(`📢 Cluster set to ${config.cluster}`, {
-        cluster: config.cluster,
       });
     }
 
@@ -447,6 +409,155 @@ const seedConfig = async (config: Config) => {
       );
     }
 
+    if (config.svm) {
+      config.svm.chains &&
+        (await Promise.all(
+          config.svm.chains.map(async (data) => {
+            const chain = {
+              cluster: data.cluster,
+              name: data.name,
+              rpcUrl: data.rpcUrl,
+              testnet: data.testnet,
+            };
+            if (!chain) {
+              logger.warn('⚠ Invalid chain input', { chain });
+              return;
+            }
+            if (!chain.cluster) {
+              logger.warn('⚠ Cluster is missing', { chain });
+              return;
+            }
+            if (!chain.name) {
+              logger.warn('⚠ Chain name is missing', { chain });
+              return;
+            }
+            if (!chain.rpcUrl) {
+              logger.warn('⚠ RPC url is missing', { chain });
+              return;
+            }
+
+            await addSolanaChain(chain.cluster, JSON.stringify(chain));
+            logger.info(`📢 New chain has been added | ${chain.name}`, {
+              chain,
+            });
+          })
+        ));
+
+      if (config.svm.cluster) {
+        await setCluster(config.svm.cluster);
+        logger.info(`📢 Cluster set to ${config.svm.cluster}`, {
+          cluster: config.svm.cluster,
+        });
+      }
+
+      config.svm.verifierPrograms &&
+        (await Promise.all(
+          config.svm.verifierPrograms.map(async (verifier) => {
+            if (!verifier.cluster) {
+              logger.warn('⚠ Invalid verifier cluster', { verifier });
+              return;
+            }
+            if (!isAddress(verifier.verifierProgramID)) {
+              logger.warn('⚠ Invalid verifier program ID', { verifier });
+              return;
+            }
+            if (!isAddress(verifier.accessControllerAccount)) {
+              logger.warn('⚠ Invalid access controller account', { verifier });
+              return;
+            }
+            await addSolanaVerifierProgram(
+              verifier.cluster,
+              JSON.stringify({
+                verifierProgramID: verifier.verifierProgramID,
+                accessControllerAccount: verifier.accessControllerAccount,
+              })
+            );
+            logger.info(
+              `📢 Verifier program has been added for cluster ${verifier.cluster}`,
+              { verifier }
+            );
+          })
+        ));
+
+      await Promise.all(
+        config.svm.targetChains.map(async ({ cluster, targetPrograms }) => {
+          if (!cluster) {
+            logger.warn('⚠ Contract cluster invalid input');
+            return;
+          }
+          await Promise.all(
+            targetPrograms.map(async (program) => {
+              try {
+                const {
+                  feedId,
+                  idl,
+                  instructionName,
+                  instructionArgs,
+                  instructionPDA,
+                } = program;
+
+                if (!feedId || !isHex(feedId)) {
+                  logger.warn('⚠ Program feedId invalid input', program);
+                  return;
+                }
+                if (idl) {
+                  await setIdl(feedId, cluster, JSON.stringify(idl));
+                  logger.info(
+                    `📢 IDL has been set for feed ${feedId} on chain ${cluster}`,
+                    {
+                      feedId,
+                      cluster,
+                      idl,
+                    }
+                  );
+                }
+                if (instructionName) {
+                  await setInstructionName(feedId, cluster, instructionName);
+                  logger.info(
+                    `📢 New instruction ${instructionName} has been set for feed ${feedId}`,
+                    {
+                      feedId,
+                      cluster,
+                      instructionName,
+                    }
+                  );
+                }
+                if (instructionArgs && instructionArgs.length > 0) {
+                  await setInstructionArgs(
+                    feedId,
+                    cluster,
+                    instructionArgs.map((arg) => JSON.stringify(arg))
+                  );
+                  logger.info(
+                    `📢 Set of arguments ${instructionArgs
+                      .map(({ name }) => name)
+                      .join(
+                        ', '
+                      )} has been set for feed ${feedId} on chain ${cluster}`,
+                    { feedId, cluster, instructionArgs }
+                  );
+                }
+                if (instructionPDA) {
+                  await setInstructionPDA(feedId, cluster, instructionPDA);
+                  logger.info(
+                    `📢 New instruction PDA ${instructionPDA} has been set for feed ${feedId}`,
+                    {
+                      feedId,
+                      cluster,
+                      instructionPDA,
+                    }
+                  );
+                }
+              } catch (error) {
+                logger.error('ERROR', { error });
+                console.error(error);
+              }
+            })
+          );
+        })
+      );
+    }
+
     await setSeed();
     logger.info('💽 App configured successfully', { config });
   } catch (error) {
@@ -505,4 +616,12 @@ export {
   seedConfig,
   getVm,
   setVm,
+  getIdl,
+  setIdl,
+  getInstructionName,
+  setInstructionName,
+  getInstrutctionArgs,
+  setInstructionArgs,
+  getInstructionPDA,
+  setInstructionPDA,
 };

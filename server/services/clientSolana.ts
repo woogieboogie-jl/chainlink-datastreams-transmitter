@@ -9,14 +9,16 @@ import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
 import bs58 from 'bs58';
 import * as snappy from 'snappy';
 import { logger } from './logger';
-import { getCluster, setCluster } from 'server/store';
-import { getAllSolanaChains } from 'server/config/chains';
-import { ReportV3, ReportV4, StreamReport } from 'server/types';
-import idl from 'server/config/idl.json';
-import { Verifier } from 'server/config/idlType';
+import { getCluster, setCluster } from '../store';
+import { getAllSolanaChains } from '../config/chains';
+import { ReportV3, ReportV4, StreamReport } from '../types';
+import idl from '../config/idl.json';
+import customIdl from './idl.json';
+import { Verifier } from '../config/idlType';
 import { decodeAbiParameters } from 'viem';
-import { getSolanaVerifier } from 'server/config/verifiers';
-import { base64ToHex } from 'server/utils';
+import { getSolanaVerifier } from '../config/verifiers';
+import { base64ToHex } from '../utils';
+import { BN } from 'bn.js';
 
 const getKeyPair = () => {
   try {
@@ -146,8 +148,8 @@ export async function verifyReport(report: StreamReport) {
       report.rawReport
     );
 
-    const reportVersion = reportData.charAt(5);
-    if (reportVersion !== '3' && reportVersion !== '4') {
+    const reportVersion = parseInt(reportData.slice(0, 6), 16);
+    if (reportVersion !== 3 && reportVersion !== 4) {
       logger.warn('⚠️ Invalid report version', { report });
       return;
     }
@@ -214,7 +216,7 @@ export async function verifyReport(report: StreamReport) {
     for (const log of txDetails.meta.logMessages) {
       if (log.includes('Program return') || log.includes('Program consumed')) {
         const verifiedReportData = log.split(' ')[3];
-        if (reportVersion === '3') {
+        if (reportVersion === 3) {
           const [
             feedId,
             validFromTimestamp,
@@ -252,7 +254,7 @@ export async function verifyReport(report: StreamReport) {
           };
           return verifiedReport;
         }
-        if (reportVersion === '4') {
+        if (reportVersion === 4) {
           const [
             feedId,
             validFromTimestamp,
@@ -290,6 +292,58 @@ export async function verifyReport(report: StreamReport) {
       }
     }
   } catch (error) {
+    logger.error('ERROR', { error });
+  }
+}
+
+export async function executeSolanaProgram({
+  report,
+}: {
+  report: ReportV3 | ReportV4;
+}) {
+  try {
+    const keypair = getKeyPair();
+    if (!keypair) {
+      logger.error('‼️ Account is missing');
+      return;
+    }
+    const wallet = new Wallet(keypair);
+    const connection = await getConnection();
+
+    if (!connection) {
+      logger.warn('⚠️ Invalid connection');
+      return;
+    }
+
+    const provider = new AnchorProvider(connection, wallet, {
+      commitment: 'confirmed',
+    });
+    anchor.setProvider(provider);
+    const program = new Program(customIdl, provider);
+    const [priceFeedPDA] = PublicKey.findProgramAddressSync(
+      [Buffer.from('price-feed')],
+      program.programId
+    );
+
+    const tx = await program.methods
+      .updatePrice(
+        report.feedId.slice(0, 4),
+        new BN(report.price.toString().slice(0, 4)),
+        new BN(report.validFromTimestamp.toString().slice(0, 4))
+      )
+      .accounts({
+        priceFeed: priceFeedPDA,
+        signer: provider.publicKey,
+      })
+      .rpc({ commitment: 'confirmed' });
+    const txDetails = await provider.connection.getTransaction(tx, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0,
+    });
+
+    return txDetails;
+  } catch (error) {
+    console.error(error);
     logger.error('ERROR', { error });
   }
 }
