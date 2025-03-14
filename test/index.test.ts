@@ -160,6 +160,100 @@ describe('Unit', () => {
   });
 
   describe('executeContract', () => {
+    it('should abort if private key is missing', async () => {
+      process.env = { NODE_ENV: 'test' };
+      const result = await executeContract({
+        report: mockReport,
+        functionArgs: mockFunctionArgs,
+        functionName: mockFunctionName,
+        abi: mockAbi,
+      });
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if ABI is missing', async () => {
+      const result = await executeContract({
+        report: mockReport,
+        functionArgs: mockFunctionArgs,
+        functionName: mockFunctionName,
+        abi: [],
+      });
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if functionName is missing', async () => {
+      const result = await executeContract({
+        report: mockReport,
+        functionArgs: mockFunctionArgs,
+        functionName: '',
+        abi: mockAbi,
+      });
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if functionArguments are missing', async () => {
+      const result = await executeContract({
+        report: mockReport,
+        functionArgs: [],
+        functionName: mockFunctionName,
+        abi: mockAbi,
+      });
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if contract address is missing', async () => {
+      getContractAddressMock.mockResolvedValueOnce(null);
+
+      const result = await executeContract({
+        report: mockReport,
+        functionArgs: mockFunctionArgs,
+        functionName: mockFunctionName,
+        abi: mockAbi,
+      });
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if chain is missing', async () => {
+      getContractAddressMock.mockResolvedValueOnce(
+        '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
+      );
+      getChainIdMock.mockResolvedValueOnce(null);
+
+      const result = await executeContract({
+        report: mockReport,
+        functionArgs: mockFunctionArgs,
+        functionName: mockFunctionName,
+        abi: mockAbi,
+      });
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if chain is invalid', async () => {
+      getContractAddressMock.mockResolvedValueOnce(
+        '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
+      );
+      getChainIdMock.mockResolvedValueOnce('31336');
+      getAllChainsMock.mockResolvedValueOnce([hardhat]);
+
+      const result = await executeContract({
+        report: mockReport,
+        functionArgs: mockFunctionArgs,
+        functionName: mockFunctionName,
+        abi: mockAbi,
+      });
+      expect(result).toEqual(undefined);
+    });
+    it('should abort if chain exceeds the limit', async () => {
+      getContractAddressMock.mockResolvedValueOnce(
+        '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
+      );
+      getChainIdMock.mockResolvedValueOnce('31337');
+      getAllChainsMock.mockResolvedValueOnce([hardhat]);
+      estimateContractGasMock.mockResolvedValueOnce(1234n);
+      getGasCapMock.mockResolvedValueOnce(500n.toString());
+
+      const result = await executeContract({
+        report: mockReport,
+        functionArgs: mockFunctionArgs,
+        functionName: mockFunctionName,
+        abi: mockAbi,
+      });
+      expect(result).toEqual(undefined);
+    });
     it('should execute contract', async () => {
       getContractAddressMock.mockResolvedValueOnce(
         '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'

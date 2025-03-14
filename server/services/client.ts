@@ -79,7 +79,10 @@ export async function executeContract({
     const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
 
     const address = await getContractAddress(report.feedId);
-    if (!address || !isAddress(address)) return;
+    if (!address || !isAddress(address)) {
+      logger.warn('⚠️ Contract address is missing');
+      return;
+    }
     const clients = await getClients();
     if (!clients || !clients.publicClient || !clients.walletClient) {
       logger.warn('⚠️ Invalid clients', { clients });
