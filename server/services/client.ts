@@ -14,6 +14,13 @@ import {
   formatUnits,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import {
+  estimateContractGas,
+  simulateContract,
+  waitForTransactionReceipt,
+  writeContract,
+  readContract,
+} from 'viem/actions';
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
@@ -23,8 +30,8 @@ import {
   getContractAddress,
   getGasCap,
   setChainId,
-} from 'server/store';
-import { getVerifier } from 'server/config/verifiers';
+} from '../store';
+import { getVerifier } from '../config/verifiers';
 
 const getAccount = () => {
   try {
@@ -71,15 +78,18 @@ export async function executeContract({
 
     const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
 
-    const address = await getContractAddress();
-    if (!address || !isAddress(address)) return;
+    const address = await getContractAddress(report.feedId);
+    if (!address || !isAddress(address)) {
+      logger.warn('⚠️ Contract address is missing');
+      return;
+    }
     const clients = await getClients();
     if (!clients || !clients.publicClient || !clients.walletClient) {
       logger.warn('⚠️ Invalid clients', { clients });
       return;
     }
     const { publicClient, walletClient } = clients;
-    const gas = await publicClient.estimateContractGas({
+    const gas = await estimateContractGas(publicClient, {
       account,
       address,
       abi,
@@ -102,7 +112,7 @@ export async function executeContract({
       );
       return;
     }
-    const { request } = await publicClient.simulateContract({
+    const { request } = await simulateContract(publicClient, {
       account,
       address,
       abi,
@@ -111,9 +121,10 @@ export async function executeContract({
     });
     logger.info('ℹ️ Transaction simulated', request);
 
-    const hash = await walletClient.writeContract(request);
+    const hash = await writeContract(walletClient, request);
     logger.info(`⌛️ Sending transaction ${hash} `, hash);
-    return await publicClient.waitForTransactionReceipt({ hash });
+    const txReceipt = await waitForTransactionReceipt(publicClient, { hash });
+    return txReceipt;
   } catch (error) {
     logger.error('ERROR', { error });
   }
@@ -143,19 +154,19 @@ async function getContractAddresses() {
       return;
     }
 
-    const feeManagerAddress = await publicClient.readContract({
+    const feeManagerAddress = await readContract(publicClient, {
       address: verifierProxyAddress,
       abi: verifierProxyAbi,
       functionName: 's_feeManager',
     });
 
     const [rewardManagerAddress, feeTokenAddress] = await Promise.all([
-      publicClient.readContract({
+      readContract(publicClient, {
         address: feeManagerAddress,
         abi: feeManagerAbi,
         functionName: 'i_rewardManager',
       }),
-      publicClient.readContract({
+      readContract(publicClient, {
         address: feeManagerAddress,
         abi: feeManagerAbi,
         functionName: 'i_linkAddress',
@@ -226,7 +237,7 @@ export async function verifyReport(report: StreamReport) {
       verifierProxyAddress,
     } = contractAddresses;
 
-    const [fee] = await publicClient.readContract({
+    const [fee] = await readContract(publicClient, {
       address: feeManagerAddress,
       abi: feeManagerAbi,
       functionName: 'getFeeAndReward',
@@ -239,7 +250,7 @@ export async function verifyReport(report: StreamReport) {
       [feeTokenAddress]
     );
 
-    const approveLinkGas = await publicClient.estimateContractGas({
+    const approveLinkGas = await estimateContractGas(publicClient, {
       account,
       address: feeTokenAddress,
       abi: erc20Abi,
@@ -264,7 +275,8 @@ export async function verifyReport(report: StreamReport) {
       return;
     }
 
-    const { request: approveLinkRequest } = await publicClient.simulateContract(
+    const { request: approveLinkRequest } = await simulateContract(
+      publicClient,
       {
         account,
         address: feeTokenAddress,
@@ -273,12 +285,13 @@ export async function verifyReport(report: StreamReport) {
         args: [rewardManagerAddress, fee.amount],
       }
     );
-    const approveLinkHash = await walletClient.writeContract(
+    const approveLinkHash = await writeContract(
+      walletClient,
       approveLinkRequest
     );
-    await publicClient.waitForTransactionReceipt({ hash: approveLinkHash });
+    await waitForTransactionReceipt(publicClient, { hash: approveLinkHash });
 
-    const verifyReportGas = await publicClient.estimateContractGas({
+    const verifyReportGas = await estimateContractGas(publicClient, {
       account,
       address: verifierProxyAddress,
       abi: verifierProxyAbi,
@@ -301,17 +314,18 @@ export async function verifyReport(report: StreamReport) {
       return;
     }
     const { request: verifyReportRequest, result: verifiedReportData } =
-      await publicClient.simulateContract({
+      await simulateContract(publicClient, {
         account,
         address: verifierProxyAddress,
         abi: verifierProxyAbi,
         functionName: 'verify',
         args: [report.rawReport, feeTokenAddressEncoded],
       });
-    const verifyReportHash = await walletClient.writeContract(
+    const verifyReportHash = await writeContract(
+      walletClient,
       verifyReportRequest
     );
-    await publicClient.waitForTransactionReceipt({ hash: verifyReportHash });
+    await waitForTransactionReceipt(publicClient, { hash: verifyReportHash });
 
     if (reportVersion === '3') {
       const [

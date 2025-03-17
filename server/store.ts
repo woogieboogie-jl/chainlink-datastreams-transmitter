@@ -11,7 +11,7 @@ import {
   setList,
   setValue,
 } from './services/redis';
-import { getReportPrice } from '~/lib/utils';
+import { getReportPrice } from '../app/lib/utils';
 import { logger } from './services/logger';
 import { CronExpressionParser } from 'cron-parser';
 
