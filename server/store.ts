@@ -74,21 +74,31 @@ const removeVerifierAddress = async (chainId: string) => {
 const getSeed = async () => getValue('seed');
 const setSeed = async () => setValue('seed', new Date().toString());
 
-const getFunctionName = async (feedId?: string) =>
-  await getValue(`functionName:${feedId}`);
-const setFunctionName = async (feedId: string, functionName: string) =>
-  await setValue(`functionName:${feedId}`, functionName);
-const getFunctionArgs = async (feedId?: string) =>
-  await getList(`functionArgs:${feedId}`);
-const setFunctionArgs = async (feedId: string, functionArgs: string[]) =>
-  await setList(`functionArgs:${feedId}`, functionArgs);
-const getAbi = async (feedId?: string) => await getValue(`abi:${feedId}`);
-const setAbi = async (feedId: string, abi: string) =>
-  await setValue(`abi:${feedId}`, abi);
-const getContractAddress = async (feedId?: string) =>
-  await getValue(`contractAddress:${feedId}`);
-const setContractAddress = async (feedId: string, address: Address) =>
-  await setValue(`contractAddress:${feedId}`, address);
+const getFunctionName = async (feedId: string, chainId: string) =>
+  await getValue(`functionName:${feedId}:${chainId}`);
+const setFunctionName = async (
+  feedId: string,
+  chainId: string,
+  functionName: string
+) => await setValue(`functionName:${feedId}:${chainId}`, functionName);
+const getFunctionArgs = async (feedId: string, chainId: string) =>
+  await getList(`functionArgs:${feedId}:${chainId}`);
+const setFunctionArgs = async (
+  feedId: string,
+  chainId: string,
+  functionArgs: string[]
+) => await setList(`functionArgs:${feedId}:${chainId}`, functionArgs);
+const getAbi = async (feedId: string, chainId: string) =>
+  await getValue(`abi:${feedId}:${chainId}`);
+const setAbi = async (feedId: string, chainId: string, abi: string) =>
+  await setValue(`abi:${feedId}:${chainId}`, abi);
+const getContractAddress = async (feedId: string, chainId: string) =>
+  await getValue(`contractAddress:${feedId}:${chainId}`);
+const setContractAddress = async (
+  feedId: string,
+  chainId: string,
+  address: Address
+) => await setValue(`contractAddress:${feedId}:${chainId}`, address);
 
 const seedConfig = async (config: Config) => {
   try {
@@ -201,52 +211,68 @@ const seedConfig = async (config: Config) => {
     }
 
     await Promise.all(
-      config.targetContracts.map(async (contract) => {
-        try {
-          const { feedId, address, abi, functionArgs, functionName } = contract;
-          if (!feedId || !isHex(feedId)) {
-            logger.warn('⚠ Contract feedId invalid input', contract);
-            return;
-          }
-          if (isAddress(address) && address !== zeroAddress) {
-            await setContractAddress(feedId, address);
-            logger.info(
-              `📢 Contract ${address} has been set for feed ${feedId}`,
-              {
-                feedId,
-                address,
-              }
-            );
-          }
-          if (abi) {
-            await setAbi(feedId, JSON.stringify(abi));
-            logger.info(`📢 ABI has been set for feed ${feedId}`, {
-              feedId,
-              abi,
-            });
-          }
-          if (functionName) {
-            await setFunctionName(feedId, functionName);
-            logger.info(
-              `📢 New function ${functionName} has been set for feed ${feedId}`,
-              {
-                feedId,
-                functionName,
-              }
-            );
-          }
-          if (functionArgs && functionArgs.length > 0) {
-            await setFunctionArgs(feedId, functionArgs);
-            logger.info(
-              `📢 Set of arguments ${functionArgs.join(
-                ', '
-              )} has been set for feed ${feedId}`,
-              { feedId, functionArgs }
-            );
-          }
-        } catch (error) {
-          logger.error('ERROR', { error });
+      config.targetChains.map(async ({ chainId, targetContracts }) => {
+        if (!chainId) {
+          logger.warn('⚠ Contract chainId invalid input');
+          return;
         }
+        await Promise.all(
+          targetContracts.map(async (contract) => {
+            try {
+              const { feedId, address, abi, functionArgs, functionName } =
+                contract;
+
+              if (!feedId || !isHex(feedId)) {
+                logger.warn('⚠ Contract feedId invalid input', contract);
+                return;
+              }
+              if (isAddress(address) && address !== zeroAddress) {
+                await setContractAddress(feedId, `${chainId}`, address);
+                logger.info(
+                  `📢 Contract ${address} has been set for feed ${feedId} on chain ${chainId}`,
+                  {
+                    feedId,
+                    chainId,
+                    address,
+                  }
+                );
+              }
+              if (abi) {
+                await setAbi(feedId, `${chainId}`, JSON.stringify(abi));
+                logger.info(
+                  `📢 ABI has been set for feed ${feedId} on chain ${chainId}`,
+                  {
+                    feedId,
+                    chainId,
+                    abi,
+                  }
+                );
+              }
+              if (functionName) {
+                await setFunctionName(feedId, `${chainId}`, functionName);
+                logger.info(
+                  `📢 New function ${functionName} has been set for feed ${feedId}`,
+                  {
+                    feedId,
+                    chainId,
+                    functionName,
+                  }
+                );
+              }
+              if (functionArgs && functionArgs.length > 0) {
+                await setFunctionArgs(feedId, `${chainId}`, functionArgs);
+                logger.info(
+                  `📢 Set of arguments ${functionArgs.join(
+                    ', '
+                  )} has been set for feed ${feedId} on chain ${chainId}`,
+                  { feedId, chainId, functionArgs }
+                );
+              }
+            } catch (error) {
+              logger.error('ERROR', { error });
+            }
+          })
+        );
       })
     );
 

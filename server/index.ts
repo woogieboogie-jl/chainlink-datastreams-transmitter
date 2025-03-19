@@ -17,6 +17,7 @@ import { readFile } from 'node:fs/promises';
 import {
   addFeed,
   getAbi,
+  getChainId,
   getFeedExists,
   getFeedName,
   getFeeds,
@@ -283,18 +284,25 @@ app.listen(port, async () => {
 
 async function dataUpdater({ report }: { report: StreamReport }) {
   try {
+    const chainId = await getChainId();
+    if (!chainId) {
+      logger.warn(
+        `🛑 ChainId is missing. Connect to a chain and try again | Aborting`
+      );
+      return;
+    }
     const verifiedReport = await verifyReport(report);
     const { feedId } = report;
     if (!verifiedReport) {
       logger.warn(`🛑 Verified report is missing | Aborting`);
       return;
     }
-    const functionName = await getFunctionName(feedId);
+    const functionName = await getFunctionName(feedId, chainId);
     if (!functionName) {
       logger.warn(`🛑 Function name is missing | Aborting`);
       return;
     }
-    const abi = await getAbi(feedId);
+    const abi = await getAbi(feedId, chainId);
     if (!abi) {
       logger.warn(`🛑 Contract ABI is missing | Aborting`);
       return;
@@ -304,7 +312,7 @@ async function dataUpdater({ report }: { report: StreamReport }) {
       report: verifiedReport as ReportV3,
       abi: JSON.parse(abi),
       functionName,
-      functionArgs: await getFunctionArgs(feedId),
+      functionArgs: await getFunctionArgs(feedId, chainId),
     });
     if (transaction?.status) {
       logger.info(`ℹ️ Transaction status: ${transaction?.status}`, {

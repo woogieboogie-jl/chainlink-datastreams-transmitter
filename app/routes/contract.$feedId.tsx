@@ -1,5 +1,6 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { Form, useLoaderData, useNavigate } from '@remix-run/react';
+import { getCurrentChain } from 'server/services/client';
 import { logger } from 'server/services/logger';
 import {
   getAbi,
@@ -30,6 +31,13 @@ enum Intent {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
+  const chain = await getCurrentChain();
+  if (!chain || !chain.chainId) {
+    logger.warn('⚠️ Chain is missing. Connect to a chain and try again');
+    return;
+  }
+  const chainId = `${chain.chainId}`;
+  const chainName = chain.name;
   const feedId = params.feedId;
   if (!feedId) {
     logger.warn('⚠ Feed ID is missing', { params });
@@ -51,8 +59,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       logger.warn('⚠ Invalid contract address', { data });
       return null;
     }
-    await setContractAddress(feedId, contract);
-    logger.info(`📢 New contract has been set ${contract}`, { contract });
+    await setContractAddress(feedId, chainId, contract);
+    logger.info(
+      `📢 New contract has been set ${contract} on chain ${chainName} (${chainId})`,
+      { contract }
+    );
     return null;
   }
   if (intent === Intent.ABI) {
@@ -67,8 +78,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       logger.error('ERROR', error);
       return null;
     }
-    await setAbi(feedId, abi);
-    logger.info(`📢 New abi has been set`, { abi });
+    await setAbi(feedId, chainId, abi);
+    logger.info(`📢 New abi has been set on chain ${chainName} (${chainId})`, {
+      abi,
+    });
     return null;
   }
   if (intent === Intent.FUNCTION) {
@@ -77,10 +90,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       logger.warn('⚠ Invalid functionName input', { data });
       return null;
     }
-    await setFunctionName(feedId, functionName);
-    logger.info(`📢 New function has been set ${functionName}`, {
-      functionName,
-    });
+    await setFunctionName(feedId, chainId, functionName);
+    logger.info(
+      `📢 New function has been set ${functionName} on chain ${chainName} (${chainId})`,
+      {
+        functionName,
+      }
+    );
     return null;
   }
   if (intent === Intent.ARGS) {
@@ -90,10 +106,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return null;
     }
     const newArgs = args.split(',').map((a) => a.trim());
-    await setFunctionArgs(feedId, newArgs);
-    logger.info(`📢 New set of arguments has been set ${newArgs.join(', ')}`, {
-      functionArgs: args,
-    });
+    await setFunctionArgs(feedId, chainId, newArgs);
+    logger.info(
+      `📢 New set of arguments has been set ${newArgs.join(
+        ', '
+      )} on chain ${chainName} (${chainId})`,
+      {
+        functionArgs: args,
+      }
+    );
 
     return null;
   }
@@ -102,6 +123,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
+  const chain = await getCurrentChain();
+  if (!chain || !chain.chainId) {
+    throw new Response(null, {
+      status: 400,
+      statusText: 'Not connected to a chain',
+    });
+  }
+  const chainId = `${chain.chainId}`;
+  const chainName = chain.name;
   const feedId = params.feedId;
   if (!feedId) {
     throw new Response(null, {
@@ -118,24 +148,24 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   const [contract, abi, functionName, args, feedName] = await Promise.all([
-    getContractAddress(feedId),
-    getAbi(feedId),
-    getFunctionName(feedId),
-    getFunctionArgs(feedId),
+    getContractAddress(feedId, chainId),
+    getAbi(feedId, chainId),
+    getFunctionName(feedId, chainId),
+    getFunctionArgs(feedId, chainId),
     getFeedName(feedId),
   ]);
-  return { contract, abi, functionName, args, feedName };
+  return { contract, abi, functionName, args, feedName, chainName, chainId };
 }
 
 export default function Contract() {
   const navigate = useNavigate();
-  const { contract, abi, functionName, args, feedName } =
+  const { contract, abi, functionName, args, feedName, chainName, chainId } =
     useLoaderData<typeof loader>();
 
   return (
     <>
       <h1 className="leading text-2xl font-semibold">
-        {`Feed ${feedName} on-chain settings`}
+        {`Feed ${feedName} settings on chain ${chainName} (${chainId})`}
       </h1>
 
       <Card>
