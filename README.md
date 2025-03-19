@@ -172,23 +172,27 @@ chains:
 verifierAddresses:
   - chainId: 84532
     address: '0x...'
-# Target contracts to write data on-chain configuration. Map each feedId to a contract address and
-# set the functionName with the arguments to be called. Contract ABI should also be provided.
-targetContracts:
-  - feedId: '0x...'
-    address: '0x...'
-    functionName: 'functionNameHere'
-    functionArgs:
-      - 'feedId'
-      - 'validFromTimestamp'
-      - 'observationsTimestamp'
-      - 'nativeFee'
-      - 'linkFee'
-      - 'expiresAt'
-      - 'price'
-      - 'bid'
-      - 'ask'
-    abi: [...]
+# Target chains to write data on-chain    
+targetChains:
+  # The target blockchain network ID
+  - chainId: 43113
+    # Target contracts to write data on-chain configuration. Map each feedId to a contract address on the specified chain and
+    # set the functionName with the arguments to be called. Contract ABI should also be provided.
+    targetContracts:
+      - feedId: '0x...'
+        address: '0x...'
+        functionName: 'functionNameHere'
+        functionArgs:
+          - 'feedId'
+          - 'validFromTimestamp'
+          - 'observationsTimestamp'
+          - 'nativeFee'
+          - 'linkFee'
+          - 'expiresAt'
+          - 'price'
+          - 'bid'
+          - 'ask'
+        abi: [...]
 ```
 
 ### Example YAML Configuration
@@ -222,65 +226,67 @@ verifierAddresses:
     address: '0x...'
   - chainId: 84532
     address: '0x...'
-targetContracts:
-  - feedId: '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'
-    address: '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
-    functionName: 'set'
-    functionArgs:
-      - 'feedId'
-      - 'validFromTimestamp'
-      - 'observationsTimestamp'
-      - 'nativeFee'
-      - 'linkFee'
-      - 'expiresAt'
-      - 'price'
-      - 'bid'
-      - 'ask'
-    abi:
-      [
-        {
-          'inputs':
-            [
-              {
-                'internalType': 'bytes32',
-                'name': 'feedId',
-                'type': 'bytes32',
-              },
-              {
-                'internalType': 'uint32',
-                'name': 'validFromTimestamp',
-                'type': 'uint32',
-              },
-              {
-                'internalType': 'uint32',
-                'name': 'observationsTimestamp',
-                'type': 'uint32',
-              },
-              {
-                'internalType': 'uint192',
-                'name': 'nativeFee',
-                'type': 'uint192',
-              },
-              {
-                'internalType': 'uint192',
-                'name': 'linkFee',
-                'type': 'uint192',
-              },
-              {
-                'internalType': 'uint32',
-                'name': 'expiresAt',
-                'type': 'uint32',
-              },
-              { 'internalType': 'int192', 'name': 'price', 'type': 'int192' },
-              { 'internalType': 'int192', 'name': 'bid', 'type': 'int192' },
-              { 'internalType': 'int192', 'name': 'ask', 'type': 'int192' },
-            ],
-          'name': 'set',
-          'outputs': [],
-          'stateMutability': 'nonpayable',
-          'type': 'function',
-        },
-      ]
+targetChains:    
+  - chainId: 43113
+    targetContracts:
+      - feedId: '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'
+        address: '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
+        functionName: 'set'
+        functionArgs:
+          - 'feedId'
+          - 'validFromTimestamp'
+          - 'observationsTimestamp'
+          - 'nativeFee'
+          - 'linkFee'
+          - 'expiresAt'
+          - 'price'
+          - 'bid'
+          - 'ask'
+        abi:
+          [
+            {
+              'inputs':
+                [
+                  {
+                    'internalType': 'bytes32',
+                    'name': 'feedId',
+                    'type': 'bytes32',
+                  },
+                  {
+                    'internalType': 'uint32',
+                    'name': 'validFromTimestamp',
+                    'type': 'uint32',
+                  },
+                  {
+                    'internalType': 'uint32',
+                    'name': 'observationsTimestamp',
+                    'type': 'uint32',
+                  },
+                  {
+                    'internalType': 'uint192',
+                    'name': 'nativeFee',
+                    'type': 'uint192',
+                  },
+                  {
+                    'internalType': 'uint192',
+                    'name': 'linkFee',
+                    'type': 'uint192',
+                  },
+                  {
+                    'internalType': 'uint32',
+                    'name': 'expiresAt',
+                    'type': 'uint32',
+                  },
+                  { 'internalType': 'int192', 'name': 'price', 'type': 'int192' },
+                  { 'internalType': 'int192', 'name': 'bid', 'type': 'int192' },
+                  { 'internalType': 'int192', 'name': 'ask', 'type': 'int192' },
+                ],
+              'name': 'set',
+              'outputs': [],
+              'stateMutability': 'nonpayable',
+              'type': 'function',
+            },
+          ]
 ```
 
 ### Key Configuration Parameters
@@ -292,10 +298,12 @@ targetContracts:
 - `priceDeltaPercentage`: Minimum price deviation percent before an update is triggered.
 - `chains`: List of supported blockchain networks with RPC URLs.
 - `verifierAddresses`: The Data Streams verifier contracts for any custom chains added to the config.
-- `targetContracts`: The smart contracts to interact with.
-  - `functionName`: Name of the smart contract function to call.
-  - `functionArgs`: List of required arguments for the contract function.
-  - `abi`: Function definition used for contract interactions.
+- `targetChains`: The blockchain networks where data will be written to.
+  - `chainId`: The chainId of the network the target contracts are deployed to.
+  - `targetContracts`: The smart contracts to interact with.
+    - `functionName`: Name of the smart contract function to call.
+    - `functionArgs`: List of required arguments for the contract function.
+    - `abi`: Function definition used for contract interactions.
 
 To apply changes, restart the Broadcaster using:
 

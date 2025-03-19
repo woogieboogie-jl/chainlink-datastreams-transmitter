@@ -55,6 +55,11 @@ export async function executeContract({
   functionArgs: string[];
 }) {
   try {
+    const chainId = await getChainId();
+    if (!chainId) {
+      logger.warn('⚠️ Chain is missing. Connect to a chain and try again');
+      return;
+    }
     const account = getAccount();
     if (!account) {
       logger.error('‼️ Account is missing');
@@ -78,7 +83,7 @@ export async function executeContract({
 
     const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
 
-    const address = await getContractAddress(report.feedId);
+    const address = await getContractAddress(report.feedId, chainId);
     if (!address || !isAddress(address)) {
       logger.warn('⚠️ Contract address is missing');
       return;

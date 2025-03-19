@@ -53,12 +53,15 @@ export type Config = {
     name: string;
     feedId: Hex;
   }[];
-  targetContracts: {
-    feedId: Hex;
-    address: Address;
-    abi: Abi;
-    functionName: string;
-    functionArgs: string[];
+  targetChains: {
+    chainId: number | string;
+    targetContracts: {
+      feedId: Hex;
+      address: Address;
+      abi: Abi;
+      functionName: string;
+      functionArgs: string[];
+    }[];
   }[];
   gasCap: string;
   interval: string;
