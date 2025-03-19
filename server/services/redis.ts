@@ -1,12 +1,16 @@
 import { Redis } from 'ioredis';
+import MockRedis from 'ioredis-mock';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const redis = new Redis({
-  password: process.env.REDIS_PASSWORD,
-  host: process.env.REDIS_HOST || '127.0.0.1',
-});
+const redis =
+  process.env.NODE_ENV === 'test'
+    ? new MockRedis()
+    : new Redis({
+        password: process.env.REDIS_PASSWORD,
+        host: process.env.REDIS_HOST || '127.0.0.1',
+      });
 
 export const setValue = async (key: string, value: string | number) =>
   await redis.set(key, value);
