@@ -34,8 +34,8 @@ import { ChevronLeft, Home } from 'lucide-react';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Datastreams Broadcaster' },
-    { name: 'description', content: 'Chainlink Datastreams Broadcaster' },
+    { title: 'Datastreams Transmitter' },
+    { name: 'description', content: 'Chainlink Datastreams Transmitter' },
   ];
 };
 

@@ -10,7 +10,7 @@ ENV NODE_ENV production
 
 FROM base as deps
 
-WORKDIR /broadcaster
+WORKDIR /transmitter
 
 ADD package.json ./
 RUN npm install --include=dev
@@ -19,9 +19,9 @@ RUN npm install --include=dev
 
 FROM base as production-deps
 
-WORKDIR /broadcaster
+WORKDIR /transmitter
 
-COPY --from=deps /broadcaster/node_modules /broadcaster/node_modules
+COPY --from=deps /transmitter/node_modules /transmitter/node_modules
 ADD package.json ./
 RUN npm prune --omit=dev
 
@@ -29,9 +29,9 @@ RUN npm prune --omit=dev
 
 FROM base as build
 
-WORKDIR /broadcaster
+WORKDIR /transmitter
 
-COPY --from=deps /broadcaster/node_modules /broadcaster/node_modules
+COPY --from=deps /transmitter/node_modules /transmitter/node_modules
 
 ADD . .
 RUN npm run build
@@ -40,12 +40,12 @@ RUN npm run build
 
 FROM base
 
-WORKDIR /broadcaster
+WORKDIR /transmitter
 
-COPY --from=production-deps /broadcaster/node_modules /broadcaster/node_modules
+COPY --from=production-deps /transmitter/node_modules /transmitter/node_modules
 
-COPY --from=build /broadcaster/build /broadcaster/build
-COPY --from=build /broadcaster/public /broadcaster/public
+COPY --from=build /transmitter/build /transmitter/build
+COPY --from=build /transmitter/public /transmitter/public
 ADD . .
 
 CMD ["npm", "start"]

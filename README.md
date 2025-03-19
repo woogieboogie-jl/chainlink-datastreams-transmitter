@@ -8,11 +8,11 @@
 
 </div>
 
-# Chainlink Data Streams Broadcaster
+# Chainlink Data Streams Transmitter
 
 ## Overview
 
-Chainlink Data Streams Broadcaster is a service that bridges off-chain data streams with on-chain smart contracts. It continuously monitors off-chain price updates and pushes them on-chain based on predefined conditions such as price deviations or time intervals.
+Chainlink Data Streams Transmitter is a service that bridges off-chain data streams with on-chain smart contracts. It continuously monitors off-chain price updates and pushes them on-chain based on predefined conditions such as price deviations or time intervals.
 
 ### Key Features:
 
@@ -25,7 +25,7 @@ Chainlink Data Streams Broadcaster is a service that bridges off-chain data stre
 
 ## Table of contents
 
-- [Chainlink Data Streams Broadcaster](#chainlink-data-streams-broadcaster)
+- [Chainlink Data Streams Transmitter](#chainlink-data-streams-transmitter)
   - [Overview](#overview)
     - [Key Features:](#key-features)
   - [Table of contents](#table-of-contents)
@@ -56,7 +56,7 @@ Chainlink Data Streams Broadcaster is a service that bridges off-chain data stre
 
 ```mermaid
 graph TD
-    A[Streams Aggregation Network] -->|1.Monitors prices via websocket| B[Data Streams Chain Broadcaster]
+    A[Streams Aggregation Network] -->|1.Monitors prices via websocket| B[Data Streams Chain Transmitter]
     B -->|2.Retrieves Verified Reports at set interval or deviation| C[Streams Verifier Contract]
     B -->|3.Writes Prices on-chain to data feeds contract| D[ETH/USD]
     B -->|3.Writes Prices on-chain to data feeds contract| E[BTC/USD]
@@ -71,7 +71,7 @@ graph TD
 
 ## Installation Instructions
 
-Before setting up the Broadcaster, ensure you have the required dependencies installed.
+Before setting up the , ensure you have the required dependencies installed.
 
 ### Prerequisites
 
@@ -83,8 +83,8 @@ Before setting up the Broadcaster, ensure you have the required dependencies ins
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/hackbg/chainlink-datastreams-broadcaster.git
-   cd chainlink-datastreams-broadcaster
+   git clone https://github.com/hackbg/chainlink-datastreams-transmitter.git
+   cd chainlink-datastreams-transmitter
    ```
 2. Copy the example environment file:
    ```sh
@@ -131,18 +131,18 @@ To make setting environment variables easier there is a `.env.example` file in t
 
 Although configurations are stored in Redis, an example YAML configuration is provided for reference. This YAML file can be used to seed the Redis configuration parameters automatically without requiring manual input through the UI. This approach simplifies setup and allows for easier reproducibility of configurations across multiple instances of the service.
 
-Using a YAML file for configuration also makes it possible to replicate a specific setup by copying the file across different instances of the Broadcaster. This ensures that deployments remain consistent and eliminates the need for repeated manual configuration when scaling the service.
+Using a YAML file for configuration also makes it possible to replicate a specific setup by copying the file across different instances of the Transmitter. This ensures that deployments remain consistent and eliminates the need for repeated manual configuration when scaling the service.
 
 ### YAML Configuration
 
 ```yaml
-# List of Chainlink Data feeds that the broadcaster will subscribe to
+# List of Chainlink Data feeds that the transmitter will subscribe to
 feeds:
   # Name of the feed
   - name: 'ETH/USD'
     # Unique identifier for the feed (Ref: https://docs.chain.link/data-streams/crypto-streams?page=1)
     feedId: '0x...'
-# The target blockchain network ID (the network the Broadcaster will write the data to)
+# The target blockchain network ID (the network the Transmitter will write the data to)
 chainId: 43113
 # Maximum gas limit. This is the maximum amount of gas you are willing to spend on a transaction.
 # If the estimated gas is greater, the transaction will be canceled.
@@ -161,7 +161,7 @@ priceDeltaPercentage: 0.01
 chains:
   # Each additional chain should be added to the configuration with the following mandatory properties: id, name, currencyName, currencySymbol, currencyDecimals, rpc.
   # Optional: Set the `testnet` property to 'true' if this is a test network.
-  # Removing this property makes the broadcaster consider the network a mainnet.
+  # Removing this property makes the transmitter consider the network a mainnet.
   - id: 995
     name: '🔥 5ireChain'
     currencyName: '5ire Token'
@@ -305,7 +305,7 @@ targetChains:
     - `functionArgs`: List of required arguments for the contract function.
     - `abi`: Function definition used for contract interactions.
 
-To apply changes, restart the Broadcaster using:
+To apply changes, restart the Transmitter using:
 
 ```sh
 docker compose restart
@@ -340,7 +340,7 @@ Before starting the application, ensure that all necessary environment variables
 
 ## UI Setup Instructions
 
-The Broadcaster provides a UI for managing feeds. It is automatically enabled if you start the broadcaster using the Docker compose file as mentioned in the instructions above.
+The Transmitter provides a UI for managing feeds. It is automatically enabled if you start the transmitter using the Docker compose file as mentioned in the instructions above.
 
 To start it manually outside of the docker setup:
 
@@ -366,7 +366,7 @@ The application supports different logging levels:
 Logs can be accessed via:
 
 ```sh
-docker logs -f broadcaster
+docker logs -f transmitter
 ```
 
 The application stores logs in the `logs` directory to maintain an audit trail of user actions and configuration changes. They can also be used for troubleshooting..
@@ -387,7 +387,7 @@ After deployment, verify the setup with:
 
 - Verify logs:
   ```sh
-  docker logs broadcaster
+  docker logs transmitter
   ```
 
 ---
