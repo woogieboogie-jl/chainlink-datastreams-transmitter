@@ -373,7 +373,7 @@ To start it manually outside of the docker setup:
 ### UI usage
 
 > [!NOTE]
-> If a configuration YAML file is provided, the UI will automatically load the settings from that file when opened. Otherwise, the interface will start with an empty state, requiring the user to enter all details manually. The following sections explain how to complete the configuration step by step.
+> If a configuration YAML file is provided, its content gets saved in the local Redis instance on the first start of the transmitter. The UI will automatically load the settings from the Redis store instance when opened. Otherwise, if there is no initial configuration provided - the interface will start with an empty state, requiring the user to enter all details manually. The following sections explain how to complete the configuration step by step.
 
 #### Streams
 
