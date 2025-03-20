@@ -41,7 +41,22 @@ Chainlink Data Streams Transmitter is a service that bridges off-chain data stre
   - [Deployment Guide](#deployment-guide)
     - [Running with Docker Compose](#running-with-docker-compose)
     - [Production Deployment](#production-deployment)
-  - [UI Setup Instructions](#ui-setup-instructions)
+  - [UI](#ui)
+    - [UI Setup Instructions](#ui-setup-instructions)
+    - [UI usage](#ui-usage)
+      - [Streams](#streams)
+        - [Contract](#contract)
+        - [Add new data stream](#add-new-data-stream)
+      - [Chain](#chain)
+        - [Switch chain](#switch-chain)
+        - [Add new chain](#add-new-chain)
+      - [Schedule](#schedule)
+        - [Set new schedule pattern](#set-new-schedule-pattern)
+      - [Verifier Contracts](#verifier-contracts)
+        - [Set Verifier Contracts](#set-verifier-contracts)
+      - [Price delta percentage](#price-delta-percentage)
+      - [Gas cap](#gas-cap)
+      - [Logs](#logs)
   - [Logging](#logging)
   - [Testing Commands](#testing-commands)
   - [Troubleshooting](#troubleshooting)
@@ -338,7 +353,9 @@ Before starting the application, ensure that all necessary environment variables
 
 ---
 
-## UI Setup Instructions
+## UI
+
+### UI Setup Instructions
 
 The Transmitter provides a UI for managing feeds. It is automatically enabled if you start the transmitter using the Docker compose file as mentioned in the instructions above.
 
@@ -352,6 +369,147 @@ To start it manually outside of the docker setup:
 
 > [!NOTE]
 > The UI requires a running Redis instance. Make sure a Redis instance is running and the authentication credentials are set in the `.env` file when running the UI outside of the containerized setup in the docker configuration.
+
+### UI usage
+
+#### Streams
+
+![streams](public/readme/streams.png)
+
+First section allows monitoring and managing of the streams. Each row contains the following info/action:
+ - Stream: The name of the stream. It is set by the user for easier tracking
+ - Feed ID: Check [Chainlink Data Streams documentation](https://docs.chain.link/data-streams/crypto-streams) for a list of supported streams.
+ - Report Schema: Currently [Report Schema v3](https://docs.chain.link/data-streams/reference/report-schema) and [Report Schema v4](https://docs.chain.link/data-streams/reference/report-schema-v4) are supported
+ - Contract: Preview and edit the contract properties. Each feed can be recorded in a separate contract on the current chain. Check [Contract](#contract) section for more information
+ - Saved price: The latest price recorded onchain
+ - Last reported: The latest price reported by the stream.
+ - Status: Current status of the stream. It can be `Running`, `Connecting` or `Stopped`
+ - Remove: Remove the feed from the list and stop tracking its stream.
+ - Start: Start/resume all streams
+ - Stop: Stop all streams
+ - Add new data stream: add new feed to the list and start tracking it
+  
+##### Contract
+
+Clicking the contract icon <img src="public/readme/contract-btn.png" alt="contract-btn" width="30"/> brings the contract page. It allows to view/edit the contract properties for the stream on the current connected chain.
+
+**Contract address**
+![contract-address](public/readme/contract-address.png)
+
+View and edit the contract address
+
+
+**Function**
+![function](public/readme/function.png)
+
+View and edit the name of the contract function to be called to store report result data on-chain.
+
+**Arguments**
+![arguments](public/readme/arguments.png)
+
+View and edit report arguments field names in the sequense the contract expects them to be passed in the selected method, separated by comma (, ). See documentation for [Data Streams Report Schemas](https://docs.chain.link/data-streams/reference/report-schema)
+
+**ABI**
+![abi](public/readme/abi.png)
+View and edit the ABI of the contract
+
+
+##### Add new data stream
+![add-stream](public/readme/add-stream.png)
+
+Add new data stream feed.
+ - Stream name: arbitrary name input. It is recommended to be the pair of the feed, ex. `ETH/USD`
+ - Feed ID: the Id of the stream. It can be obtained from the documentation or contact your Chainlink representative.
+
+---
+
+#### Chain
+
+Information and settings for the current connected chain can be found by clicking the address button on the upper right corner <img src="public/readme/chain-btn.png" alt="chain-btn" height="50"/>. Brings a pop-up with information:
+
+![chain-info](public/readme/chain-info.png)
+
+  - Name and ID of the currently connected chain
+  - Switch chain button
+  - Address of the connected account. It is used for paying the fees for the on-chain actions
+  - The account balance of the native currency
+  - The account balance of LINK on the current chain
+
+##### Switch chain
+
+![switch-chain](public/readme/switch-chain.png)
+
+  - A dropdown menu with all the available chains
+  - Add new chain option
+  
+##### Add new chain
+
+![add-chain](public/readme/add-chain.png)
+
+Any EVM network can be easily added. The following fields are mandatory:
+  - Chain ID
+  - Chain name
+  - Native currency name
+  - Native currency symbol
+  - Native currency decimals
+  - RPC URL
+Optional:
+  - Testnet - indicates if the chain is a testnet, leave blank for mainnet chains
+
+---
+
+#### Schedule
+
+![schedule](public/readme/schedule.png)
+
+Set the interval to check for price changes and write it on-chain. It is represented as a cron expression with granularity in seconds.
+
+##### Set new schedule pattern
+
+![new-schedule](public/readme/new-schedule.png)
+
+Set the interval to check for price changes and write it on-chain. It is represented as a cron expression with granularity in seconds. You can use tools like [crontab guru](https://crontab.guru/) to build the expression.
+
+---
+
+#### Verifier Contracts
+
+![verifier](public/readme/verifier.png)
+
+The addresses of the contracts responsible for reports verification.
+
+##### Set Verifier Contracts
+
+This contract verifies the signature from the DON to cryptographically guarantee that the report has not been altered from the time that the DON reached consensus to the point where you use the data in your application. Check out up-to-date contract addresses and more information in [Streams Verifiers Documentation](https://docs.chain.link/data-streams/crypto-streams?page=1#streams-verifier-network-addresses)
+
+![new-verifier](public/readme/new-verifier.png)
+
+- Select the chain from the dropdown
+- Input the contract address
+
+---
+
+#### Price delta percentage
+
+![price-delta](public/readme/price-delta.png)
+
+Set the price deviation threshold. Only changes that meet or exceed the specified percentage difference will be recorded on-chain. This applies in both directions. For example, if you set the threshold to 5%, only changes equal to or more than +5% or -5% will be considered valid deviations.
+
+---
+
+#### Gas cap
+
+![gas-cap](public/readme/gas-cap.png)
+
+Set the maximum amount of gas you are willing to spend on a transaction. If the estimated gas is greater, the transaction will be canceled. The value is set in WEI (the smallest unit on the chain).
+
+---
+
+#### Logs
+
+![logs](public/readme/logs.png)
+
+Displays logs in real time.
 
 ---
 
