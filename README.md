@@ -372,67 +372,71 @@ To start it manually outside of the docker setup:
 
 ### UI usage
 
+> [!NOTE]
+> If a configuration YAML file is provided, the UI will automatically load the settings from that file when opened. Otherwise, the interface will start with an empty state, requiring the user to enter all details manually. The following sections explain how to complete the configuration step by step.
+
 #### Streams
 
 ![streams](public/readme/streams.png)
 
 First section allows monitoring and managing of the streams. Each row contains the following info/action:
- - Stream: The name of the stream. It is set by the user for easier tracking
- - Feed ID: Check [Chainlink Data Streams documentation](https://docs.chain.link/data-streams/crypto-streams) for a list of supported streams.
- - Report Schema: Currently [Report Schema v3](https://docs.chain.link/data-streams/reference/report-schema) and [Report Schema v4](https://docs.chain.link/data-streams/reference/report-schema-v4) are supported
- - Contract: Preview and edit the contract properties. Each feed can be recorded in a separate contract on the current chain. Check [Contract](#contract) section for more information
- - Saved price: The latest price recorded onchain
- - Last reported: The latest price reported by the stream.
- - Status: Current status of the stream. It can be `Running`, `Connecting` or `Stopped`
- - Remove: Remove the feed from the list and stop tracking its stream.
- - Start: Start/resume all streams
- - Stop: Stop all streams
- - Add new data stream: add new feed to the list and start tracking it
+ - `Stream`: The name of the stream. This is the name set by the user for easier tracking and feed identification.
+ - `Feed ID`: Check [Chainlink Data Streams Documentation](https://docs.chain.link/data-streams/crypto-streams) for a list of supported streams.
+ - `Report Schema`: Currently [Report Schema v3](https://docs.chain.link/data-streams/reference/report-schema) and [Report Schema v4](https://docs.chain.link/data-streams/reference/report-schema-v4) are supported
+ - `Contract`: Preview and edit the contract properties. Each feed can be recorded in a separate contract on the configured target chain. Check the [Contract](#contract) section for more information.
+ - `Saved price`: The latest price recorded onchain.
+ - `Last reported`: The latest price reported by the stream.
+ - `Status`: Current status of the stream. The added stream can be in one of the following states: `Running`, `Connecting`, `Stopping` or `Stopped`
+ - `Remove`: This action button can be used to remove the feed from the list and stop tracking its reports.
+ - `Start`: Action button to Start or resume all data streams.
+ - `Stop`: Action button to Stop all the streams.
+ - `Add new data stream`: A button leading to the section for adding a new feed to the list so the transmitter can start tracking it.
   
 ##### Contract
 
-Clicking the contract icon <img src="public/readme/contract-btn.png" alt="contract-btn" width="30"/> brings the contract page. It allows to view/edit the contract properties for the stream on the current connected chain.
+Clicking the contract icon <img src="public/readme/contract-btn.png" alt="contract-btn" width="30"/> in the table above opens the contract configuration page. This page allows users to view and edit contract properties for the stream on the currently connected chain. Users can also add custom contracts, define ABI, and specify functions to store feed results on-chain.
 
 **Contract address**
 ![contract-address](public/readme/contract-address.png)
 
-View and edit the contract address
+View/Add or Edit the target contract address.
 
 
 **Function**
 ![function](public/readme/function.png)
 
-View and edit the name of the contract function to be called to store report result data on-chain.
+View/Add or Edit the name of the target contract function to be called to store report result data on-chain.
 
 **Arguments**
 ![arguments](public/readme/arguments.png)
 
-View and edit report arguments field names in the sequense the contract expects them to be passed in the selected method, separated by comma (, ). See documentation for [Data Streams Report Schemas](https://docs.chain.link/data-streams/reference/report-schema)
+View, add, or edit the report argument field names in the exact order the contract expects them. Separate each field with a comma (,). Refer to the [Data Streams Report Schemas Documentation](https://docs.chain.link/data-streams/reference/report-schema) for more details.
 
 **ABI**
 ![abi](public/readme/abi.png)
-View and edit the ABI of the contract
+
+View/Add or Edit the ABI of the target contract.
 
 
 ##### Add new data stream
 ![add-stream](public/readme/add-stream.png)
 
 Add new data stream feed.
- - Stream name: arbitrary name input. It is recommended to be the pair of the feed, ex. `ETH/USD`
- - Feed ID: the Id of the stream. It can be obtained from the documentation or contact your Chainlink representative.
+ - `Stream name`: This is an arbitrary name input. It is recommended to be the pair of the feed, ex. `ETH/USD`
+ - `Feed ID`: The Id of the stream. It can be obtained from the documentation (for public feeds) or by contacting your Chainlink representative.
 
 ---
 
 #### Chain
 
-Information and settings for the current connected chain can be found by clicking the address button on the upper right corner <img src="public/readme/chain-btn.png" alt="chain-btn" height="50"/>. Brings a pop-up with information:
+To view information and settings for the currently connected chain (a.k.a. target chain), click the address button in the upper right corner <img src="public/readme/chain-btn.png" alt="chain-btn" height="50"/>. This will open a pop-up displaying:
 
 ![chain-info](public/readme/chain-info.png)
 
-  - Name and ID of the currently connected chain
-  - Switch chain button
-  - Address of the connected account. It is used for paying the fees for the on-chain actions
-  - The account balance of the native currency
+  - The name and ID of the connected chain
+  - A button to switch chains
+  - The connected account address (used for paying the fees for the on-chain transaction fees and LINK fees)
+  - The account balance of the chain's native currency
   - The account balance of LINK on the current chain
 
 ##### Switch chain
@@ -447,14 +451,14 @@ Information and settings for the current connected chain can be found by clickin
 ![add-chain](public/readme/add-chain.png)
 
 Any EVM network can be easily added. The following fields are mandatory:
-  - Chain ID
-  - Chain name
-  - Native currency name
-  - Native currency symbol
-  - Native currency decimals
-  - RPC URL
+  - `Chain ID`
+  - `Chain name`
+  - `Native currency name`
+  - `Native currency symbol`
+  - `Native currency decimals`
+  - `RPC URL`
 Optional:
-  - Testnet - indicates if the chain is a testnet, leave blank for mainnet chains
+  - `Testnet` - this flag indicates if the chain is a testnet. Leave blank for mainnet chains.
 
 ---
 
@@ -462,13 +466,13 @@ Optional:
 
 ![schedule](public/readme/schedule.png)
 
-Set the interval to check for price changes and write it on-chain. It is represented as a cron expression with granularity in seconds.
+Set the interval for checking price changes and writing them on-chain. This interval is defined using a cron expression with second-level granularity.
 
 ##### Set new schedule pattern
 
 ![new-schedule](public/readme/new-schedule.png)
 
-Set the interval to check for price changes and write it on-chain. It is represented as a cron expression with granularity in seconds. You can use tools like [crontab guru](https://crontab.guru/) to build the expression.
+Set the interval for checking price changes and writing them on-chain. This interval is defined using a cron expression with second-level granularity. You can use tools like [crontab guru](https://crontab.guru/) to build the expression.
 
 ---
 
@@ -493,7 +497,9 @@ This contract verifies the signature from the DON to cryptographically guarantee
 
 ![price-delta](public/readme/price-delta.png)
 
-Set the price deviation threshold. Only changes that meet or exceed the specified percentage difference will be recorded on-chain. This applies in both directions. For example, if you set the threshold to 5%, only changes equal to or more than +5% or -5% will be considered valid deviations.
+Set the price deviation threshold. Only changes that meet or exceed the specified percentage difference will be recorded on-chain. This applies in both directions.
+
+For example, if you set the threshold to 5%, only changes equal to or more than +5% or -5% will be considered valid deviations.
 
 ---
 
@@ -501,7 +507,7 @@ Set the price deviation threshold. Only changes that meet or exceed the specifie
 
 ![gas-cap](public/readme/gas-cap.png)
 
-Set the maximum amount of gas you are willing to spend on a transaction. If the estimated gas is greater, the transaction will be canceled. The value is set in WEI (the smallest unit on the chain).
+Set the maximum gas limit for a transaction, specified in WEI (the smallest unit on the chain). If the estimated gas exceeds this limit, the transaction will be canceled.
 
 ---
 
