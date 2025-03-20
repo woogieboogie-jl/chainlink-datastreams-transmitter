@@ -51,7 +51,7 @@ export async function loader() {
           savedPrice: await getSavedReportBenchmarkPrice(feedId),
           latestReport: await fetchLatestPrice(feedId),
           status: await fetchStatus(feedId),
-        })),
+        }))
       );
     })(),
     getInterval(),
@@ -139,7 +139,7 @@ export default function Index() {
                       to={`/contract/${feed.feedId}`}
                       className={cn(
                         buttonVariants({ variant: 'ghost', size: 'icon' }),
-                        'hover:text-primary hover:ring-1 hover:ring-primary',
+                        'hover:text-primary hover:ring-1 hover:ring-primary'
                       )}
                     >
                       <FilePen className="size-6" />
@@ -183,7 +183,7 @@ export default function Index() {
           </Table>
         </CardContent>
         <CardFooter>
-          <div className="flex space-x-4">
+          <div className="flex gap-4 flex-wrap">
             <Form
               method="post"
               action="schedule/start"
@@ -323,7 +323,7 @@ export default function Index() {
           <CardContent>
             <p>
               <strong>{`${formatEther(
-                BigInt(gasCap ?? 0),
+                BigInt(gasCap ?? 0)
               )} ETH (${gasCap} WEI)`}</strong>
             </p>
             <Form
