@@ -28,10 +28,16 @@ export function ChainInfo({
       <DialogTrigger
         className={cn(
           buttonVariants({ variant: 'ghost' }),
-          'w-32 truncate flex'
+          'w-40 md:w-60 truncate flex'
         )}
       >
-        <span className="truncate">{address}</span>
+        {chain?.name && (
+          <>
+            <span className="size-2 rounded-full bg-green-500 shrink-0" />
+            <span>{`${chain.name}`}</span>
+          </>
+        )}
+        <span className="hidden md:inline truncate">{address}</span>
         <ChevronDown className="size-4 shrink-0" />
       </DialogTrigger>
       <DialogContent className="px-0 gap-2" aria-describedby={undefined}>
