@@ -270,6 +270,7 @@ const seedConfig = async (config: Config) => {
               }
             } catch (error) {
               logger.error('ERROR', { error });
+              console.error(error);
             }
           })
         );

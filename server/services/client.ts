@@ -38,6 +38,7 @@ const getAccount = () => {
     return privateKeyToAccount(process.env.PRIVATE_KEY as Hex);
   } catch (error) {
     logger.error('ERROR', { error });
+    console.error(error);
     return;
   }
 };
@@ -132,6 +133,7 @@ export async function executeContract({
     return txReceipt;
   } catch (error) {
     logger.error('ERROR', { error });
+    console.error(error);
   }
 }
 
@@ -186,6 +188,7 @@ async function getContractAddresses() {
     };
   } catch (error) {
     logger.error('ERROR', { error });
+    console.error(error);
     return {
       verifierProxyAddress: zeroAddress,
       feeManagerAddress: zeroAddress,
@@ -407,6 +410,7 @@ export async function verifyReport(report: StreamReport) {
     }
   } catch (error) {
     logger.error('ERROR', { error });
+    console.error(error);
   }
 }
 
@@ -451,6 +455,7 @@ export async function getBalance() {
     };
   } catch (error) {
     logger.error('ERROR', { error });
+    console.error(error);
     return {
       value: formatEther(0n),
       symbol: '',
@@ -500,6 +505,7 @@ export async function getLinkBalance() {
     };
   } catch (error) {
     logger.error('ERROR', { error });
+    console.error(error);
     return {
       value: formatEther(0n),
       symbol: '',

@@ -79,6 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return redirect('/chain/switch');
   } catch (error) {
     logger.error('ERROR', error);
+    console.error(error);
     return null;
   }
 }

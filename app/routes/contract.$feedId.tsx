@@ -76,6 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       JSON.parse(abi);
     } catch (error) {
       logger.error('ERROR', error);
+      console.error(error);
       return null;
     }
     await setAbi(feedId, chainId, abi);

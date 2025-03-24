@@ -196,6 +196,7 @@ router.get('/logs', async (req, res) => {
     return res.send({ log });
   } catch (error) {
     logger.error('ERROR', error);
+    console.error(error);
     return res.send({ log: null });
   }
 });
@@ -330,6 +331,7 @@ async function dataUpdater({ report }: { report: StreamReport }) {
     }
   } catch (error) {
     logger.error('ERROR', error);
+    console.error(error);
   }
 }
 
@@ -387,5 +389,6 @@ function initJobs({ feeds, interval }: { feeds: string[]; interval: string }) {
     );
   } catch (error) {
     logger.error('ERROR', error);
+    console.error(error);
   }
 }

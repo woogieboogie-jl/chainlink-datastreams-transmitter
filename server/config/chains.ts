@@ -59,6 +59,7 @@ export const getCustomChains = async () => {
         return defineChain(JSON.parse(chain)) as Chain;
       } catch (error) {
         logger.error('ERROR', error);
+        console.error(error);
         return null;
       }
     })
