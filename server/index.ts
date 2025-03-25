@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import { CronJob, CronTime } from 'cron';
 import type ChainlinkDatastreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
 import { CronExpressionParser } from 'cron-parser';
-import { logger } from 'server/services/logger.js';
+import { logger } from 'server/services/logger.js'; 
 import {
   executeContract as executeWriteContract,
   verifyReport,

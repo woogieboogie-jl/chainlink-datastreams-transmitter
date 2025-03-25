@@ -12,6 +12,7 @@ import {
   Abi,
   Hex,
   formatUnits,
+  Chain,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import {
@@ -24,12 +25,11 @@ import {
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
-import { getAllChains } from '../config/chains';
 import {
+  getChain,
   getChainId,
   getContractAddress,
   getGasCap,
-  setChainId,
 } from '../store';
 import { getVerifier } from '../config/verifiers';
 
@@ -423,16 +423,24 @@ async function getClients() {
     logger.warn('⚠️ No chainId provided');
     return;
   }
-  const chains = await getAllChains();
-  const chain = chains.find((chain) => chain.id === Number(chainId));
-  if (!chain) {
-    logger.warn('⚠️ Invalid chain', { chainId });
-    setChainId('');
+
+  const storedChain = await getChain(chainId);
+
+  if(!storedChain) {
+    throw new Error(`No stored chain config for chainId ${chainId}`);
   }
+
+  const chain : Chain = JSON.parse(storedChain)
+
+  if (!chain.rpcUrls.default.http.length) {
+    throw new Error(`No rpc url stored in config for chainId ${chainId}`);
+  }
+    
   const publicClient = createPublicClient({
     chain,
     transport: http(),
   });
+
   const walletClient = createWalletClient({
     chain,
     transport: http(),

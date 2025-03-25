@@ -117,8 +117,14 @@ const seedConfig = async (config: Config) => {
       { feeds: config.feeds }
     );
 
+    console.log("CONFIG.chains")
+    console.log(config.chains)
+
     await Promise.all(
       config.chains.map(async (data) => {
+        console.log("TRYING TO SAVE CONFIGS TO REDIS");
+        console.log(data.rpc);
+        
         const chain = {
           id: Number(data.id),
           name: data.name,
@@ -132,6 +138,10 @@ const seedConfig = async (config: Config) => {
           },
           testnet: data.testnet,
         };
+
+        console.log('saved chain')
+        console.log(JSON.stringify(chain))
+
         if (!chain) {
           logger.warn('⚠ Invalid chain input', { chain });
           return;
