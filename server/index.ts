@@ -245,6 +245,11 @@ router.get('/status/:feedId', async (req, res) => {
 
 app.use('/api', router);
 
+app.get("/ready", (req, res) => {
+  res.status(200).send({ status: "ok" });
+});
+
+
 // handle SSR requests
 app.all(
   '*',
@@ -259,15 +264,30 @@ app.all(
   })
 );
 
-const port = process.env.PORT || 3000;
+const appPort = process.env.PORT || 3000;
+const healthPort = process.env.HEALTH_PORT || 8081;
+
+const healthApp = express();
+
+healthApp.get('/ready', (req, res) => {
+  res.status(200).send({ status: "ok" });
+});
+
+healthApp.listen(healthPort, () => {
+  logger.info(
+    `🩺 Health check endpoint running at http://localhost:${healthPort}/ready`
+  );
+});
+
+
 const jobs: {
   job: CronJob<null, null>;
   feedId: string;
   consumer: ChainlinkDatastreamsConsumer;
 }[] = [];
 
-app.listen(port, async () => {
-  logger.info(`🚀 running at http://localhost:${port}`);
+app.listen(appPort, async () => {
+  logger.info(`🚀 running at http://localhost:${appPort}`);
   await seedConfig(config);
   const feeds = await getFeeds();
   const interval = await getInterval();
