@@ -264,7 +264,7 @@ app.all(
   })
 );
 
-const appPort = process.env.PORT || 3000;
+const appPort = process.env.PORT || 8080;
 const healthPort = process.env.HEALTH_PORT || 8081;
 
 const healthApp = express();
