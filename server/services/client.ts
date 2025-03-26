@@ -30,8 +30,10 @@ import {
   getChainId,
   getContractAddress,
   getGasCap,
+  setChainId,
 } from '../store';
 import { getVerifier } from '../config/verifiers';
+import { getAllChains } from 'server/config/chains';
 
 const getAccount = () => {
   try {
@@ -423,19 +425,25 @@ async function getClients() {
     logger.warn('⚠️ No chainId provided');
     return;
   }
+  // Get chain configs from viem
+  const viemChains = await getAllChains();
+  const viemChain = viemChains.find((chain) => chain.id === Number(chainId));
+  if (!viemChain) {
+    throw new Error(`No stored viem chain config for chainId ${chainId}`);
+  }
 
+  // Get chain from config.yaml
   const storedChain = await getChain(chainId);
+  let chain: Chain; 
 
-  if(!storedChain) {
-    throw new Error(`No stored chain config for chainId ${chainId}`);
+  // Try and use the rpc url from config.yaml
+  if(storedChain) {
+    chain = JSON.parse(storedChain)
+  } else {
+    // Default to public rpc if not available
+    chain = viemChain;
   }
-
-  const chain : Chain = JSON.parse(storedChain)
-
-  if (!chain.rpcUrls.default.http.length) {
-    throw new Error(`No rpc url stored in config for chainId ${chainId}`);
-  }
-    
+  
   const publicClient = createPublicClient({
     chain,
     transport: http(),
