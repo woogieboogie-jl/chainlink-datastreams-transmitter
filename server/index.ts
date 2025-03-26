@@ -347,7 +347,7 @@ function createCronJob(feedId: string, interval: string) {
       const percentDiff =
         !savedBenchmarkPrice ||
         isNaN(Number(savedBenchmarkPrice)) ||
-        Number(savedBenchmarkPrice) !== 0
+        Number(savedBenchmarkPrice) === 0
           ? 100
           : Number(
               ((latestBenchmarkPrice - BigInt(savedBenchmarkPrice)) *
