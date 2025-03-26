@@ -127,17 +127,17 @@ Before setting up the , ensure you have the required dependencies installed.
 To make setting environment variables easier there is a `.env.example` file in the root folder of this project. You can copy it to a new `.env` file and replace the values with your own.
 
 | Name                        | Description                                                                                                                                                                                                                                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | `REDIS_PASSWORD`            | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis password.                                                                                                                                                |
 | `PRIVATE_KEY`               | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. This account will be used to pay for the transaction fees in the respective native currency for the target chain specified. |
-| `DATASTREAMS_HOSTNAME`      | Chainlink Data Streams Hostname **without** `https://`. Ex.: `api.testnet-dataengine.chain.link`                                                                                                                                                                                                                                           |
-| `DATASTREAMS_WS_HOSTNAME`   | WebSocket Hostname for Data Streams **without** `wss://`. Ex.: `ws.testnet-dataengine.chain.link`                                                                                                                                                                                                                                      |
+| `DATASTREAMS_HOSTNAME`      | Chainlink Data Streams Hostname **without** `https://`. Ex.: `api.testnet-dataengine.chain.link`                                                                                                                                                                          |
+| `DATASTREAMS_WS_HOSTNAME`   | WebSocket Hostname for Data Streams **without** `wss://`. Ex.: `ws.testnet-dataengine.chain.link`                                                                                                                                                                         |
 | `DATASTREAMS_CLIENT_ID`     | Client ID for authentication.                                                                                                                                                                                                                                             |
-| `DATASTREAMS_CLIENT_SECRET` | Client Secret for authentication.                                                                                                                                                                                                                                         |  |
+| `DATASTREAMS_CLIENT_SECRET` | Client Secret for authentication.                                                                                                                                                                                                                                         |     |
 
 > [!NOTE]
 > All other user configurations are stored locally using Redis file eliminating the need for separate configuration files. This ensures fast access and persistence across sessions without manual file handling. Only sensitive configurations, such as API keys and database credentials, are managed separately in the `.env` file. The application automatically loads and updates configurations in Redis as needed. Users do not need to manually edit or maintain configuration files, simplifying setup and deployment.
-> 
+>
 > Optional: The initial configurations can also be seeded by providing a `config.yml` file. See the `config-example.yml` and section below for more details.
 
 ---
@@ -187,7 +187,7 @@ chains:
 verifierAddresses:
   - chainId: 84532
     address: '0x...'
-# Target chains to write data on-chain    
+# Target chains to write data on-chain
 targetChains:
   # The target blockchain network ID
   - chainId: 43113
@@ -241,7 +241,7 @@ verifierAddresses:
     address: '0x...'
   - chainId: 84532
     address: '0x...'
-targetChains:    
+targetChains:
   - chainId: 43113
     targetContracts:
       - feedId: '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'
@@ -292,7 +292,11 @@ targetChains:
                     'name': 'expiresAt',
                     'type': 'uint32',
                   },
-                  { 'internalType': 'int192', 'name': 'price', 'type': 'int192' },
+                  {
+                    'internalType': 'int192',
+                    'name': 'price',
+                    'type': 'int192',
+                  },
                   { 'internalType': 'int192', 'name': 'bid', 'type': 'int192' },
                   { 'internalType': 'int192', 'name': 'ask', 'type': 'int192' },
                 ],
@@ -380,18 +384,19 @@ To start it manually outside of the docker setup:
 ![streams](public/readme/streams.png)
 
 First section allows monitoring and managing of the streams. Each row contains the following info/action:
- - `Stream`: The name of the stream. This is the name set by the user for easier tracking and feed identification.
- - `Feed ID`: Check [Chainlink Data Streams Documentation](https://docs.chain.link/data-streams/crypto-streams) for a list of supported streams.
- - `Report Schema`: Currently [Report Schema v3](https://docs.chain.link/data-streams/reference/report-schema) and [Report Schema v4](https://docs.chain.link/data-streams/reference/report-schema-v4) are supported
- - `Contract`: Preview and edit the contract properties. Each feed can be recorded in a separate contract on the configured target chain. Check the [Contract](#contract) section for more information.
- - `Saved price`: The latest price recorded onchain.
- - `Last reported`: The latest price reported by the stream.
- - `Status`: Current status of the stream. The added stream can be in one of the following states: `Running`, `Connecting`, `Stopping` or `Stopped`
- - `Remove`: This action button can be used to remove the feed from the list and stop tracking its reports.
- - `Start`: Action button to Start or resume all data streams.
- - `Stop`: Action button to Stop all the streams.
- - `Add new data stream`: A button leading to the section for adding a new feed to the list so the transmitter can start tracking it.
-  
+
+- `Stream`: The name of the stream. This is the name set by the user for easier tracking and feed identification.
+- `Feed ID`: Check [Chainlink Data Streams Documentation](https://docs.chain.link/data-streams/crypto-streams) for a list of supported streams.
+- `Report Schema`: Currently [Report Schema v3](https://docs.chain.link/data-streams/reference/report-schema) and [Report Schema v4](https://docs.chain.link/data-streams/reference/report-schema-v4) are supported
+- `Contract`: Preview and edit the contract properties. Each feed can be recorded in a separate contract on the configured target chain. Check the [Contract](#contract) section for more information.
+- `Saved price`: The latest price recorded onchain.
+- `Last reported`: The latest price reported by the stream.
+- `Status`: Current status of the stream. The added stream can be in one of the following states: `Running`, `Connecting`, `Stopping` or `Stopped`
+- `Remove`: This action button can be used to remove the feed from the list and stop tracking its reports.
+- `Start`: Action button to Start or resume all data streams.
+- `Stop`: Action button to Stop all the streams.
+- `Add new data stream`: A button leading to the section for adding a new feed to the list so the transmitter can start tracking it.
+
 ##### Contract
 
 Clicking the contract icon <img src="public/readme/contract-btn.png" alt="contract-btn" width="30"/> in the table above opens the contract configuration page. This page allows users to view and edit contract properties for the stream on the currently connected chain. Users can also add custom contracts, define ABI, and specify functions to store feed results on-chain.
@@ -400,7 +405,6 @@ Clicking the contract icon <img src="public/readme/contract-btn.png" alt="contra
 ![contract-address](public/readme/contract-address.png)
 
 View/Add or Edit the target contract address.
-
 
 **Function**
 ![function](public/readme/function.png)
@@ -417,13 +421,14 @@ View, add, or edit the report argument field names in the exact order the contra
 
 View/Add or Edit the ABI of the target contract.
 
-
 ##### Add new data stream
+
 ![add-stream](public/readme/add-stream.png)
 
 Add new data stream feed.
- - `Stream name`: This is an arbitrary name input. It is recommended to be the pair of the feed, ex. `ETH/USD`
- - `Feed ID`: The Id of the stream. It can be obtained from the documentation (for public feeds) or by contacting your Chainlink representative.
+
+- `Stream name`: This is an arbitrary name input. It is recommended to be the pair of the feed, ex. `ETH/USD`
+- `Feed ID`: The Id of the stream. It can be obtained from the documentation (for public feeds) or by contacting your Chainlink representative.
 
 ---
 
@@ -433,32 +438,33 @@ To view information and settings for the currently connected chain (a.k.a. targe
 
 ![chain-info](public/readme/chain-info.png)
 
-  - The name and ID of the connected chain
-  - A button to switch chains
-  - The connected account address (used for paying the fees for the on-chain transaction fees and LINK fees)
-  - The account balance of the chain's native currency
-  - The account balance of LINK on the current chain
+- The name and ID of the connected chain
+- A button to switch chains
+- The connected account address (used for paying the fees for the on-chain transaction fees and LINK fees)
+- The account balance of the chain's native currency
+- The account balance of LINK on the current chain
 
 ##### Switch chain
 
 ![switch-chain](public/readme/switch-chain.png)
 
-  - A dropdown menu with all the available chains
-  - Add new chain option
-  
+- A dropdown menu with all the available chains
+- Add new chain option
+
 ##### Add new chain
 
 ![add-chain](public/readme/add-chain.png)
 
 Any EVM network can be easily added. The following fields are mandatory:
-  - `Chain ID`
-  - `Chain name`
-  - `Native currency name`
-  - `Native currency symbol`
-  - `Native currency decimals`
-  - `RPC URL`
-Optional:
-  - `Testnet` - this flag indicates if the chain is a testnet. Leave blank for mainnet chains.
+
+- `Chain ID`
+- `Chain name`
+- `Native currency name`
+- `Native currency symbol`
+- `Native currency decimals`
+- `RPC URL`
+  Optional:
+- `Testnet` - this flag indicates if the chain is a testnet. Leave blank for mainnet chains.
 
 ---
 
@@ -539,7 +545,7 @@ The application stores logs in the `logs` directory to maintain an audit trail o
 
 ## Testing Commands
 
-The project comes with unit testing suite using Jest that ensures verification of reports and writing the results to the chain work as expected. 
+The project comes with unit testing suite using Jest that ensures verification of reports and writing the results to the chain work as expected.
 
 Run tests:
 

@@ -84,7 +84,7 @@ export async function loader() {
       ([chainId, address]) => ({
         chainId,
         address,
-      }),
+      })
     ),
   };
 }
@@ -131,7 +131,7 @@ export default function Verifiers() {
               {defaultVerifiers
                 .filter((verifier) => {
                   const chain = chains.find(
-                    (chain) => chain.id === Number(verifier.chainId),
+                    (chain) => chain.id === Number(verifier.chainId)
                   );
                   return (
                     chain &&
@@ -146,8 +146,8 @@ export default function Verifiers() {
                       ?.name ?? ''
                   ).localeCompare(
                     chains.find((chain) => chain.id === Number(b.chainId))
-                      ?.name ?? '',
-                  ),
+                      ?.name ?? ''
+                  )
                 )
                 .map((verifier, i) => (
                   <TableRow
@@ -157,7 +157,7 @@ export default function Verifiers() {
                     <TableCell>
                       {
                         chains.find(
-                          (chain) => chain.id === Number(verifier.chainId),
+                          (chain) => chain.id === Number(verifier.chainId)
                         )?.name
                       }
                     </TableCell>
@@ -182,8 +182,8 @@ export default function Verifiers() {
                 .filter(
                   (verifier) =>
                     chains.find(
-                      (chain) => chain.id === Number(verifier.chainId),
-                    )?.testnet === true,
+                      (chain) => chain.id === Number(verifier.chainId)
+                    )?.testnet === true
                 )
                 .sort((a, b) =>
                   (
@@ -191,8 +191,8 @@ export default function Verifiers() {
                       ?.name ?? ''
                   ).localeCompare(
                     chains.find((chain) => chain.id === Number(b.chainId))
-                      ?.name ?? '',
-                  ),
+                      ?.name ?? ''
+                  )
                 )
                 .map((verifier, i) => (
                   <TableRow
@@ -202,7 +202,7 @@ export default function Verifiers() {
                     <TableCell>
                       {
                         chains.find(
-                          (chain) => chain.id === Number(verifier.chainId),
+                          (chain) => chain.id === Number(verifier.chainId)
                         )?.name
                       }
                     </TableCell>
@@ -240,8 +240,8 @@ export default function Verifiers() {
                       ?.name ?? ''
                   ).localeCompare(
                     chains.find((chain) => chain.id === Number(b.chainId))
-                      ?.name ?? '',
-                  ),
+                      ?.name ?? ''
+                  )
                 )
                 .map((verifier, i) => (
                   <TableRow
@@ -251,7 +251,7 @@ export default function Verifiers() {
                     <TableCell>
                       {
                         chains.find(
-                          (chain) => chain.id === Number(verifier.chainId),
+                          (chain) => chain.id === Number(verifier.chainId)
                         )?.name
                       }
                     </TableCell>
@@ -267,17 +267,16 @@ export default function Verifiers() {
                           const response = confirm(
                             `Delete verifier contract ${verifier.address} for ${
                               chains.find(
-                                (chain) =>
-                                  chain.id === Number(verifier.chainId),
+                                (chain) => chain.id === Number(verifier.chainId)
                               )?.name
-                            }?`,
+                            }?`
                           );
                           if (!response) {
                             return;
                           }
                           submit(
                             { chainId: verifier.chainId },
-                            { method: 'delete' },
+                            { method: 'delete' }
                           );
                         }}
                       >
@@ -307,7 +306,7 @@ export default function Verifiers() {
                     <div>
                       {
                         chains.find(
-                          (chain) => chain.id === Number(chainIdInput),
+                          (chain) => chain.id === Number(chainIdInput)
                         )?.name
                       }
                     </div>
@@ -364,7 +363,7 @@ export default function Verifiers() {
               onClick={() => {
                 submit(
                   { chainId: chainIdInput, address: addressInput },
-                  { method: 'post' },
+                  { method: 'post' }
                 );
                 if (!warning) {
                   setAddressInput('');
