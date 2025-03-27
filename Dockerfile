@@ -48,4 +48,14 @@ COPY --from=build /transmitter/build /transmitter/build
 COPY --from=build /transmitter/public /transmitter/public
 ADD . .
 
+# Create a non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 --gid 1001 nodeuser
+
+# Set ownership of application files
+RUN chown -R nodeuser:nodejs /transmitter
+
+# Switch to non-root user for runtime
+USER nodeuser
+
 CMD ["npm", "start"]
