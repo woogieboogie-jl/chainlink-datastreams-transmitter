@@ -24,7 +24,6 @@ import {
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
 import { logger } from './logger';
-import { getAllChains } from '../config/chains';
 import {
   getChainId,
   getContractAddress,
@@ -32,6 +31,7 @@ import {
   setChainId,
 } from '../store';
 import { getVerifier } from '../config/verifiers';
+import { defaultChains, getCustomChains } from 'server/config/chains';
 
 const getAccount = () => {
   try {
@@ -423,18 +423,40 @@ async function getClients() {
     logger.warn('⚠️ No chainId provided');
     return;
   }
-  const chains = await getAllChains();
-  const chain = chains.find((chain) => chain.id === Number(chainId));
-  if (!chain) {
+  const storedChains = await getCustomChains();
+  const storedChain = storedChains.find(
+    (chain) => chain.id === Number(chainId)
+  );
+
+  if (storedChain) {
+    const publicClient = createPublicClient({
+      chain: storedChain,
+      transport: http(),
+    });
+
+    const walletClient = createWalletClient({
+      chain: storedChain,
+      transport: http(),
+    });
+    return { publicClient, walletClient };
+  }
+
+  const defaultChain = defaultChains.find(
+    (chain) => chain.id === Number(chainId)
+  );
+  if (!defaultChain) {
     logger.warn('⚠️ Invalid chain', { chainId });
     setChainId('');
+    return;
   }
+
   const publicClient = createPublicClient({
-    chain,
+    chain: defaultChain,
     transport: http(),
   });
+
   const walletClient = createWalletClient({
-    chain,
+    chain: defaultChain,
     transport: http(),
   });
   return { publicClient, walletClient };
