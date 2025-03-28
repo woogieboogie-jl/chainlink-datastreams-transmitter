@@ -297,7 +297,17 @@ export async function verifyReport(report: StreamReport) {
       walletClient,
       approveLinkRequest
     );
-    await waitForTransactionReceipt(publicClient, { hash: approveLinkHash });
+    const approveLinkReceipt = await waitForTransactionReceipt(publicClient, {
+      hash: approveLinkHash,
+    });
+
+    if (approveLinkReceipt.status !== 'success') {
+      logger.warn(
+        `🛑 LINK approval transaction was not successfull | Aborting`,
+        { transactionReceipt: approveLinkReceipt }
+      );
+      return;
+    }
 
     const verifyReportGas = await estimateContractGas(publicClient, {
       account,
@@ -333,7 +343,17 @@ export async function verifyReport(report: StreamReport) {
       walletClient,
       verifyReportRequest
     );
-    await waitForTransactionReceipt(publicClient, { hash: verifyReportHash });
+    const verifyReportReceipt = await waitForTransactionReceipt(publicClient, {
+      hash: verifyReportHash,
+    });
+
+    if (verifyReportReceipt.status !== 'success') {
+      logger.warn(
+        `🛑 Verification transaction was not successfull | Aborting`,
+        { transactionReceipt: verifyReportReceipt }
+      );
+      return;
+    }
 
     if (reportVersion === '3') {
       const [
