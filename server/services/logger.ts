@@ -79,7 +79,11 @@ const errorLogger = createLogger({
   ],
 });
 
-export const logger: { [key: string]: LeveledLogMethod } = {
+export const logger: {
+  info: LeveledLogMethod;
+  warn: LeveledLogMethod;
+  error: LeveledLogMethod;
+} = {
   info: (...params) => infoLogger.info(...params),
   warn: (...params) => infoLogger.warn(...params),
   error: (...params) => errorLogger.error(...params),

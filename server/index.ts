@@ -245,10 +245,9 @@ router.get('/status/:feedId', async (req, res) => {
 
 app.use('/api', router);
 
-app.get("/ready", (req, res) => {
-  res.status(200).send({ status: "ok" });
+app.get('/ready', (req, res) => {
+  res.status(200).send({ status: 'ok' });
 });
-
 
 // handle SSR requests
 app.all(
@@ -270,7 +269,7 @@ const healthPort = process.env.HEALTH_PORT || 8081;
 const healthApp = express();
 
 healthApp.get('/ready', (req, res) => {
-  res.status(200).send({ status: "ok" });
+  res.status(200).send({ status: 'ok' });
 });
 
 healthApp.listen(healthPort, () => {
@@ -278,7 +277,6 @@ healthApp.listen(healthPort, () => {
     `🩺 Health check endpoint running at http://localhost:${healthPort}/ready`
   );
 });
-
 
 const jobs: {
   job: CronJob<null, null>;
@@ -360,6 +358,10 @@ function createCronJob(feedId: string, interval: string) {
     interval,
     async function () {
       const report = getLatestReport(feedId);
+      if (!report) {
+        logger.warn(`🛑 No report logged | Aborting`);
+        return;
+      }
       const latestBenchmarkPrice = getReportPrice(report);
       if (!latestBenchmarkPrice) return;
       const savedBenchmarkPrice = await getSavedReportBenchmarkPrice(feedId);
