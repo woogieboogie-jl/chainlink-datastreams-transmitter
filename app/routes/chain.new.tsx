@@ -2,6 +2,7 @@ import { ActionFunctionArgs, redirect } from '@remix-run/node';
 import { Form, useNavigate } from '@remix-run/react';
 import { logger } from 'server/services/logger';
 import { addChain } from 'server/store';
+import { printError } from 'server/utils';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -78,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
     logger.info(`📢 New chain has been added`, { chain });
     return redirect('/chain/switch');
   } catch (error) {
-    logger.error('ERROR', error);
+    logger.error(printError(error), error);
     console.error(error);
     return null;
   }

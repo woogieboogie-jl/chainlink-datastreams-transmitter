@@ -14,6 +14,7 @@ import {
 import { getReportPrice } from '../app/lib/utils';
 import { logger } from './services/logger';
 import { CronExpressionParser } from 'cron-parser';
+import { printError } from './utils';
 
 const latestReports: { [key: string]: StreamReport } = {};
 
@@ -269,7 +270,7 @@ const seedConfig = async (config: Config) => {
                 );
               }
             } catch (error) {
-              logger.error('ERROR', { error });
+              logger.error(printError(error), error);
               console.error(error);
             }
           })

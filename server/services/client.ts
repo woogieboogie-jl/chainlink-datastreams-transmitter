@@ -32,12 +32,13 @@ import {
 } from '../store';
 import { getVerifier } from '../config/verifiers';
 import { defaultChains, getCustomChains } from 'server/config/chains';
+import { printError } from 'server/utils';
 
 const getAccount = () => {
   try {
     return privateKeyToAccount(process.env.PRIVATE_KEY as Hex);
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
     console.error(error);
     return;
   }
@@ -132,7 +133,7 @@ export async function executeContract({
     const txReceipt = await waitForTransactionReceipt(publicClient, { hash });
     return txReceipt;
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
     console.error(error);
   }
 }
@@ -187,7 +188,7 @@ async function getContractAddresses() {
       feeTokenAddress,
     };
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
     console.error(error);
     return {
       verifierProxyAddress: zeroAddress,
@@ -429,7 +430,7 @@ export async function verifyReport(report: StreamReport) {
       return verifiedReport;
     }
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
     console.error(error);
   }
 }
@@ -496,7 +497,7 @@ export async function getBalance() {
       symbol: publicClient.chain?.nativeCurrency.symbol,
     };
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
     console.error(error);
     return {
       value: formatEther(0n),
@@ -546,7 +547,7 @@ export async function getLinkBalance() {
       symbol,
     };
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
     console.error(error);
     return {
       value: formatEther(0n),

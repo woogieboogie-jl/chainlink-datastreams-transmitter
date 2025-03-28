@@ -14,6 +14,7 @@ import {
   setFunctionArgs,
   setFunctionName,
 } from 'server/store';
+import { printError } from 'server/utils';
 import { isAddress, zeroAddress } from 'viem';
 import { Button, buttonVariants } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
@@ -75,7 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     try {
       JSON.parse(abi);
     } catch (error) {
-      logger.error('ERROR', error);
+      logger.error(printError(error), error);
       console.error(error);
       return null;
     }

@@ -12,7 +12,7 @@ import {
   verifyReport,
 } from 'server/services/client.js';
 import { ReportV3, StreamReport } from 'server/types.js';
-import { formatUSD, isPositive } from 'server/utils.js';
+import { formatUSD, isPositive, printError } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
 import {
   addFeed,
@@ -195,7 +195,7 @@ router.get('/logs', async (req, res) => {
     const log = await readFile('./logs/all/all.log', 'utf8');
     return res.send({ log });
   } catch (error) {
-    logger.error('ERROR', error);
+    logger.error(printError(error), error);
     console.error(error);
     return res.send({ log: null });
   }
@@ -348,7 +348,7 @@ async function dataUpdater({ report }: { report: StreamReport }) {
       );
     }
   } catch (error) {
-    logger.error('ERROR', error);
+    logger.error(printError(error), error);
     console.error(error);
   }
 }
@@ -410,7 +410,7 @@ function initJobs({ feeds, interval }: { feeds: string[]; interval: string }) {
       })
     );
   } catch (error) {
-    logger.error('ERROR', error);
+    logger.error(printError(error), error);
     console.error(error);
   }
 }

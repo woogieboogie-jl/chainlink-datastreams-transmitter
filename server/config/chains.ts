@@ -1,3 +1,4 @@
+import { printError } from 'server/utils';
 import { logger } from '../services/logger';
 import { getChain, getChains } from '../store';
 import { defineChain } from 'viem';
@@ -58,7 +59,7 @@ export const getCustomChains = async () => {
       try {
         return defineChain(JSON.parse(chain)) as Chain;
       } catch (error) {
-        logger.error('ERROR', error);
+        logger.error(printError(error), error);
         console.error(error);
         return null;
       }
