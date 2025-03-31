@@ -58,8 +58,8 @@ const removeChain = async (chainId: string) => {
   await deleteValue(`chain:${chainId}`);
   await removeFromSet('chains', chainId);
 };
-const getVeriifierAddresses = async () => await getSet('verifiers');
-const getVeriifierAddress = async (chainId: string) =>
+const getVerifierAddresses = async () => await getSet('verifiers');
+const getVerifierAddress = async (chainId: string) =>
   await getValue(`verifier:${chainId}`);
 const addVerifierAddress = async (
   chainId: number | string,
@@ -350,8 +350,8 @@ export {
   getChain,
   addChain,
   removeChain,
-  getVeriifierAddresses,
-  getVeriifierAddress,
+  getVerifierAddresses,
+  getVerifierAddress,
   addVerifierAddress,
   removeVerifierAddress,
   seedConfig,

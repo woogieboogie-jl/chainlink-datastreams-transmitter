@@ -1,4 +1,4 @@
-import { getVeriifierAddress, getVeriifierAddresses } from '../store';
+import { getVerifierAddress, getVerifierAddresses } from '../store';
 import { Address, isAddress } from 'viem';
 import {
   arbitrum,
@@ -45,11 +45,11 @@ export const defaultVerifiers: Record<number, Address> = {
 };
 
 export const getCustomVerifiers = async () => {
-  const verifiersList = await getVeriifierAddresses();
+  const verifiersList = await getVerifierAddresses();
   return await Promise.all(
     verifiersList.map(async (chainId) => ({
       chainId,
-      address: await getVeriifierAddress(chainId),
+      address: await getVerifierAddress(chainId),
     }))
   );
 };
@@ -70,7 +70,7 @@ export const getAllVerifiers = async (): Promise<
 ];
 
 export async function getVerifier(chainId: string): Promise<Address> {
-  const customVerifier = await getVeriifierAddress(chainId);
+  const customVerifier = await getVerifierAddress(chainId);
   if (customVerifier && isAddress(customVerifier)) return customVerifier;
   return defaultVerifiers[Number(chainId)];
 }

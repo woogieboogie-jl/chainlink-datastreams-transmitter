@@ -9,7 +9,7 @@ export function Footer() {
           <div className="text-center md:text-left">
             <p className="text-lg font-semibold"></p>
             <p className="text-sm text-gray-400">
-              © {new Date().getFullYear()} Open source software
+              © {new Date().getFullYear()} Chainlink Labs
             </p>
           </div>
 
