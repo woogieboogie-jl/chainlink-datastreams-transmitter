@@ -549,7 +549,7 @@ const seedConfig = async (config: Config) => {
                   );
                 }
               } catch (error) {
-                logger.error('ERROR', { error });
+                logger.error(printError(error), error);
                 console.error(error);
               }
             })

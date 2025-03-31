@@ -74,7 +74,9 @@ export const getAllEVMVerifiers = async (): Promise<
   ...(await getCustomEVMVerifiers()),
 ];
 
-export async function getEVMVerifier(chainId: string): Promise<Address> {
+export async function getEVMVerifier(
+  chainId: string
+): Promise<Address | undefined> {
   const customVerifier = await getEVMVerifierAddress(chainId);
   if (customVerifier && isAddress(customVerifier)) return customVerifier;
   return defaultEVMVerifiers[Number(chainId)];

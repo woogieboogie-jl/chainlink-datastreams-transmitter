@@ -112,7 +112,8 @@ const getCustomSolanaChains = async () => {
           testnet?: boolean;
         };
       } catch (error) {
-        logger.error('ERROR', error);
+        logger.error(printError(error), error);
+        console.error(error);
         return null;
       }
     })

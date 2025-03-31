@@ -17,7 +17,7 @@ import customIdl from './idl.json';
 import { Verifier } from '../config/idlType';
 import { decodeAbiParameters } from 'viem';
 import { getSolanaVerifier } from '../config/verifiers';
-import { base64ToHex } from '../utils';
+import { base64ToHex, printError } from '../utils';
 import { BN } from 'bn.js';
 
 const getKeyPair = () => {
@@ -27,7 +27,8 @@ const getKeyPair = () => {
       Keypair.fromSecretKey(bs58.decode(process.env.SECRET_KEY))
     );
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
+    console.error(error);
     return;
   }
 };
@@ -73,7 +74,8 @@ export async function getBalance() {
       symbol: 'SOL',
     };
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
+    console.error(error);
     return {
       value: '0',
       symbol: '',
@@ -189,6 +191,10 @@ export async function verifyReport(report: StreamReport) {
       [signedReport.slice(0, 32)],
       new PublicKey(verifierProgramID)
     );
+    if (!program.methods.verify) {
+      logger.error('‼️ Program verify method is undefined', program);
+      return;
+    }
     const tx = await program.methods
       .verify(compressedReport)
       .accounts({
@@ -216,7 +222,7 @@ export async function verifyReport(report: StreamReport) {
     for (const log of txDetails.meta.logMessages) {
       if (log.includes('Program return') || log.includes('Program consumed')) {
         const verifiedReportData = log.split(' ')[3];
-        if (reportVersion === 3) {
+        if (verifiedReportData && reportVersion === 3) {
           const [
             feedId,
             validFromTimestamp,
@@ -254,7 +260,7 @@ export async function verifyReport(report: StreamReport) {
           };
           return verifiedReport;
         }
-        if (reportVersion === 4) {
+        if (verifiedReportData && reportVersion === 4) {
           const [
             feedId,
             validFromTimestamp,
@@ -292,7 +298,8 @@ export async function verifyReport(report: StreamReport) {
       }
     }
   } catch (error) {
-    logger.error('ERROR', { error });
+    logger.error(printError(error), error);
+    console.error(error);
   }
 }
 
@@ -324,7 +331,10 @@ export async function executeSolanaProgram({
       [Buffer.from('price-feed')],
       program.programId
     );
-
+    if (!program.methods.updatePrice) {
+      logger.error('‼️ Program method is undefined', program);
+      return;
+    }
     const tx = await program.methods
       .updatePrice(
         report.feedId.slice(0, 4),
@@ -343,7 +353,7 @@ export async function executeSolanaProgram({
 
     return txDetails;
   } catch (error) {
+    logger.error(printError(error), error);
     console.error(error);
-    logger.error('ERROR', { error });
   }
 }

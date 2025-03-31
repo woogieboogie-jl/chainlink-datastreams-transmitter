@@ -26,7 +26,7 @@ import {
 import { zeroAddress } from 'viem';
 import { StreamReport } from 'server/types';
 import { logger } from './logger';
-import { formatUSD } from 'server/utils';
+import { formatUSD, printError } from 'server/utils';
 import { getReportPrice } from '~/lib/utils';
 
 export async function getCurrentChain() {
@@ -150,6 +150,7 @@ export async function dataUpdater({ report }: { report: StreamReport }) {
       );
     }
   } catch (error) {
-    logger.error('ERROR', error);
+    logger.error(printError(error), error);
+    console.error(error);
   }
 }
