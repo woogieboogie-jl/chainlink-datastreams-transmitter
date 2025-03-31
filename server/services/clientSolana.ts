@@ -13,11 +13,10 @@ import { getCluster, setCluster } from '../store';
 import { getAllSolanaChains } from '../config/chains';
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import idl from '../config/idl.json';
-import customIdl from './idl.json';
 import { Verifier } from '../config/idlType';
 import { decodeAbiParameters } from 'viem';
 import { getSolanaVerifier } from '../config/verifiers';
-import { base64ToHex, printError } from '../utils';
+import { base64ToHex, kebabToCamel, printError } from '../utils';
 import { BN } from 'bn.js';
 
 const getKeyPair = () => {
@@ -305,8 +304,16 @@ export async function verifyReport(report: StreamReport) {
 
 export async function executeSolanaProgram({
   report,
+  idl,
+  instructionName,
+  instructionPDA,
+  instructionArgs,
 }: {
   report: ReportV3 | ReportV4;
+  idl: string;
+  instructionName: string;
+  instructionPDA: string;
+  instructionArgs: { name: string; type: string }[];
 }) {
   try {
     const keypair = getKeyPair();
@@ -326,23 +333,25 @@ export async function executeSolanaProgram({
       commitment: 'confirmed',
     });
     anchor.setProvider(provider);
-    const program = new Program(customIdl, provider);
-    const [priceFeedPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from('price-feed')],
+    const program = new Program(JSON.parse(idl), provider);
+    const [PDA] = PublicKey.findProgramAddressSync(
+      [Buffer.from(instructionPDA)],
       program.programId
     );
-    if (!program.methods.updatePrice) {
-      logger.error('‼️ Program method is undefined', program);
+    const method =
+      program.methods[instructionName as keyof typeof program.methods];
+    if (!method) {
+      logger.error('‼️ Program method is undefined', { instructionName });
       return;
     }
-    const tx = await program.methods
-      .updatePrice(
-        report.feedId.slice(0, 4),
-        new BN(report.price.toString().slice(0, 4)),
-        new BN(report.validFromTimestamp.toString().slice(0, 4))
-      )
+    const args = instructionArgs.map(({ name, type }) =>
+      type === 'number'
+        ? new BN(report[name as keyof typeof report].toString())
+        : report[name as keyof typeof report].toString()
+    );
+    const tx = await method(...args)
       .accounts({
-        priceFeed: priceFeedPDA,
+        [kebabToCamel(instructionPDA)]: PDA,
         signer: provider.publicKey,
       })
       .rpc({ commitment: 'confirmed' });

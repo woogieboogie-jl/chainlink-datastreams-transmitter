@@ -111,8 +111,7 @@ svm:
               type: 'number'
             - name: 'validFromTimestamp'
               type: 'number'
-          instructionPDAs:
-            - 'price-feed'
+          instructionPDA: 'price-feed'
           idl:
             {
               'address': 'zDecnPdGtuXypFqhnUsVJtUT5BCwgdzygyECT1bKGNo',

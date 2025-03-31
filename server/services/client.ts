@@ -20,6 +20,10 @@ import {
   getFeedName,
   getFunctionArgs,
   getFunctionName,
+  getIdl,
+  getInstructionName,
+  getInstructionPDA,
+  getInstrutctionArgs,
   getVm,
   setSavedReport,
 } from 'server/store';
@@ -72,13 +76,54 @@ export async function dataUpdater({ report }: { report: StreamReport }) {
       logger.warn(`🛑 Verified report is missing | Aborting`);
       return;
     }
+    const { feedId } = report;
+    if (!feedId) {
+      logger.warn(`🛑 Invalid report feedId | Aborting`, { report });
+      return;
+    }
     logger.info(`✅ Report verified | ${await getFeedName(report.feedId)}`, {
       verifiedReport,
     });
     const vm = await getVm();
     if (vm === 'svm') {
+      const cluster = await getCluster();
+      if (!cluster) {
+        logger.warn(
+          '🛑 Cluster is missing. Connect to a chain and try again | Aborting'
+        );
+        return;
+      }
+
+      const idl = await getIdl(feedId, cluster);
+      if (!idl) {
+        logger.warn('🛑 No IDL provided | Aborting');
+        return;
+      }
+      const instructionName = await getInstructionName(feedId, cluster);
+      if (!instructionName) {
+        logger.warn('🛑 No instruction name provided | Aborting');
+        return;
+      }
+      const instructionPDA = await getInstructionPDA(feedId, cluster);
+      if (!instructionPDA) {
+        logger.warn(
+          `🛑 No PDA for the instruction '${instructionName}' provided | Aborting`
+        );
+        return;
+      }
+      const instructionArgs = (await getInstrutctionArgs(feedId, cluster)).map(
+        (arg) => JSON.parse(arg) as { name: string; type: string }
+      );
+      if (!instructionArgs || instructionArgs.length === 0) {
+        logger.warn('⚠️ No args provided');
+        return;
+      }
       const transaction = await executeSolanaProgram({
         report: verifiedReport,
+        idl,
+        instructionName,
+        instructionPDA,
+        instructionArgs,
       });
       if (
         !transaction?.meta?.logMessages ||
@@ -113,7 +158,7 @@ export async function dataUpdater({ report }: { report: StreamReport }) {
       );
       return;
     }
-    const { feedId } = report;
+
     if (!verifiedReport) {
       logger.warn(`🛑 Verified report is missing | Aborting`);
       return;
