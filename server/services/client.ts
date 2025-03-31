@@ -221,8 +221,8 @@ export async function verifyReport(report: StreamReport) {
       report.rawReport
     );
 
-    const reportVersion = reportData.charAt(5);
-    if (reportVersion !== '3' && reportVersion !== '4') {
+    const reportVersion = parseInt(reportData.slice(0, 6), 16);
+    if (reportVersion !== 3 && reportVersion !== 4) {
       logger.warn('⚠️ Invalid report version', { report });
       return;
     }
@@ -356,7 +356,7 @@ export async function verifyReport(report: StreamReport) {
       return;
     }
 
-    if (reportVersion === '3') {
+    if (reportVersion === 3) {
       const [
         feedId,
         validFromTimestamp,
@@ -394,7 +394,7 @@ export async function verifyReport(report: StreamReport) {
       };
       return verifiedReport;
     }
-    if (reportVersion === '4') {
+    if (reportVersion === 4) {
       const [
         feedId,
         validFromTimestamp,
