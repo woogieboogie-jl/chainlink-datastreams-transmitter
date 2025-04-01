@@ -22,8 +22,8 @@ import { BN } from 'bn.js';
 const getKeyPair = () => {
   try {
     return (
-      process.env.SECRET_KEY &&
-      Keypair.fromSecretKey(bs58.decode(process.env.SECRET_KEY))
+      process.env.SECRET_KEY_SVM &&
+      Keypair.fromSecretKey(bs58.decode(process.env.SECRET_KEY_SVM))
     );
   } catch (error) {
     logger.error(printError(error), error);

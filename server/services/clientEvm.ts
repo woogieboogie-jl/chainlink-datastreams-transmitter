@@ -36,7 +36,7 @@ import { printError } from 'server/utils';
 
 const getAccount = () => {
   try {
-    return privateKeyToAccount(process.env.PRIVATE_KEY as Hex);
+    return privateKeyToAccount(process.env.PRIVATE_KEY_EVM as Hex);
   } catch (error) {
     logger.error(printError(error), error);
     console.error(error);
