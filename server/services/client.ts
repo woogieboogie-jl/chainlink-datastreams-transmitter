@@ -35,8 +35,8 @@ import { getReportPrice } from '~/lib/utils';
 
 export async function getCurrentChain() {
   const vm = await getVm();
-  if (vm === 'svm') return getCurrentSolanaChain();
-  return getCurrentEvmChain();
+  if (vm === 'svm') return { vm, ...(await getCurrentSolanaChain()) };
+  return { vm, ...(await getCurrentEvmChain()) };
 }
 
 export async function getAddress() {
