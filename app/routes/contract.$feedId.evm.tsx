@@ -3,7 +3,11 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from '@remix-run/node';
-import { Form, useLoaderData } from '@remix-run/react';
+import { Plus, Trash2Icon } from 'lucide-react';
+import { useLoaderData, useSubmit } from '@remix-run/react';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { getCurrentChain } from 'server/services/client';
 import { logger } from 'server/services/logger';
 import {
@@ -23,10 +27,17 @@ import { isAddress, zeroAddress } from 'viem';
 import { Button, buttonVariants } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { Textarea } from '~/components/ui/textarea';
 import { cn } from '~/lib/utils';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '~/components/ui/form';
 
 enum Intent {
   CONTRACT = 'CONTRACT',
@@ -34,6 +45,20 @@ enum Intent {
   FUNCTION = 'FUNCTION',
   ARGS = 'ARGS',
 }
+
+const contractAddressSchema = z.object({
+  contract: z
+    .string()
+    .refine(
+      (a) => isAddress(a) && a !== zeroAddress,
+      'Invalid contract address'
+    ),
+});
+const functionNameSchema = z.object({ functionName: z.string() });
+const functionArgsSchema = z.object({
+  args: z.array(z.object({ name: z.string() })),
+});
+const contractABISchema = z.object({ abi: z.string() });
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const chain = await getCurrentChain();
@@ -110,12 +135,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return null;
     }
     case Intent.ARGS: {
-      const args = (data as { args: string }).args;
+      const argsStr = (data as { args: string }).args;
+      const args: { name: string }[] = JSON.parse(argsStr);
       if (!args || args.length === 0) {
         logger.warn('⚠ Invalid args input', { data });
         return null;
       }
-      const newArgs = args.split(',').map((a) => a.trim());
+      const newArgs = args.map(({ name }) => name);
       await setFunctionArgs(feedId, chainId, newArgs);
       logger.info(
         `📢 New set of arguments has been set ${newArgs.join(
@@ -174,6 +200,67 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function ContractEVM() {
   const { contract, abi, functionName, args } = useLoaderData<typeof loader>();
 
+  const submit = useSubmit();
+
+  const contractAddressForm = useForm<z.infer<typeof contractAddressSchema>>({
+    resolver: zodResolver(contractAddressSchema),
+    defaultValues: {
+      contract: '',
+    },
+  });
+  function contractAddressOnSubmit(
+    values: z.infer<typeof contractAddressSchema>
+  ) {
+    submit(
+      { intent: Intent.CONTRACT, contract: values.contract },
+      { method: 'post' }
+    );
+  }
+
+  const functionNameForm = useForm<z.infer<typeof functionNameSchema>>({
+    resolver: zodResolver(functionNameSchema),
+    defaultValues: {
+      functionName: '',
+    },
+  });
+  function functionNameOnSubmit(values: z.infer<typeof functionNameSchema>) {
+    submit(
+      { intent: Intent.FUNCTION, functionName: values.functionName },
+      { method: 'post' }
+    );
+  }
+
+  const functionArgsForm = useForm<z.infer<typeof functionArgsSchema>>({
+    resolver: zodResolver(functionArgsSchema),
+    defaultValues: {
+      args: [{ name: '' }],
+    },
+  });
+  const {
+    fields: argsFields,
+    append: argsFieldAppend,
+    remove: argsFieldRemove,
+  } = useFieldArray({
+    control: functionArgsForm.control,
+    name: 'args',
+  });
+  function functionArgsOnSubmit(values: z.infer<typeof functionArgsSchema>) {
+    submit(
+      { intent: Intent.ARGS, args: JSON.stringify(values.args) },
+      { method: 'post' }
+    );
+  }
+
+  const contractABIForm = useForm<z.infer<typeof contractABISchema>>({
+    resolver: zodResolver(contractABISchema),
+    defaultValues: {
+      abi: '',
+    },
+  });
+  function contractABIOnSubmit(values: z.infer<typeof contractABISchema>) {
+    submit({ intent: Intent.ABI, abi: values.abi }, { method: 'post' });
+  }
+
   return (
     <>
       <Card>
@@ -185,13 +272,28 @@ export default function ContractEVM() {
             <span className="w-24">Address:</span>
             <span className="truncate font-mono">{contract}</span>
           </div>
-          <Form method="post" className="space-y-4" id="contract-form">
-            <Input type="hidden" name="intent" value={Intent.CONTRACT} />
-            <div>
-              <Label htmlFor="contract">New address</Label>
-              <Input name="contract" placeholder="0x..." />
-            </div>
-            <Button type="submit">Submit</Button>
+          <Form {...contractAddressForm}>
+            <form
+              onSubmit={contractAddressForm.handleSubmit(
+                contractAddressOnSubmit
+              )}
+              className="space-y-4"
+            >
+              <FormField
+                control={contractAddressForm.control}
+                name="contract"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0x..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Submit</Button>
+            </form>
           </Form>
         </CardContent>
       </Card>
@@ -208,13 +310,26 @@ export default function ContractEVM() {
             <span>Selected function:</span>
             <span className="truncate font-mono">{functionName}</span>
           </div>
-          <Form method="post" className="space-y-4" id="function-form">
-            <Input type="hidden" name="intent" value={Intent.FUNCTION} />
-            <div>
-              <Label htmlFor="functionName">Function name</Label>
-              <Input name="functionName" placeholder="functionName" />
-            </div>
-            <Button type="submit">Submit</Button>
+          <Form {...functionNameForm}>
+            <form
+              onSubmit={functionNameForm.handleSubmit(functionNameOnSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={functionNameForm.control}
+                name="functionName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Function name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="functionName" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Submit</Button>
+            </form>
           </Form>
         </CardContent>
       </Card>
@@ -295,13 +410,50 @@ export default function ContractEVM() {
               ))}
             </ul>
           </div>
-          <Form method="post" className="space-y-2 w-full" id="args-form">
-            <Input type="hidden" name="intent" value={Intent.ARGS} />
-            <div>
-              <Label htmlFor="args">Args</Label>
-              <Input name="args" placeholder="Enter arguments " />
-            </div>
-            <Button type="submit">Submit</Button>
+          <Form {...functionArgsForm}>
+            <form
+              onSubmit={functionArgsForm.handleSubmit(functionArgsOnSubmit)}
+              className="space-y-4"
+            >
+              {argsFields.map((field, index) => (
+                <div
+                  className="md:flex md:items-end md:space-x-2"
+                  key={field.id}
+                >
+                  <FormField
+                    control={functionArgsForm.control}
+                    name={`args.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Argument</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter argument" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => argsFieldRemove(index)}
+                  >
+                    <Trash2Icon className="size-6" />
+                  </Button>
+                </div>
+              ))}
+              <div className="space-x-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => argsFieldAppend({ name: '', type: 'string' })}
+                >
+                  Add <Plus className="size-6" />
+                </Button>
+                <Button type="submit">Submit</Button>
+              </div>
+            </form>
           </Form>
         </CardContent>
       </Card>
@@ -315,7 +467,32 @@ export default function ContractEVM() {
               <pre>{abi && JSON.stringify(JSON.parse(abi), null, 2)}</pre>
             </code>
           </ScrollArea>
-          <Form method="post" className="space-y-2 w-full" id="abi-form">
+          <Form {...contractABIForm}>
+            <form
+              onSubmit={contractABIForm.handleSubmit(contractABIOnSubmit)}
+              className="space-y-4 w-full"
+            >
+              <FormField
+                control={contractABIForm.control}
+                name="abi"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New ABI</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Paste contract's ABI here"
+                        className="font-mono"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Submit</Button>
+            </form>
+          </Form>
+          {/* <Form method="post" className="space-y-2 w-full" id="abi-form">
             <Input type="hidden" name="intent" value={Intent.ABI} />
             <div>
               <Label htmlFor="abi">New ABI</Label>
@@ -326,7 +503,7 @@ export default function ContractEVM() {
               />
             </div>
             <Button type="submit">Submit</Button>
-          </Form>
+          </Form> */}
         </CardContent>
       </Card>
     </>

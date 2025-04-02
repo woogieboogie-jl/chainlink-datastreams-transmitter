@@ -3,7 +3,10 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from '@remix-run/node';
-import { Form, useLoaderData } from '@remix-run/react';
+import { useLoaderData, useSubmit } from '@remix-run/react';
+import { useFieldArray, useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { getCurrentChain } from 'server/services/client';
 import { logger } from 'server/services/logger';
 import {
@@ -22,10 +25,18 @@ import { printError } from 'server/utils';
 import { Button, buttonVariants } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { Textarea } from '~/components/ui/textarea';
 import { cn } from '~/lib/utils';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '~/components/ui/form';
+import { Plus, Trash2Icon } from 'lucide-react';
 
 enum Intent {
   INSTRUCTION = 'INSTRUCTION',
@@ -33,6 +44,17 @@ enum Intent {
   PDA = 'PDA',
   ARGS = 'ARGS',
 }
+
+const instructionNameSchema = z.object({
+  instructionName: z.string(),
+});
+const instructionArgsSchema = z.object({
+  args: z.array(
+    z.object({ name: z.string(), type: z.enum(['number', 'string']) })
+  ),
+});
+const instructionPDASchema = z.object({ instructionPDA: z.string() });
+const instructionIDLSchema = z.object({ idl: z.string() });
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const chain = await getCurrentChain();
@@ -91,33 +113,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return null;
     }
     case Intent.ARGS: {
-      const args = (data as { args: string }).args;
-      if (!args || args.length === 0) {
-        logger.warn('⚠ Invalid args input', { data });
+      try {
+        const argsStr = (data as { args: string }).args;
+        const args: { name: string; type: string }[] = JSON.parse(argsStr);
+        if (!args || args.length === 0) {
+          logger.warn('⚠ Invalid args input', { data });
+          return null;
+        }
+        await setInstructionArgs(
+          feedId,
+          cluster,
+          args.map((arg) => JSON.stringify(arg))
+        );
+        logger.info(
+          `📢 New set of arguments has been set ${args
+            .map((a) => a.name)
+            .join(', ')} on chain ${chainName} (${cluster})`,
+          {
+            functionArgs: args,
+          }
+        );
+
+        return null;
+      } catch (error) {
+        logger.error(printError(error), error);
+        console.error(error);
         return null;
       }
-      const newArgs = args
-        .split(',')
-        .map((a) => a.trim())
-        .map((a) => {
-          const [name, type] = a.split(' ');
-          return { name, type };
-        });
-      await setInstructionArgs(
-        feedId,
-        cluster,
-        newArgs.map((arg) => JSON.stringify(arg))
-      );
-      logger.info(
-        `📢 New set of arguments has been set ${JSON.stringify(
-          newArgs
-        )} on chain ${chainName} (${cluster})`,
-        {
-          functionArgs: args,
-        }
-      );
-
-      return null;
     }
     case Intent.IDL: {
       const idl = (data as { idl: string }).idl;
@@ -189,11 +211,78 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function ContractSVM() {
   const { idl, instructionName, instructionPDA, instructionArgs } =
     useLoaderData<typeof loader>();
+  const submit = useSubmit();
+
+  const instructionNameForm = useForm<z.infer<typeof instructionNameSchema>>({
+    resolver: zodResolver(instructionNameSchema),
+    defaultValues: {
+      instructionName: '',
+    },
+  });
+  function instructionNameOnSubmit(
+    values: z.infer<typeof instructionNameSchema>
+  ) {
+    submit(
+      { intent: Intent.INSTRUCTION, instructionName: values.instructionName },
+      { method: 'post' }
+    );
+  }
+
+  const instructionArgsForm = useForm<z.infer<typeof instructionArgsSchema>>({
+    resolver: zodResolver(instructionArgsSchema),
+    defaultValues: {
+      args: [{ name: '', type: 'string' }],
+    },
+  });
+  const {
+    fields: argsFields,
+    append: argsFieldAppend,
+    remove: argsFieldRemove,
+  } = useFieldArray({
+    control: instructionArgsForm.control,
+    name: 'args',
+  });
+  function instructionArgsOnSubmit(
+    values: z.infer<typeof instructionArgsSchema>
+  ) {
+    submit(
+      { intent: Intent.ARGS, args: JSON.stringify(values.args) },
+      { method: 'post' }
+    );
+  }
+
+  const instructionPDAForm = useForm<z.infer<typeof instructionPDASchema>>({
+    resolver: zodResolver(instructionPDASchema),
+    defaultValues: {
+      instructionPDA: '',
+    },
+  });
+  function instructionPDAOnSubmit(
+    values: z.infer<typeof instructionPDASchema>
+  ) {
+    submit(
+      { intent: Intent.PDA, instructionPDA: values.instructionPDA },
+      { method: 'post' }
+    );
+  }
+
+  const instructionIDLForm = useForm<z.infer<typeof instructionIDLSchema>>({
+    resolver: zodResolver(instructionIDLSchema),
+    defaultValues: {
+      idl: '',
+    },
+  });
+  function instructionIDLOnSubmit(
+    values: z.infer<typeof instructionIDLSchema>
+  ) {
+    submit({ intent: Intent.IDL, idl: values.idl }, { method: 'post' });
+  }
+
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Function</CardTitle>
+          <CardTitle>Instruction</CardTitle>
           <div className="text-sm text-muted-foreground pt-2">
             Enter the name of the program instruction to be called to store
             report result data on-chain.
@@ -204,13 +293,28 @@ export default function ContractSVM() {
             <span>Selected instruction:</span>
             <span className="truncate font-mono">{instructionName}</span>
           </div>
-          <Form method="post" className="space-y-4" id="instruction-form">
-            <Input type="hidden" name="intent" value={Intent.INSTRUCTION} />
-            <div>
-              <Label htmlFor="instructionName">Instruction name</Label>
-              <Input name="instructionName" placeholder="instructionName" />
-            </div>
-            <Button type="submit">Submit</Button>
+          <Form {...instructionNameForm}>
+            <form
+              onSubmit={instructionNameForm.handleSubmit(
+                instructionNameOnSubmit
+              )}
+              className="space-y-4"
+            >
+              <FormField
+                control={instructionNameForm.control}
+                name="instructionName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Instruction name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="instructionName" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Submit</Button>
+            </form>
           </Form>
         </CardContent>
       </Card>
@@ -292,13 +396,65 @@ export default function ContractSVM() {
               ))}
             </ul>
           </div>
-          <Form method="post" className="space-y-2 w-full" id="args-form">
-            <Input type="hidden" name="intent" value={Intent.ARGS} />
-            <div>
-              <Label htmlFor="args">Args</Label>
-              <Input name="args" placeholder="Enter arguments " />
-            </div>
-            <Button type="submit">Submit</Button>
+          <Form {...instructionArgsForm}>
+            <form
+              onSubmit={instructionArgsForm.handleSubmit(
+                instructionArgsOnSubmit
+              )}
+              className="space-y-4"
+            >
+              {argsFields.map((field, index) => (
+                <div
+                  className="md:flex md:items-end md:space-x-2"
+                  key={field.id}
+                >
+                  <FormField
+                    control={instructionArgsForm.control}
+                    name={`args.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Argument</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter argument" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={instructionArgsForm.control}
+                    name={`args.${index}.type`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <FormControl>
+                          <Input placeholder="string | number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => argsFieldRemove(index)}
+                  >
+                    <Trash2Icon className="size-6" />
+                  </Button>
+                </div>
+              ))}
+              <div className="space-x-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => argsFieldAppend({ name: '', type: 'string' })}
+                >
+                  Add <Plus className="size-6" />
+                </Button>
+                <Button type="submit">Submit</Button>
+              </div>
+            </form>
           </Form>
         </CardContent>
       </Card>
@@ -315,13 +471,26 @@ export default function ContractSVM() {
             <span>PDA:</span>
             <span className="truncate font-mono">{instructionPDA}</span>
           </div>
-          <Form method="post" className="space-y-4" id="instruction-form">
-            <Input type="hidden" name="intent" value={Intent.PDA} />
-            <div>
-              <Label htmlFor="instructionPDA">PDA</Label>
-              <Input name="instructionPDA" placeholder="instructionPDA" />
-            </div>
-            <Button type="submit">Submit</Button>
+          <Form {...instructionPDAForm}>
+            <form
+              onSubmit={instructionPDAForm.handleSubmit(instructionPDAOnSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={instructionPDAForm.control}
+                name="instructionPDA"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PDA</FormLabel>
+                    <FormControl>
+                      <Input placeholder="instructionPDA" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Submit</Button>
+            </form>
           </Form>
         </CardContent>
       </Card>
@@ -336,17 +505,30 @@ export default function ContractSVM() {
               <pre>{idl && JSON.stringify(JSON.parse(idl), null, 2)}</pre>
             </code>
           </ScrollArea>
-          <Form method="post" className="space-y-2 w-full" id="abi-form">
-            <Input type="hidden" name="intent" value={Intent.IDL} />
-            <div>
-              <Label htmlFor="idl">New IDL</Label>
-              <Textarea
-                placeholder="Paste program's IDL here"
-                className="font-mono"
+          <Form {...instructionIDLForm}>
+            <form
+              onSubmit={instructionIDLForm.handleSubmit(instructionIDLOnSubmit)}
+              className="space-y-4 w-full"
+            >
+              <FormField
+                control={instructionIDLForm.control}
                 name="idl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New IDL</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Paste program's IDL here"
+                        className="font-mono"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <Button type="submit">Submit</Button>
+              <Button type="submit">Submit</Button>
+            </form>
           </Form>
         </CardContent>
       </Card>
