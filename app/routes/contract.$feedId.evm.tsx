@@ -338,8 +338,7 @@ export default function ContractEVM() {
           <CardTitle>Function arguments</CardTitle>
           <div className="text-sm text-muted-foreground pt-2">
             Enter report arguments field names in the sequense the contract
-            expects them to be passed in the selected method, separated by comma
-            &#40;, &#41;
+            expects them to be passed in the selected method.
             <br />
             Valid arguments:
             <ul className="list-disc list-inside">
