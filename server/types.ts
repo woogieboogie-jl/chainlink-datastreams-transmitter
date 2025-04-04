@@ -21,6 +21,7 @@ export type ReportV3 = {
   price: bigint;
   bid: bigint;
   ask: bigint;
+  rawReport: Hex;
 };
 
 export type ReportV4 = {
@@ -32,6 +33,7 @@ export type ReportV4 = {
   expiresAt: number;
   price: bigint;
   marketStatus: number;
+  rawReport: Hex;
 };
 
 export type Feed = { name: string; feedId: string };
