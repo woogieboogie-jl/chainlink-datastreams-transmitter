@@ -51,7 +51,7 @@ export async function executeContract({
   functionName,
   functionArgs,
 }: {
-  report: ReportV3;
+  report: ReportV3 | ReportV4 | StreamReport;
   abi: Abi;
   functionName: string;
   functionArgs: string[];
@@ -83,7 +83,7 @@ export async function executeContract({
 
     logger.info('📝 Prepared verification transaction', report);
 
-    const args = functionArgs.map((arg) => report[arg as keyof ReportV3]);
+    const args = functionArgs.map((arg) => report[arg as keyof typeof report]);
 
     const address = await getContractAddress(report.feedId, chainId);
     if (!address || !isAddress(address)) {
@@ -393,6 +393,7 @@ export async function verifyReport(report: StreamReport) {
         ask,
         rawReport: report.rawReport,
       };
+      logger.info('✅ Report verified', { verifiedReport });
       return verifiedReport;
     }
     if (reportVersion === 4) {
@@ -429,6 +430,7 @@ export async function verifyReport(report: StreamReport) {
         marketStatus,
         rawReport: report.rawReport,
       };
+      logger.info('✅ Report verified', { verifiedReport });
       return verifiedReport;
     }
   } catch (error) {

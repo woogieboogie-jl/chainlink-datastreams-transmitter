@@ -100,6 +100,13 @@ const setContractAddress = async (
   chainId: string,
   address: Address
 ) => await setValue(`contractAddress:${feedId}:${chainId}`, address);
+const getSkipVerify = async (feedId: string, chainId: string) =>
+  await getValue(`skipVerify:${feedId}:${chainId}`);
+const setSkipVerify = async (
+  feedId: string,
+  chainId: string,
+  skipVerify: string
+) => await setValue(`skipVerify:${feedId}:${chainId}`, skipVerify);
 
 const seedConfig = async (config: Config) => {
   try {
@@ -186,23 +193,27 @@ const seedConfig = async (config: Config) => {
       })
     );
 
-    await Promise.all(
-      config.verifierAddresses.map(async (verifier) => {
-        if (!verifier.chainId || isNaN(Number(verifier.chainId))) {
-          logger.warn('⚠ Invalid verifier chain id', { verifier });
-          return;
-        }
-        if (!isAddress(verifier.address) || verifier.address === zeroAddress) {
-          logger.warn('⚠ Invalid verifier contract address', { verifier });
-          return;
-        }
-        await addVerifierAddress(verifier.chainId, verifier.address);
-        logger.info(
-          `📢 Verifier contract has been added for chain with ID ${verifier.chainId}`,
-          { verifier }
-        );
-      })
-    );
+    config.verifierAddresses &&
+      (await Promise.all(
+        config.verifierAddresses.map(async (verifier) => {
+          if (!verifier.chainId || isNaN(Number(verifier.chainId))) {
+            logger.warn('⚠ Invalid verifier chain id', { verifier });
+            return;
+          }
+          if (
+            !isAddress(verifier.address) ||
+            verifier.address === zeroAddress
+          ) {
+            logger.warn('⚠ Invalid verifier contract address', { verifier });
+            return;
+          }
+          await addVerifierAddress(verifier.chainId, verifier.address);
+          logger.info(
+            `📢 Verifier contract has been added for chain with ID ${verifier.chainId}`,
+            { verifier }
+          );
+        })
+      ));
 
     if (config.chainId && !isNaN(config.chainId)) {
       await setChainId(config.chainId);
@@ -220,8 +231,14 @@ const seedConfig = async (config: Config) => {
         await Promise.all(
           targetContracts.map(async (contract) => {
             try {
-              const { feedId, address, abi, functionArgs, functionName } =
-                contract;
+              const {
+                feedId,
+                address,
+                abi,
+                functionArgs,
+                functionName,
+                skipVerify,
+              } = contract;
 
               if (!feedId || !isHex(feedId)) {
                 logger.warn('⚠ Contract feedId invalid input', contract);
@@ -267,6 +284,17 @@ const seedConfig = async (config: Config) => {
                     ', '
                   )} has been set for feed ${feedId} on chain ${chainId}`,
                   { feedId, chainId, functionArgs }
+                );
+              }
+              if (skipVerify) {
+                await setSkipVerify(
+                  feedId,
+                  `${chainId}`,
+                  skipVerify.toString()
+                );
+                logger.info(
+                  `📢 Skip verification set to ${skipVerify.toString()} for feed ${feedId}}`,
+                  { feedId, chainId, skipVerify }
                 );
               }
             } catch (error) {
@@ -316,7 +344,9 @@ const seedConfig = async (config: Config) => {
     await setSeed();
     logger.info('💽 App configured successfuly', { config });
   } catch (error) {
-    logger.warn('⚠️ App configuration was not completed', { config, error });
+    logger.warn('⚠️ App configuration was not completed', { config });
+    logger.error(printError(error), error);
+    console.error(error);
   }
 };
 
@@ -344,6 +374,8 @@ export {
   setChainId,
   getContractAddress,
   setContractAddress,
+  getSkipVerify,
+  setSkipVerify,
   getGasCap,
   setGasCap,
   getChains,

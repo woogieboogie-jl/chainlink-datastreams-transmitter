@@ -11,7 +11,7 @@ import {
   executeContract as executeWriteContract,
   verifyReport,
 } from 'server/services/client.js';
-import { ReportV3, StreamReport } from 'server/types.js';
+import { StreamReport } from 'server/types.js';
 import { formatUSD, isPositive, printError } from 'server/utils.js';
 import { readFile } from 'node:fs/promises';
 import {
@@ -27,6 +27,7 @@ import {
   getLatestReport,
   getPriceDelta,
   getSavedReportBenchmarkPrice,
+  getSkipVerify,
   removeFeed,
   seedConfig,
   setInterval,
@@ -310,12 +311,8 @@ async function dataUpdater({ report }: { report: StreamReport }) {
       );
       return;
     }
-    const verifiedReport = await verifyReport(report);
+
     const { feedId } = report;
-    if (!verifiedReport) {
-      logger.warn(`🛑 Verified report is missing | Aborting`);
-      return;
-    }
     const functionName = await getFunctionName(feedId, chainId);
     if (!functionName) {
       logger.warn(`🛑 Function name is missing | Aborting`);
@@ -326,9 +323,19 @@ async function dataUpdater({ report }: { report: StreamReport }) {
       logger.warn(`🛑 Contract ABI is missing | Aborting`);
       return;
     }
-    logger.info('✅ Report verified', { verifiedReport });
+
+    const skipVerify = (await getSkipVerify(feedId, chainId)) === 'true';
+
+    const reportPayload = skipVerify ? report : await verifyReport(report);
+    if (!reportPayload) {
+      if (!reportPayload) {
+        logger.warn(`🛑 Verified report is missing | Aborting`);
+        return;
+      }
+    }
+
     const transaction = await executeWriteContract({
-      report: verifiedReport as ReportV3,
+      report: reportPayload,
       abi: JSON.parse(abi),
       functionName,
       functionArgs: await getFunctionArgs(feedId, chainId),

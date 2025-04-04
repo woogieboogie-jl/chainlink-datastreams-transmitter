@@ -59,6 +59,7 @@ export type Config = {
     chainId: number | string;
     targetContracts: {
       feedId: Hex;
+      skipVerify?: boolean;
       address: Address;
       abi: Abi;
       functionName: string;

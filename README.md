@@ -407,6 +407,12 @@ Clicking the contract icon <img src="public/readme/contract-btn.png" alt="contra
 
 View/Add or Edit the target contract address.
 
+**Skip verification**
+![skip-verify](public/readme/skip-verify.png)
+
+Skip verification before writing to the contract
+**WARNING!**: If set to `true` make sure that verification is implemented in the contract
+
 **Function**
 ![function](public/readme/function.png)
 
@@ -415,7 +421,7 @@ View/Add or Edit the name of the target contract function to be called to store 
 **Arguments**
 ![arguments](public/readme/arguments.png)
 
-View, add, or edit the report argument field names in the exact order the contract expects them. Separate each field with a comma (,). Refer to the [Data Streams Report Schemas Documentation](https://docs.chain.link/data-streams/reference/report-schema) for more details.
+View, add, or edit the report argument field names in the exact order the contract expects them. Refer to the [Data Streams Report Schemas Documentation](https://docs.chain.link/data-streams/reference/report-schema) for more details.
 
 **ABI**
 ![abi](public/readme/abi.png)
