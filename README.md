@@ -41,6 +41,7 @@ Chainlink Data Streams Transmitter is a service that bridges off-chain data stre
   - [Deployment Guide](#deployment-guide)
     - [Running with Docker Compose](#running-with-docker-compose)
     - [Production Deployment](#production-deployment)
+  - [Infrastructural Considerations](#infrastructural-considerations)
   - [UI](#ui)
     - [UI Setup Instructions](#ui-setup-instructions)
     - [UI usage](#ui-usage)
@@ -196,6 +197,9 @@ targetChains:
     # set the functionName with the arguments to be called. Contract ABI should also be provided.
     targetContracts:
       - feedId: '0x...'
+        # Optional flag to skip report verification by the transmitter before pushing the data to the user provided contract.
+        # Defaults to `false`. Set to `true` if you want the transmitter to not verify reports upon delivery.
+        skipVerify: false
         address: '0x...'
         functionName: 'functionNameHere'
         functionArgs:
@@ -356,6 +360,31 @@ Before starting the application, ensure that all necessary environment variables
 - Modify `docker-compose.yml` to set up persistent storage and environment variables.
 - If the service is going to be accessible externally consider running it behind a reverse proxy like Nginx.
 
+## Infrastructural Considerations
+
+> [!IMPORTANT]
+> This project is designed to be self-hosted, meaning that network-level and authorization security controls are the responsibility of the user to implement and manage.
+
+We recommend implementing security controls and equivalent protections at the infrastructure level.
+
+These application-level security controls could be supplemented through the following infrastructural-level recommendations:
+- The web server leverages HTTP and does not employ protocol-level encryption and authentication (e.g., TLS), leaving network traffic prone to man-in-the-middle attacks.
+  - For a local instance run on your machine, the operator should only interact with the web server over localhost, to avoid a man-in-the-middle attack.
+  - For a cloud instance (e.g., AWS), the operator should avoid directly exposing the web server, instead introducing a load balancer that enforces TLS in front of the web server.
+- The web server does not employ any authentication mechanism such as credential-based logins. It is accessible by anyone it is exposed to.
+  - For a local instance run on your machine, the operator should ensure the guest (container)’s ports that are forwarded to the host cannot be indirectly accessed by another machine through the host over the local network.
+  - The system should use Docker configurations to restrict such accesses, or leverage the operating system’s firewall to deny such access.
+  - For a cloud instance (e.g., AWS), the operator should not directly expose the web server, instead introducing a gateway component that enforces authentication in front of the web server. Alternatively, operators may opt to not allow external access to the component, leveraging a VPN to access it.
+- The web server may be exposed to other components on the same network. An attacker that compromised a component within the same network could use it to access the web server.
+  - For a local instance run on your machine, the operator should ensure the guest (container)’s ports that are forwarded to the host cannot be indirectly accessed by another machine through the host over the local network.
+  - The system should use Docker configurations to restrict such accesses, or leverage the operating system’s firewall to deny such access.
+  - For a cloud instance (e.g., AWS), the operator should enforce strict ingress/egress rules that allow only expected component communications.
+  E.g., with three components, A, B, and C, where only A should communicate
+with C, but B should not, ingress and egress rules can be used to enforce these patterns.
+
+Additionally, consider the following:
+- Although the Redis server should never be publicly exposed, it should nonetheless be hardened by employing [TLS configurations](https://redis.io/docs/latest/operate/oss_and_stack/management/security/encryption/) to mitigate a man-in-the-middle attack by someone who gained an initial foothold within the network.
+
 ---
 
 ## UI
@@ -407,11 +436,20 @@ Clicking the contract icon <img src="public/readme/contract-btn.png" alt="contra
 
 View/Add or Edit the target contract address.
 
-**Skip verification**
+**Skip Report Verification**
 ![skip-verify](public/readme/skip-verify.png)
 
-Skip verification before writing to the contract
-**WARNING!**: If set to `true` make sure that verification is implemented in the contract
+This setting allows you to configure the transmitter to bypass off-chain report verification before submitting the transaction to the specified contract on-chain.
+
+- Default Behavior:
+  - If this option is not enabled, the transmitter will automatically perform off-chain report verification before submitting reports to the blockchain. The transmitter will submit the received data to on-chain Chainlink verifier contracts to verify the correctness of the report and to ensure it originated from Chainlink's DON before submitting the data to the user provided contract.
+    - > [!WARNING]
+      > The transmitter side report verification could be a paid operation depending on the selected destination chain. Refer to the documentation for more information on [Data Streams Billing](https://docs.chain.link/data-streams/billing).
+- Important Considerations:
+  - Enabling this option means skipping the off-chain verification step, which could expose your system to risks if the contract's verification mechanism is not robust.
+
+> [!WARNING]
+> Only enable this setting if you have thoroughly implemented and verified the on-chain report verification mechanism in the contract. For an example of how to implement on-chain report verification, refer to the [on-chain report verification documentation]((https://docs.chain.link/data-streams/reference/streams-direct/streams-direct-onchain-verification#interfaces)).
 
 **Function**
 ![function](public/readme/function.png)
