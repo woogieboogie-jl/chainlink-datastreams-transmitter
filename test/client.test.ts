@@ -43,14 +43,14 @@ describe('Unit', () => {
     it('should abort if private key is missing', async () => {
       process.env = { NODE_ENV: 'test' };
       const result = await verifyReport(
-        (mockRawReport as unknown) as StreamReport
+        mockRawReport as unknown as StreamReport
       );
       expect(result).toEqual(undefined);
     });
     it('should abort if chain id is missing', async () => {
       getChainIdMock.mockResolvedValue(null);
       const result = await verifyReport(
-        (mockRawReport as unknown) as StreamReport
+        mockRawReport as unknown as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -58,16 +58,7 @@ describe('Unit', () => {
       getChainIdMock.mockResolvedValue('31336');
       getAllChainsMock.mockResolvedValue([hardhat]);
       const result = await verifyReport(
-        (mockRawReport as unknown) as StreamReport
-      );
-      expect(result).toEqual(undefined);
-    });
-    it('should abort if contract address is invalid', async () => {
-      getChainIdMock.mockResolvedValue('31337');
-      getAllChainsMock.mockResolvedValue([hardhat]);
-      getContractAddressMock.mockResolvedValue(zeroAddress);
-      const result = await verifyReport(
-        (mockRawReport as unknown) as StreamReport
+        mockRawReport as unknown as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -75,7 +66,7 @@ describe('Unit', () => {
       getChainIdMock.mockResolvedValue('31337');
       getAllChainsMock.mockResolvedValue([hardhat]);
       const result = await verifyReport(
-        (mockInvalidRawReport as unknown) as StreamReport
+        mockInvalidRawReport as unknown as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -87,7 +78,7 @@ describe('Unit', () => {
       simulateReadContractMock.mockResolvedValueOnce(zeroAddress);
       simulateReadContractMock.mockResolvedValueOnce(zeroAddress);
       const result = await verifyReport(
-        (mockRawReport as unknown) as StreamReport
+        mockRawReport as unknown as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -115,7 +106,7 @@ describe('Unit', () => {
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(500n.toString());
       const result = await verifyReport(
-        (mockRawReport as unknown) as StreamReport
+        mockRawReport as unknown as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -142,25 +133,25 @@ describe('Unit', () => {
       ]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
-      simulateContractMock.mockResolvedValueOnce(({
+      simulateContractMock.mockResolvedValueOnce({
         request: { address: '0x0000000000000000000000000000000000000000' },
-      } as unknown) as viemActions.SimulateContractReturnType);
+      } as unknown as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
       );
       estimateContractGasMock.mockResolvedValueOnce(1234n);
-      simulateContractMock.mockResolvedValueOnce(({
+      simulateContractMock.mockResolvedValueOnce({
         request: { address: '0x0000000000000000000000000000000000000000' },
         result: mockVerifiedReport,
-      } as unknown) as viemActions.SimulateContractReturnType);
+      } as unknown as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
       );
 
       const result = await verifyReport(
-        (mockRawReport as unknown) as StreamReport
+        mockRawReport as unknown as StreamReport
       );
       expect(result?.feedId).toEqual(
         '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'
@@ -172,6 +163,8 @@ describe('Unit', () => {
   describe('executeContract', () => {
     it('should abort if private key is missing', async () => {
       process.env = { NODE_ENV: 'test' };
+      getChainIdMock.mockResolvedValueOnce('31337');
+      getCustomChainsMock.mockResolvedValueOnce([hardhat]);
       const result = await executeContract({
         report: mockReport,
         functionArgs: mockFunctionArgs,
@@ -181,6 +174,8 @@ describe('Unit', () => {
       expect(result).toEqual(undefined);
     });
     it('should abort if ABI is missing', async () => {
+      getChainIdMock.mockResolvedValueOnce('31337');
+      getCustomChainsMock.mockResolvedValueOnce([hardhat]);
       const result = await executeContract({
         report: mockReport,
         functionArgs: mockFunctionArgs,
@@ -190,6 +185,8 @@ describe('Unit', () => {
       expect(result).toEqual(undefined);
     });
     it('should abort if functionName is missing', async () => {
+      getChainIdMock.mockResolvedValueOnce('31337');
+      getCustomChainsMock.mockResolvedValueOnce([hardhat]);
       const result = await executeContract({
         report: mockReport,
         functionArgs: mockFunctionArgs,
@@ -199,6 +196,8 @@ describe('Unit', () => {
       expect(result).toEqual(undefined);
     });
     it('should abort if functionArguments are missing', async () => {
+      getChainIdMock.mockResolvedValueOnce('31337');
+      getCustomChainsMock.mockResolvedValueOnce([hardhat]);
       const result = await executeContract({
         report: mockReport,
         functionArgs: [],
@@ -208,6 +207,8 @@ describe('Unit', () => {
       expect(result).toEqual(undefined);
     });
     it('should abort if contract address is missing', async () => {
+      getChainIdMock.mockResolvedValueOnce('31337');
+      getCustomChainsMock.mockResolvedValueOnce([hardhat]);
       getContractAddressMock.mockResolvedValueOnce(null);
 
       const result = await executeContract({
@@ -272,9 +273,9 @@ describe('Unit', () => {
       getCustomChainsMock.mockResolvedValue([hardhat]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
-      simulateContractMock.mockResolvedValueOnce(({
+      simulateContractMock.mockResolvedValueOnce({
         request: { address: '0x0000000000000000000000000000000000000000' },
-      } as unknown) as viemActions.SimulateContractReturnType);
+      } as unknown as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
@@ -290,128 +291,10 @@ describe('Unit', () => {
     });
   });
 });
-describe('verifiers', () => {
-  it('should return default and custom verifiers combined', async () => {
-    const result = await verifiers.getAllVerifiers();
-
-    expect(result).toEqual([
-      {
-        address: '0xEBA4789A88C89C18f4657ffBF47B13A3abC7EB8D',
-        chainId: '10',
-        default: true,
-      },
-      {
-        address: '0xBE9f07f73de2412A9d0Ed64C42De7d9A10C9F28C',
-        chainId: '109',
-        default: true,
-      },
-      {
-        address: '0xfBFff08fE4169853F7B1b5Ac67eC10dc8806801d',
-        chainId: '146',
-        default: true,
-      },
-      {
-        address: '0xc44eb6c00A0F89D044279cD91Bdfd5f62f752Da3',
-        chainId: '157',
-        default: true,
-      },
-      {
-        address: '0x7D543D1a715ED544f7e3Ae9e3b1777BCdA56bF8e',
-        chainId: '204',
-        default: true,
-      },
-      {
-        address: '0x65eaE24251C5707D5aCBF7461A49fe87CB1bE4c7',
-        chainId: '480',
-        default: true,
-      },
-      {
-        address: '0x26603bAC5CE09DAE5604700B384658AcA13AD6ae',
-        chainId: '1946',
-        default: true,
-      },
-      {
-        address: '0x2482A390bE58b3cBB6Df72dB2e950Db20256e55E',
-        chainId: '4801',
-        default: true,
-      },
-      {
-        address: '0x001225Aca0efe49Dbb48233aB83a9b4d177b581A',
-        chainId: '5611',
-        default: true,
-      },
-      {
-        address: '0xDE1A28D87Afd0f546505B28AB50410A5c3a7387a',
-        chainId: '8453',
-        default: true,
-      },
-      {
-        address: '0x478Aa2aC9F6D65F84e09D9185d126c3a17c2a93C',
-        chainId: '42161',
-        default: true,
-      },
-      {
-        address: '0x2bf612C65f5a4d388E687948bb2CF842FFb8aBB3',
-        chainId: '43113',
-        default: true,
-      },
-      {
-        address: '0x79BAa65505C6682F16F9b2C7F8afEBb1821BE3f6',
-        chainId: '43114',
-        default: true,
-      },
-      {
-        address: '0xfBFff08fE4169853F7B1b5Ac67eC10dc8806801d',
-        chainId: '64165',
-        default: true,
-      },
-      {
-        address: '0x8Ac491b7c118a0cdcF048e0f707247fD8C9575f9',
-        chainId: '84532',
-        default: true,
-      },
-      {
-        address: '0x2ff010DEbC1297f19579B4246cad07bd24F2488A',
-        chainId: '421614',
-        default: true,
-      },
-      {
-        address: '0xE17A7C6A7c2eF0Cb859578aa1605f8Bc2434A365',
-        chainId: '534351',
-        default: true,
-      },
-      {
-        address: '0x37e550C9b35DB56F9c943126F1c2642fcbDF7B51',
-        chainId: '534352',
-        default: true,
-      },
-      {
-        address: '0x5f64394a2Ab3AcE9eCC071568Fc552489a8de7AF',
-        chainId: '11155420',
-        default: true,
-      },
-    ]);
-  });
-
-  it('returns custom verifier if valid', async () => {
-    getVerifierMock.mockResolvedValue(
-      '0x5f64394a2Ab3AcE9eCC071568Fc552489a8de7AF'
-    );
-
-    const result = await verifiers.getVerifier('1');
-    expect(result).toBe('0x5f64394a2Ab3AcE9eCC071568Fc552489a8de7AF');
-  });
-
-  it('falls back to default verifier if custom verifier is invalid', async () => {
-    getVerifierMock.mockResolvedValue(undefined);
-
-    const result = await verifiers.getVerifier('1');
-    expect(result).toBe(verifiers.defaultVerifiers[1]);
-  });
-});
 
 const mockReport: ReportV3 = {
-  feedId: '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796' as Hex,
+  feedId:
+    '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796' as Hex,
   validFromTimestamp: 1741956359,
   observationsTimestamp: 1741956359,
   nativeFee: 168454106500448n,

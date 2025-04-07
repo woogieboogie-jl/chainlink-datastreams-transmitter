@@ -9,7 +9,8 @@
     "lint": "prettier --write .",
     "start": "cross-env NODE_ENV=production node ./build/server/index.js",
     "typecheck": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@hackbg/chainlink-datastreams-consumer": "^1.0.2",
