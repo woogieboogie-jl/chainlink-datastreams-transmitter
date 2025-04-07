@@ -1,4 +1,4 @@
-import { printError } from 'server/utils';
+import { printError } from '../utils';
 import { logger } from '../services/logger';
 import { getChain, getChains } from '../store';
 import { defineChain } from 'viem';

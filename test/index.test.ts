@@ -13,12 +13,13 @@ import * as chains from '../server/config/chains';
 import * as verifiers from '../server/config/verifiers';
 import * as viemActions from 'viem/actions';
 import { hardhat } from 'viem/chains';
-import { StreamReport } from '../server/types';
+import { ReportV3, StreamReport } from '../server/types';
 
 const getContractAddressMock = jest.spyOn(store, 'getContractAddress');
 const getChainIdMock = jest.spyOn(store, 'getChainId');
 const getGasCapMock = jest.spyOn(store, 'getGasCap');
 const getAllChainsMock = jest.spyOn(chains, 'getAllChains');
+const getCustomChainsMock = jest.spyOn(chains, 'getCustomChains');
 const estimateContractGasMock = jest.spyOn(viemActions, 'estimateContractGas');
 const simulateContractMock = jest.spyOn(viemActions, 'simulateContract');
 const simulateWriteContractMock = jest.spyOn(viemActions, 'writeContract');
@@ -34,7 +35,7 @@ describe('Unit', () => {
     process.env.PRIVATE_KEY = mockPrivateKey;
   });
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     process.env = { NODE_ENV: 'test' };
   });
 
@@ -109,9 +110,9 @@ describe('Unit', () => {
       );
       expect(result).toEqual(undefined);
     });
-    it('should verify contract', async () => {
+    it('should verify report', async () => {
       getChainIdMock.mockResolvedValue('31337');
-      getAllChainsMock.mockResolvedValue([hardhat]);
+      getCustomChainsMock.mockResolvedValue([hardhat]);
       getVerifierMock.mockResolvedValueOnce(
         '0xE17A7C6A7c2eF0Cb859578aa1605f8Bc2434A365'
       );
@@ -242,7 +243,7 @@ describe('Unit', () => {
         '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
       );
       getChainIdMock.mockResolvedValueOnce('31337');
-      getAllChainsMock.mockResolvedValueOnce([hardhat]);
+      getCustomChainsMock.mockResolvedValueOnce([hardhat]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(500n.toString());
 
@@ -258,8 +259,8 @@ describe('Unit', () => {
       getContractAddressMock.mockResolvedValueOnce(
         '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
       );
-      getChainIdMock.mockResolvedValueOnce('31337');
-      getAllChainsMock.mockResolvedValueOnce([hardhat]);
+      getChainIdMock.mockResolvedValue('31337');
+      getCustomChainsMock.mockResolvedValue([hardhat]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
       simulateContractMock.mockResolvedValueOnce({
@@ -281,7 +282,7 @@ describe('Unit', () => {
   });
 });
 
-const mockReport = {
+const mockReport: ReportV3 = {
   feedId:
     '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796' as Hex,
   validFromTimestamp: 1741956359,
@@ -292,6 +293,8 @@ const mockReport = {
   price: 18624904418177297500n,
   bid: 18619563897291935000n,
   ask: 18629557461720030000n,
+  rawReport:
+    '0x0006aee203ef23a892e75b579f8c3f26fd933d9ca45de95c2f8ac470f4ddcd76000000000000000000000000000000000000000000000000000000001f3e0011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000026001010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000434a5b30cafe7e853832a458ea1591dc2f5fb5e4cf80b9979b8248065a7ea0000000000000000000000000000000000000000000000000000000067d45fd70000000000000000000000000000000000000000000000000000000067d45fd7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067d5b15700000000000000000000000000000000000000000000000008c6d7bbf74ce0000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000252e35605f977ca4ea98f57457b5dfae41dd0f6131d3e15fef10baf270b2a1c79c3dfc21411f65ab8da6019eceabc8e0b314843850fb4d156c1d97a41d4efb9cd00000000000000000000000000000000000000000000000000000000000000020282325283e17a7053db4e3c65b27620541175700164bc873bb6d2b7420ba5b6569fbce826b3ddb200a2f2896328da36ecd3924686164640687289f290619fe0',
 };
 const mockAbi = [
   {

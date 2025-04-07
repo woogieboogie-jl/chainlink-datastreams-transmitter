@@ -1,3 +1,4 @@
+import { logger } from '../services/logger';
 import { getVerifierAddress, getVerifierAddresses } from '../store';
 import { Address, isAddress } from 'viem';
 import {
@@ -69,8 +70,13 @@ export const getAllVerifiers = async (): Promise<
   ...(await getCustomVerifiers()),
 ];
 
-export async function getVerifier(chainId: string): Promise<Address> {
+export async function getVerifier(chainId: string) {
   const customVerifier = await getVerifierAddress(chainId);
   if (customVerifier && isAddress(customVerifier)) return customVerifier;
-  return defaultVerifiers[Number(chainId)];
+  const verifier = defaultVerifiers[Number(chainId)];
+  if (!verifier) {
+    logger.warn(`Verifier not found for chainId: ${chainId}`);
+    return;
+  }
+  return verifier;
 }

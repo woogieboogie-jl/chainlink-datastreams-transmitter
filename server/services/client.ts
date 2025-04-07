@@ -31,8 +31,8 @@ import {
   setChainId,
 } from '../store';
 import { getVerifier } from '../config/verifiers';
-import { defaultChains, getCustomChains } from 'server/config/chains';
-import { printError } from 'server/utils';
+import { defaultChains, getCustomChains } from '../config/chains';
+import { printError } from '../utils';
 
 const getAccount = () => {
   try {
