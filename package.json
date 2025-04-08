@@ -12,7 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@hackbg/chainlink-datastreams-consumer": "^1.0.0",
+    "@hackbg/chainlink-datastreams-consumer": "^1.0.2",
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-label": "^2.1.1",
