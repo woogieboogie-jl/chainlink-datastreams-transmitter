@@ -52,14 +52,14 @@ describe('Client', () => {
     it('should abort if private key is missing', async () => {
       process.env = { NODE_ENV: 'test' };
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
       expect(result).toEqual(undefined);
     });
     it('should abort if chain id is missing', async () => {
       getChainIdMock.mockResolvedValue(null);
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -67,7 +67,7 @@ describe('Client', () => {
       getChainIdMock.mockResolvedValue('31336');
       getAllChainsMock.mockResolvedValue([hardhat]);
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -75,7 +75,7 @@ describe('Client', () => {
       getChainIdMock.mockResolvedValue('31337');
       getAllChainsMock.mockResolvedValue([hardhat]);
       const result = await verifyReport(
-        mockInvalidRawReport as unknown as StreamReport
+        (mockInvalidRawReport as unknown) as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -88,7 +88,7 @@ describe('Client', () => {
       simulateReadContractMock.mockResolvedValueOnce(zeroAddress);
       simulateReadContractMock.mockResolvedValueOnce(zeroAddress);
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
       expect(logSpy).toHaveBeenCalledWith('⚠️ Invalid contract addresses', {
         contractAddresses: {
@@ -124,7 +124,7 @@ describe('Client', () => {
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(500n.toString());
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
       expect(result).toEqual(undefined);
     });
@@ -133,7 +133,7 @@ describe('Client', () => {
       getChainIdMock.mockResolvedValue('31337');
       getCustomChainsMock.mockResolvedValue([hardhat]);
       const result = await verifyReport(
-        mockInvalidVersionRawReport as unknown as StreamReport
+        (mockInvalidVersionRawReport as unknown) as StreamReport
       );
       expect(logSpy).toHaveBeenCalledWith('⚠️ Invalid report version', {
         report: mockInvalidVersionRawReport,
@@ -164,18 +164,20 @@ describe('Client', () => {
       ]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
-      simulateWaitForTransactionReceipt.mockResolvedValueOnce({
+      simulateWaitForTransactionReceipt.mockResolvedValueOnce(({
         status: 'error',
-      } as unknown as TransactionReceipt);
+      } as unknown) as TransactionReceipt);
 
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
-      expect(logSpy).toHaveBeenCalledWith(
+      expect(
+        logSpy
+      ).toHaveBeenCalledWith(
         '🛑 LINK approval transaction was not successful | Aborting',
         { transactionReceipt: { status: 'error' } }
       );
@@ -206,9 +208,9 @@ describe('Client', () => {
       ]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
@@ -216,9 +218,11 @@ describe('Client', () => {
       estimateContractGasMock.mockResolvedValueOnce(12345n);
 
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
-      expect(logSpy).toHaveBeenCalledWith(
+      expect(
+        logSpy
+      ).toHaveBeenCalledWith(
         '🛑 Verification gas is above the limit of 0.000000000000005 | Aborting',
         { gasCap: '5000', verifyReportGas: 12345n }
       );
@@ -248,27 +252,29 @@ describe('Client', () => {
       ]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
       );
       estimateContractGasMock.mockResolvedValueOnce(1234n);
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
         result: mockVerifiedReport,
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
-      simulateWaitForTransactionReceipt.mockResolvedValueOnce({
+      simulateWaitForTransactionReceipt.mockResolvedValueOnce(({
         status: 'error',
-      } as unknown as TransactionReceipt);
+      } as unknown) as TransactionReceipt);
 
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
-      expect(logSpy).toHaveBeenCalledWith(
+      expect(
+        logSpy
+      ).toHaveBeenCalledWith(
         '🛑 Verification transaction was not successful | Aborting',
         { transactionReceipt: { status: 'error' } }
       );
@@ -297,25 +303,25 @@ describe('Client', () => {
       ]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
       );
       estimateContractGasMock.mockResolvedValueOnce(1234n);
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
         result: mockVerifiedReport,
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
       );
 
       const result = await verifyReport(
-        mockRawReport as unknown as StreamReport
+        (mockRawReport as unknown) as StreamReport
       );
       expect(result?.feedId).toEqual(
         '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'
@@ -345,25 +351,25 @@ describe('Client', () => {
       ]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
       );
       estimateContractGasMock.mockResolvedValueOnce(1234n);
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
         result: mockVerifiedReportV4,
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
       );
 
       const result = await verifyReport(
-        mockRawReportV4 as unknown as StreamReport
+        (mockRawReportV4 as unknown) as StreamReport
       );
       expect(result?.feedId).toEqual(
         '0x0004b9905d8337c34e00f8dbe31619428bac5c3937e73e6af75c71780f1770ce'
@@ -480,7 +486,9 @@ describe('Client', () => {
         functionName: mockFunctionName,
         abi: mockAbi,
       });
-      expect(logSpy).toHaveBeenCalledWith(
+      expect(
+        logSpy
+      ).toHaveBeenCalledWith(
         '🛑 Gas is above the limit of 0.0000000000000005 | Aborting',
         { gas: 1234n, gasCap: '500' }
       );
@@ -494,9 +502,9 @@ describe('Client', () => {
       getCustomChainsMock.mockResolvedValue([hardhat]);
       estimateContractGasMock.mockResolvedValueOnce(1234n);
       getGasCapMock.mockResolvedValueOnce(5000n.toString());
-      simulateContractMock.mockResolvedValueOnce({
+      simulateContractMock.mockResolvedValueOnce(({
         request: { address: '0x0000000000000000000000000000000000000000' },
-      } as unknown as viemActions.SimulateContractReturnType);
+      } as unknown) as viemActions.SimulateContractReturnType);
       simulateWriteContractMock.mockResolvedValueOnce(zeroHash);
       simulateWaitForTransactionReceipt.mockResolvedValueOnce(
         mockTransactionReceipt
@@ -534,8 +542,7 @@ describe('Client', () => {
 });
 
 const mockReport: ReportV3 = {
-  feedId:
-    '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796' as Hex,
+  feedId: '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796' as Hex,
   validFromTimestamp: 1741956359,
   observationsTimestamp: 1741956359,
   nativeFee: 168454106500448n,
