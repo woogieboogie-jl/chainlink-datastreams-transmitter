@@ -225,7 +225,7 @@ router.post('/stop', async (req, res) => {
     })
   );
   const feeds = jobs.map(({ feedId }) => feedId);
-  logger.info('🛑 All streams have been stoped', { feeds });
+  logger.info('🛑 All streams have been stopped', { feeds });
   res.send({ feedsStopped: feeds });
 });
 

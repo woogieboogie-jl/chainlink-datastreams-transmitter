@@ -16,7 +16,7 @@ chains:
     rpc: 'https://rpc.5ire.network'
   - id: 84532
     name: 'Base Sepolia Custom'
-    currencyName: 'Sepoloa Ether'
+    currencyName: 'Sepolia Ether'
     currencySymbol: 'ETH'
     currencyDecimals: 18
     rpc: 'https://sepolia.base.org'

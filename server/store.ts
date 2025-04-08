@@ -342,7 +342,7 @@ const seedConfig = async (config: Config) => {
     }
 
     await setSeed();
-    logger.info('💽 App configured successfuly', { config });
+    logger.info('💽 App configured successfully', { config });
   } catch (error) {
     logger.warn('⚠️ App configuration was not completed', { config });
     logger.error(printError(error), error);
