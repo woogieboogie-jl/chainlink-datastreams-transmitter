@@ -17,7 +17,7 @@ import { Navigation } from './components/navigation';
 import { Footer } from './components/footer';
 import {
   accountAddress,
-  getBalance,
+  getTokenBalance,
   getCurrentChain,
   getLinkBalance,
 } from 'server/services/client';
@@ -85,7 +85,7 @@ export default function App() {
 export async function loader() {
   const [chain, balance, linkBalance] = await Promise.all([
     getCurrentChain(),
-    getBalance(),
+    getTokenBalance(),
     getLinkBalance(),
   ]);
   return { chain, balance, linkBalance, address: accountAddress };

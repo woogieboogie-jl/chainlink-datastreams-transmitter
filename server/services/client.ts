@@ -20,6 +20,7 @@ import {
   waitForTransactionReceipt,
   writeContract,
   readContract,
+  getBalance,
 } from 'viem/actions';
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
@@ -111,7 +112,7 @@ export async function executeContract({
     );
     const gasCap = await getGasCap();
     if (gasCap && gas > BigInt(gasCap)) {
-      logger.info(
+      logger.warn(
         `🛑 Gas is above the limit of ${formatEther(
           BigInt(gasCap)
         )} | Aborting`,
@@ -324,7 +325,7 @@ export async function verifyReport(report: StreamReport) {
       { verifyReportGas }
     );
     if (gasCap && verifyReportGas > BigInt(gasCap)) {
-      logger.info(
+      logger.warn(
         `🛑 Verification gas is above the limit of ${formatEther(
           BigInt(gasCap)
         )} | Aborting`,
@@ -332,16 +333,14 @@ export async function verifyReport(report: StreamReport) {
       );
       return;
     }
-    const {
-      request: verifyReportRequest,
-      result: verifiedReportData,
-    } = await simulateContract(publicClient, {
-      account,
-      address: verifierProxyAddress,
-      abi: verifierProxyAbi,
-      functionName: 'verify',
-      args: [report.rawReport, feeTokenAddressEncoded],
-    });
+    const { request: verifyReportRequest, result: verifiedReportData } =
+      await simulateContract(publicClient, {
+        account,
+        address: verifierProxyAddress,
+        abi: verifierProxyAbi,
+        functionName: 'verify',
+        args: [report.rawReport, feeTokenAddressEncoded],
+      });
     const verifyReportHash = await writeContract(
       walletClient,
       verifyReportRequest
@@ -443,14 +442,14 @@ export async function verifyReport(report: StreamReport) {
 const isAddressValid = (address: string) =>
   !isAddress(address) || isAddressEqual(address, zeroAddress) ? false : true;
 
-async function getClients() {
+export async function getClients() {
   const chainId = await getChainId();
   if (!chainId) {
     logger.warn('⚠️ No chainId provided');
     return;
   }
   const storedChains = await getCustomChains();
-  const storedChain = storedChains.find(
+  const storedChain = storedChains?.find(
     (chain) => chain.id === Number(chainId)
   );
 
@@ -488,7 +487,7 @@ async function getClients() {
   return { publicClient, walletClient };
 }
 
-export async function getBalance() {
+export async function getTokenBalance() {
   try {
     const clients = await getClients();
     if (!clients || !clients.publicClient) {
@@ -496,7 +495,7 @@ export async function getBalance() {
       return;
     }
     const { publicClient } = clients;
-    const balance = await publicClient.getBalance({ address: accountAddress });
+    const balance = await getBalance(publicClient, { address: accountAddress });
     return {
       value: formatEther(balance),
       symbol: publicClient.chain?.nativeCurrency.symbol,
