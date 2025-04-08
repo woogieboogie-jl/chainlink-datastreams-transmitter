@@ -14,6 +14,9 @@ import * as verifiers from '../server/config/verifiers';
 import * as viemActions from 'viem/actions';
 import { hardhat } from 'viem/chains';
 import { ReportV3, StreamReport } from '../server/types';
+import { logger } from '../server/services/logger';
+
+jest.mock('../server/services/logger');
 
 const getContractAddressMock = jest.spyOn(store, 'getContractAddress');
 const getChainIdMock = jest.spyOn(store, 'getChainId');
@@ -162,6 +165,7 @@ describe('Unit', () => {
 
   describe('executeContract', () => {
     it('should abort if private key is missing', async () => {
+      const logSpy = jest.spyOn(logger, 'error');
       process.env = { NODE_ENV: 'test' };
       getChainIdMock.mockResolvedValueOnce('31337');
       getCustomChainsMock.mockResolvedValueOnce([hardhat]);
@@ -171,6 +175,9 @@ describe('Unit', () => {
         functionName: mockFunctionName,
         abi: mockAbi,
       });
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('‼️ Account is missing')
+      );
       expect(result).toEqual(undefined);
     });
     it('should abort if ABI is missing', async () => {
