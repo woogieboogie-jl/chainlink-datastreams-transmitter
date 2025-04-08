@@ -60,6 +60,7 @@ Chainlink Data Streams Transmitter is a service that bridges off-chain data stre
       - [Logs](#logs)
   - [Logging](#logging)
   - [Testing Commands](#testing-commands)
+  - [Notes](#notes)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues \& Fixes](#common-issues--fixes)
   - [Modifications \& Further Development](#modifications--further-development)
@@ -168,7 +169,7 @@ chainId: 43113
 gasCap: '150000'
 # The interval to check for price changes and write on-chain.
 # It is represented as a cron expression with granularity in seconds.
-# Tip: You can build and verify your cron expression easily using helpers such as https://crontab.guru
+# Tip: You can build and verify your cron expression easily using helpers such as https://crontab.guru or refer to the cron-parser library documentation (https://github.com/harrisiirak/cron-parser?tab=readme-ov-file#cron-format).
 interval: '* * * * * *'
 # The price deviation threshold.
 # Only changes that meet or exceed the specified percentage difference will be recorded on-chain.
@@ -524,7 +525,7 @@ Set the interval for checking price changes and writing them on-chain. This inte
 
 ![new-schedule](public/readme/new-schedule.png)
 
-Set the interval for checking price changes and writing them on-chain. This interval is defined using a cron expression with second-level granularity. You can use tools like [crontab guru](https://crontab.guru/) to build the expression.
+Set the interval for checking price changes and writing them on-chain. This interval is defined using a cron expression with second-level granularity. You can use tools like [crontab guru](https://crontab.guru/) to build the expression or refer to the [cron-parser](https://github.com/harrisiirak/cron-parser?tab=readme-ov-file#cron-format) library documentation.
 
 ---
 
@@ -607,6 +608,17 @@ After deployment, verify the setup with:
   ```
 
 ---
+
+## Notes
+
+> [!IMPORTANT]
+> The Transmitter uses [cron-parser](https://github.com/harrisiirak/cron-parser?tab=readme-ov-file#cron-format) for handling cron expressions.
+>
+> The cron-parser dependency is noted to lose some pattern information when serializing a cron pattern, such as “?” characters. The transmitter is also prone to this when setting a schedule cron pattern using "?" character which is an alias for "*" in cron-parser.
+>
+> For example, using “* * * ? * *” will actually set “* * * * * *”, where in other libraries the “?” character denotes an unspecified one-of (“?”), but not all (“*”).
+>
+>Make sure to check and test your cron expressions.
 
 ## Troubleshooting
 
