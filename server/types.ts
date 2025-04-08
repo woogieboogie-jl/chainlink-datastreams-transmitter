@@ -48,7 +48,7 @@ export type Config = {
     currencySymbol: string;
     currencyDecimals: number | string;
     rpc: string;
-    testnet: string | boolean;
+    testnet?: string | boolean;
   }[];
   verifierAddresses: { chainId: number; address: Address }[];
   feeds: {
