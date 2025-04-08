@@ -1,4 +1,11 @@
-import { describe, beforeEach, it, expect } from '@jest/globals';
+import {
+  describe,
+  beforeEach,
+  afterAll,
+  it,
+  expect,
+  jest,
+} from '@jest/globals';
 import {
   setValue,
   getValue,
@@ -9,7 +16,10 @@ import {
   getSet,
   removeFromSet,
   isSetMember,
+  getRedisClient,
 } from '../server/services/redis';
+import Redis from 'ioredis';
+import MockRedis from 'ioredis-mock';
 
 describe('Redis Store Utils', () => {
   const testKey = 'test-key';
@@ -77,5 +87,45 @@ describe('Redis Store Utils', () => {
       expect(isMember).toBe(true);
       expect(isNotMember).toBe(false);
     });
+  });
+});
+
+describe('Redis initialization', () => {
+  const OLD_ENV: 'test' | 'development' | 'production' = process.env.NODE_ENV;
+
+  beforeEach(async () => {
+    jest.resetModules();
+    process.env.NODE_ENV = OLD_ENV;
+  });
+
+  afterAll(() => {
+    process.env.NODE_ENV = OLD_ENV;
+    jest.clearAllTimers();
+  });
+
+  it('uses MockRedis when NODE_ENV is test', () => {
+    process.env.NODE_ENV = 'test';
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const testRedis = require('../server/services/redis').getRedisClient();
+
+    // Check if the returned instance is of the correct type (MockRedis)
+    expect((testRedis as typeof MockRedis.prototype).set).toBeDefined();
+    expect((testRedis as typeof MockRedis.prototype).get).toBeDefined();
+
+    testRedis.quit();
+  });
+
+  it('uses Redis client when NODE_ENV is not test', () => {
+    process.env.NODE_ENV = 'production';
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const testRedis = require('../server/services/redis').getRedisClient();
+
+    // Check if the returned instance is of the correct type (Redis)
+    expect((testRedis as typeof Redis.prototype).set).toBeDefined();
+    expect((testRedis as typeof Redis.prototype).get).toBeDefined();
+
+    testRedis.quit();
   });
 });

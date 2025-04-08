@@ -12,6 +12,10 @@ const redis =
         host: process.env.REDIS_HOST || '127.0.0.1',
       });
 
+export const getRedisClient = (): Redis | typeof MockRedis => {
+  return redis;
+};
+
 export const setValue = async (key: string, value: string | number) =>
   await redis.set(key, value);
 export const getValue = async (key: string) => await redis.get(key);
