@@ -6,7 +6,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const data = Object.fromEntries(formData) as { gasCap: string };
   const gasCap = data.gasCap;
-  if (isNaN(Number(gasCap))) {
+  if (
+    isNaN(Number(gasCap)) ||
+    Number(gasCap) < 0 ||
+    Number(gasCap) === Number.POSITIVE_INFINITY
+  ) {
     logger.warn('⚠ Invalid gas cap', { data });
     return redirect('/');
   }
