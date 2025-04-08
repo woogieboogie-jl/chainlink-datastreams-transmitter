@@ -1,21 +1,30 @@
 import { describe, jest, afterEach, it, expect } from '@jest/globals';
 import {
+  addChain,
   addFeed,
+  getAbi,
+  getChain,
   getChainId,
+  getContractAddress,
   getFeedExists,
   getFeedName,
   getFeeds,
+  getFunctionArgs,
+  getFunctionName,
   getGasCap,
   getInterval,
   getLatestReport,
   getPriceDelta,
   getSavedReportBenchmarkPrice,
+  getSkipVerify,
+  removeChain,
   removeFeed,
   seedConfig,
   setLatestReport,
   setSavedReport,
 } from '../server/store';
 import { Config, StreamReport } from '../server/types';
+import { logger } from '../server/services/logger';
 
 describe('Store', () => {
   afterEach(() => {
@@ -43,6 +52,43 @@ describe('Store', () => {
       expect(gasCap).toEqual(mockConfig.gasCap);
       const chainId = await getChainId();
       expect(chainId).toEqual(mockConfig.chainId.toString());
+      const functionName = await getFunctionName(
+        '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796',
+        '995'
+      );
+      expect(functionName).toEqual('set');
+      const functionArgs = await getFunctionArgs(
+        '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796',
+        '995'
+      );
+      expect(functionArgs).toEqual(
+        expect.arrayContaining(['fedId', 'price', 'validFromTimestamp'])
+      );
+      const contractAddress = await getContractAddress(
+        '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796',
+        '995'
+      );
+      expect(contractAddress).toEqual(
+        '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47'
+      );
+      const skipVerify = await getSkipVerify(
+        '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796',
+        '995'
+      );
+      expect(skipVerify).toEqual('true');
+      const abi = await getAbi(
+        '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796',
+        '995'
+      );
+      expect(abi).toEqual(
+        JSON.stringify(mockConfig.targetChains[0]?.targetContracts[0]?.abi)
+      );
+    });
+    it('should skip if already seeded', async () => {
+      const logSpy = jest.spyOn(logger, 'warn');
+      await seedConfig(mockConfig);
+      await seedConfig(mockConfig);
+      expect(logSpy).toHaveBeenCalledWith('ℹ️ App already configured');
     });
     it('should set get and remove feeds', async () => {
       const feed1 = {
@@ -68,6 +114,22 @@ describe('Store', () => {
       await removeFeed(feed2.feedId);
       const isFeedExistRemoved = await getFeedExists(feed2.feedId);
       expect(isFeedExistRemoved).toEqual(false);
+    });
+    it('should remove chain', async () => {
+      const chainInput = {
+        id: 995,
+        name: '🔥 5ireChain',
+        currencyName: '5ire Token',
+        currencySymbol: '5IRE',
+        currencyDecimals: 18,
+        rpc: 'https://rpc.5ire.network',
+      };
+      await addChain(chainInput.id.toString(), JSON.stringify(chainInput));
+      const chainResult = await getChain(chainInput.id.toString());
+      expect(chainResult).toEqual(JSON.stringify(chainInput));
+      await removeChain(chainInput.id.toString());
+      const chainResultAfter = await getChain(chainInput.id.toString());
+      expect(chainResultAfter).toEqual(null);
     });
   });
 });
@@ -124,6 +186,7 @@ const mockConfig: Config = {
           feedId:
             '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796',
           address: '0xfa162F0A25b2C2aA32Ddaacda872B6D7b2c38E47',
+          skipVerify: true,
           functionName: 'set',
           functionArgs: ['fedId', 'price', 'validFromTimestamp'],
           abi: [

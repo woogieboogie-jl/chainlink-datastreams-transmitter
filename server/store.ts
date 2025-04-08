@@ -112,7 +112,7 @@ const seedConfig = async (config: Config) => {
   try {
     const isSeeded = !!(await getSeed());
     if (isSeeded) {
-      logger.info('ℹ️ App already configured');
+      logger.warn('ℹ️ App already configured');
       return;
     }
     logger.info('🎬 Start app configuration');
