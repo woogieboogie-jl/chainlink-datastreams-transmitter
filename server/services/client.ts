@@ -351,10 +351,9 @@ export async function verifyReport(report: StreamReport) {
     });
 
     if (verifyReportReceipt.status !== 'success') {
-      logger.warn(
-        `🛑 Verification transaction was not successfull | Aborting`,
-        { transactionReceipt: verifyReportReceipt }
-      );
+      logger.warn(`🛑 Verification transaction was not successful | Aborting`, {
+        transactionReceipt: verifyReportReceipt,
+      });
       return;
     }
 
