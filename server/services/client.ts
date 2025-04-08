@@ -304,7 +304,7 @@ export async function verifyReport(report: StreamReport) {
 
     if (approveLinkReceipt.status !== 'success') {
       logger.warn(
-        `🛑 LINK approval transaction was not successfull | Aborting`,
+        `🛑 LINK approval transaction was not successful | Aborting`,
         { transactionReceipt: approveLinkReceipt }
       );
       return;
@@ -332,14 +332,16 @@ export async function verifyReport(report: StreamReport) {
       );
       return;
     }
-    const { request: verifyReportRequest, result: verifiedReportData } =
-      await simulateContract(publicClient, {
-        account,
-        address: verifierProxyAddress,
-        abi: verifierProxyAbi,
-        functionName: 'verify',
-        args: [report.rawReport, feeTokenAddressEncoded],
-      });
+    const {
+      request: verifyReportRequest,
+      result: verifiedReportData,
+    } = await simulateContract(publicClient, {
+      account,
+      address: verifierProxyAddress,
+      abi: verifierProxyAbi,
+      functionName: 'verify',
+      args: [report.rawReport, feeTokenAddressEncoded],
+    });
     const verifyReportHash = await writeContract(
       walletClient,
       verifyReportRequest
