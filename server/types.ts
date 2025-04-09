@@ -88,6 +88,7 @@ export type Config = {
       cluster: string;
       targetPrograms: {
         feedId: Hex;
+        skipVerify?: boolean;
         instructionName: string;
         instructionArgs: { name: string; type: 'string' | 'number' }[];
         instructionPDA: string;

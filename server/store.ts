@@ -265,23 +265,27 @@ const seedConfig = async (config: Config) => {
       })
     );
 
-    await Promise.all(
-      config.verifierAddresses.map(async (verifier) => {
-        if (!verifier.chainId || isNaN(Number(verifier.chainId))) {
-          logger.warn('⚠ Invalid verifier chain id', { verifier });
-          return;
-        }
-        if (!isAddress(verifier.address) || verifier.address === zeroAddress) {
-          logger.warn('⚠ Invalid verifier contract address', { verifier });
-          return;
-        }
-        await addEVMVerifierAddress(verifier.chainId, verifier.address);
-        logger.info(
-          `📢 Verifier contract has been added for chain with ID ${verifier.chainId}`,
-          { verifier }
-        );
-      })
-    );
+    config.verifierAddresses &&
+      (await Promise.all(
+        config.verifierAddresses.map(async (verifier) => {
+          if (!verifier.chainId || isNaN(Number(verifier.chainId))) {
+            logger.warn('⚠ Invalid verifier chain id', { verifier });
+            return;
+          }
+          if (
+            !isAddress(verifier.address) ||
+            verifier.address === zeroAddress
+          ) {
+            logger.warn('⚠ Invalid verifier contract address', { verifier });
+            return;
+          }
+          await addEVMVerifierAddress(verifier.chainId, verifier.address);
+          logger.info(
+            `📢 Verifier contract has been added for chain with ID ${verifier.chainId}`,
+            { verifier }
+          );
+        })
+      ));
 
     if (config.chainId && !isNaN(config.chainId)) {
       await setChainId(config.chainId);
@@ -494,6 +498,7 @@ const seedConfig = async (config: Config) => {
                   instructionName,
                   instructionArgs,
                   instructionPDA,
+                  skipVerify,
                 } = program;
 
                 if (!feedId || !isHex(feedId)) {
@@ -546,6 +551,13 @@ const seedConfig = async (config: Config) => {
                       cluster,
                       instructionPDA,
                     }
+                  );
+                }
+                if (skipVerify) {
+                  await setSkipVerify(feedId, cluster, skipVerify.toString());
+                  logger.info(
+                    `📢 Skip verification set to ${skipVerify.toString()} for feed ${feedId}}`,
+                    { feedId, cluster, skipVerify }
                   );
                 }
               } catch (error) {
