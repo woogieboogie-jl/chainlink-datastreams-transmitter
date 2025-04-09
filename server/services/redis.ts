@@ -1,4 +1,4 @@
-import { Redis } from 'ioredis';
+import { Redis, Callback } from 'ioredis';
 import MockRedis from 'ioredis-mock';
 import dotenv from 'dotenv';
 
@@ -33,3 +33,6 @@ export const removeFromSet = async (key: string, value: string | number) =>
   await redis.srem(key, value);
 export const isSetMember = async (key: string, value: string | number) =>
   !!(await redis.sismember(key, value));
+
+export const flushAll = (callback?: Callback<'OK'>) =>
+  process.env.NODE_ENV === 'test' && redis.flushall(callback);

@@ -97,7 +97,7 @@ svm:
   chains:
     - cluster: 'devnet'
       name: 'Solana Devnet'
-      rpc: 'https://api.devnet.solana.com'
+      rpcUrl: 'https://api.devnet.solana.com'
       testnet: true
   targetChains:
     - cluster: 'devnet'

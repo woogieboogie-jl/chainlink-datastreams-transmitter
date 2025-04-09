@@ -33,7 +33,7 @@ import {
 } from '../store';
 import { getEVMVerifier } from '../config/verifiers';
 import { defaultChains, getCustomEVMChains } from '../config/chains';
-import { printError } from 'server/utils';
+import { printError } from '../utils';
 
 const getAccount = () => {
   try {
@@ -229,7 +229,7 @@ export async function verifyReport(report: StreamReport) {
     }
 
     const contractAddresses = await getContractAddresses();
-
+    console.log(contractAddresses);
     if (
       !contractAddresses ||
       Object.values(contractAddresses)

@@ -3,7 +3,7 @@ import {
   getEVMVerifierAddresses,
   getSolanaVerifierProgram,
   getSolanaVerifierPrograms,
-} from 'server/store';
+} from '../store';
 import { Address, isAddress } from 'viem';
 import {
   arbitrum,

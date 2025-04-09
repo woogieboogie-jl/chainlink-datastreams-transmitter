@@ -1,12 +1,12 @@
 import { describe, it, expect } from '@jest/globals';
-import { getAllChains, getCustomChains } from '../server/config/chains';
-import { addChain } from '../server/store';
+import { getAllChains, getCustomEVMChains } from '../server/config/chains';
+import { addEVMChain } from '../server/store';
 import { Chain } from 'viem';
 
 describe('Client', () => {
   describe('chains', () => {
     it('should return an empty array on fetching customChains if none have been added', async () => {
-      const result: (Chain | null)[] = await getCustomChains();
+      const result: (Chain | null)[] = await getCustomEVMChains();
       expect(result).toEqual([]);
     });
 
@@ -44,12 +44,12 @@ describe('Client', () => {
         testnet: true,
       };
 
-      const customChainsBefore = await getCustomChains();
+      const customChainsBefore = await getCustomEVMChains();
 
-      await addChain(chain1.id.toString(), JSON.stringify(chain1));
-      await addChain(chain2.id.toString(), JSON.stringify(chain2));
+      await addEVMChain(chain1.id.toString(), JSON.stringify(chain1));
+      await addEVMChain(chain2.id.toString(), JSON.stringify(chain2));
 
-      const customChainsAfter = await getCustomChains();
+      const customChainsAfter = await getCustomEVMChains();
 
       expect(customChainsAfter.length).toBeGreaterThan(
         customChainsBefore.length

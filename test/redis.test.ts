@@ -16,7 +16,6 @@ import {
   getSet,
   removeFromSet,
   isSetMember,
-  getRedisClient,
 } from '../server/services/redis';
 import Redis from 'ioredis';
 import MockRedis from 'ioredis-mock';

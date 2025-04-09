@@ -1,9 +1,9 @@
 import { describe, jest, afterEach, it, expect } from '@jest/globals';
 import {
-  addChain,
+  addEVMChain,
   addFeed,
   getAbi,
-  getChain,
+  getEVMChain,
   getChainId,
   getContractAddress,
   getFeedExists,
@@ -17,11 +17,15 @@ import {
   getPriceDelta,
   getSavedReportBenchmarkPrice,
   getSkipVerify,
-  removeChain,
+  removeEVMChain,
   removeFeed,
   seedConfig,
   setLatestReport,
   setSavedReport,
+  getCluster,
+  addSolanaChain,
+  getSolanaChain,
+  removeSolanaChain,
 } from '../server/store';
 import { Config, StreamReport } from '../server/types';
 import { logger } from '../server/services/logger';
@@ -83,6 +87,8 @@ describe('Store', () => {
       expect(abi).toEqual(
         JSON.stringify(mockConfig.targetChains[0]?.targetContracts[0]?.abi)
       );
+      const cluster = await getCluster();
+      expect(cluster).toEqual('devnet');
     });
     it('should skip if already seeded', async () => {
       const logSpy = jest.spyOn(logger, 'warn');
@@ -115,7 +121,7 @@ describe('Store', () => {
       const isFeedExistRemoved = await getFeedExists(feed2.feedId);
       expect(isFeedExistRemoved).toEqual(false);
     });
-    it('should remove chain', async () => {
+    it('should remove evm chain', async () => {
       const chainInput = {
         id: 995,
         name: '🔥 5ireChain',
@@ -124,11 +130,28 @@ describe('Store', () => {
         currencyDecimals: 18,
         rpc: 'https://rpc.5ire.network',
       };
-      await addChain(chainInput.id.toString(), JSON.stringify(chainInput));
-      const chainResult = await getChain(chainInput.id.toString());
+      await addEVMChain(chainInput.id.toString(), JSON.stringify(chainInput));
+      const chainResult = await getEVMChain(chainInput.id.toString());
       expect(chainResult).toEqual(JSON.stringify(chainInput));
-      await removeChain(chainInput.id.toString());
-      const chainResultAfter = await getChain(chainInput.id.toString());
+      await removeEVMChain(chainInput.id.toString());
+      const chainResultAfter = await getEVMChain(chainInput.id.toString());
+      expect(chainResultAfter).toEqual(null);
+    });
+    it('should remove svm chain', async () => {
+      const chainInput = {
+        cluster: 'devnet',
+        name: 'Solana Devnet',
+        rpcUrl: 'https://api.devnet.solana.com',
+        testnet: true,
+      };
+      await addSolanaChain(
+        chainInput.cluster.toString(),
+        JSON.stringify(chainInput)
+      );
+      const chainResult = await getSolanaChain(chainInput.cluster);
+      expect(chainResult).toEqual(JSON.stringify(chainInput));
+      await removeSolanaChain(chainInput.cluster);
+      const chainResultAfter = await getSolanaChain(chainInput.cluster);
       expect(chainResultAfter).toEqual(null);
     });
   });
@@ -240,4 +263,103 @@ const mockConfig: Config = {
       ],
     },
   ],
+  vm: 'evm',
+  svm: {
+    cluster: 'devnet',
+    chains: [
+      {
+        cluster: 'devnet',
+        name: 'Solana Devnet',
+        rpcUrl: 'https://api.devnet.solana.com',
+        testnet: true,
+      },
+    ],
+    targetChains: [
+      {
+        cluster: 'devnet',
+        targetPrograms: [
+          {
+            feedId:
+              '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796',
+            skipVerify: false,
+            instructionName: 'updatePrice',
+            instructionArgs: [
+              { name: 'feedId', type: 'string' },
+              { name: 'price', type: 'number' },
+            ],
+            instructionPDA: 'price-feed',
+            idl: {
+              address: 'zDecnPdGtuXypFqhnUsVJtUT5BCwgdzygyECT1bKGNo',
+              metadata: {
+                name: 'price_feed',
+                version: '0.1.0',
+                spec: '0.1.0',
+                description: 'Created with Anchor',
+              },
+              instructions: [
+                {
+                  name: 'initialize',
+                  discriminator: [175, 175, 109, 31, 13, 152, 155, 237],
+                  accounts: [
+                    {
+                      name: 'price_feed',
+                      writable: true,
+                      pda: {
+                        seeds: [
+                          {
+                            kind: 'const',
+                            value: [
+                              112, 114, 105, 99, 101, 45, 102, 101, 101, 100,
+                            ],
+                          },
+                        ],
+                      },
+                    },
+                    { name: 'signer', writable: true, signer: true },
+                    {
+                      name: 'system_program',
+                      address: '11111111111111111111111111111111',
+                    },
+                  ],
+                  args: [],
+                },
+                {
+                  name: 'update_price',
+                  discriminator: [61, 34, 117, 155, 75, 34, 123, 208],
+                  accounts: [
+                    { name: 'price_feed', writable: true },
+                    { name: 'signer', signer: true },
+                  ],
+                  args: [
+                    { name: 'feed_id', type: 'string' },
+                    { name: 'price', type: 'i128' },
+                    { name: 'date', type: 'i128' },
+                  ],
+                },
+              ],
+              accounts: [
+                {
+                  name: 'PriceFeed',
+                  discriminator: [189, 103, 252, 23, 152, 35, 243, 156],
+                },
+              ],
+              types: [
+                {
+                  name: 'PriceFeed',
+                  type: {
+                    kind: 'struct',
+                    fields: [
+                      { name: 'feed_id', type: 'string' },
+                      { name: 'price', type: 'i128' },
+                      { name: 'date', type: 'i128' },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  },
 };
