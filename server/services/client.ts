@@ -24,6 +24,7 @@ import {
   getInstructionName,
   getInstructionPDA,
   getInstrutctionArgs,
+  getSkipVerify,
   getVm,
   setSavedReport,
 } from 'server/store';
@@ -63,27 +64,14 @@ export async function getCurrentChainId() {
   return getChainId();
 }
 
-export async function verifyReport(report: StreamReport) {
-  const vm = await getVm();
-  if (vm === 'svm') return solanaVerifyReport(report);
-  return evmVerifyReport(report);
-}
-
 export async function dataUpdater({ report }: { report: StreamReport }) {
   try {
-    const verifiedReport = await verifyReport(report);
-    if (!verifiedReport) {
-      logger.warn(`🛑 Verified report is missing | Aborting`);
-      return;
-    }
     const { feedId } = report;
     if (!feedId) {
       logger.warn(`🛑 Invalid report feedId | Aborting`, { report });
       return;
     }
-    logger.info(`✅ Report verified | ${await getFeedName(report.feedId)}`, {
-      verifiedReport,
-    });
+
     const vm = await getVm();
     if (vm === 'svm') {
       const cluster = await getCluster();
@@ -118,8 +106,21 @@ export async function dataUpdater({ report }: { report: StreamReport }) {
         logger.warn('⚠️ No args provided');
         return;
       }
+
+      const skipVerify = (await getSkipVerify(feedId, cluster)) === 'true';
+
+      const reportPayload = skipVerify
+        ? report
+        : await solanaVerifyReport(report);
+      if (!reportPayload) {
+        if (!reportPayload) {
+          logger.warn(`🛑 Verified report is missing | Aborting`);
+          return;
+        }
+      }
+
       const transaction = await executeSolanaProgram({
-        report: verifiedReport,
+        report: reportPayload,
         idl,
         instructionName,
         instructionPDA,
@@ -159,10 +160,6 @@ export async function dataUpdater({ report }: { report: StreamReport }) {
       return;
     }
 
-    if (!verifiedReport) {
-      logger.warn(`🛑 Verified report is missing | Aborting`);
-      return;
-    }
     const functionName = await getFunctionName(feedId, chainId);
     if (!functionName) {
       logger.warn(`🛑 Function name is missing | Aborting`);
@@ -173,9 +170,19 @@ export async function dataUpdater({ report }: { report: StreamReport }) {
       logger.warn(`🛑 Contract ABI is missing | Aborting`);
       return;
     }
-    logger.info('✅ Report verified', { verifiedReport });
+
+    const skipVerify = (await getSkipVerify(feedId, chainId)) === 'true';
+
+    const reportPayload = skipVerify ? report : await evmVerifyReport(report);
+    if (!reportPayload) {
+      if (!reportPayload) {
+        logger.warn(`🛑 Verified report is missing | Aborting`);
+        return;
+      }
+    }
+
     const transaction = await executeEVMContract({
-      report: verifiedReport,
+      report: reportPayload,
       abi: JSON.parse(abi),
       functionName,
       functionArgs: await getFunctionArgs(feedId, chainId),

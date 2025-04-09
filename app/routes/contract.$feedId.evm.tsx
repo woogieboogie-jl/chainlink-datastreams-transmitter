@@ -532,7 +532,7 @@ export default function ContractEVM() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => argsFieldAppend({ name: '', type: 'string' })}
+                  onClick={() => argsFieldAppend({ name: '' })}
                 >
                   Add <Plus className="size-6" />
                 </Button>

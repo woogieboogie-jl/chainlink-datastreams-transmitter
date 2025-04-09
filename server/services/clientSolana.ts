@@ -256,6 +256,7 @@ export async function verifyReport(report: StreamReport) {
             price,
             bid,
             ask,
+            rawReport: report.rawReport,
           };
           return verifiedReport;
         }
@@ -291,6 +292,7 @@ export async function verifyReport(report: StreamReport) {
             expiresAt,
             price,
             marketStatus,
+            rawReport: report.rawReport,
           };
           return verifiedReport;
         }
@@ -309,7 +311,7 @@ export async function executeSolanaProgram({
   instructionPDA,
   instructionArgs,
 }: {
-  report: ReportV3 | ReportV4;
+  report: ReportV3 | ReportV4 | StreamReport;
   idl: string;
   instructionName: string;
   instructionPDA: string;

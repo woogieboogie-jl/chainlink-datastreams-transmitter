@@ -15,11 +15,13 @@ import {
   getInstructionName,
   getInstructionPDA,
   getInstrutctionArgs,
+  getSkipVerify,
   getVm,
   setIdl,
   setInstructionArgs,
   setInstructionName,
   setInstructionPDA,
+  setSkipVerify,
 } from 'server/store';
 import { printError } from 'server/utils';
 import { Button, buttonVariants } from '~/components/ui/button';
@@ -36,13 +38,15 @@ import {
   FormLabel,
   FormMessage,
 } from '~/components/ui/form';
-import { Plus, Trash2Icon } from 'lucide-react';
+import { Plus, Trash2Icon, TriangleAlert } from 'lucide-react';
+import { Switch } from '~/components/ui/switch';
 
 enum Intent {
   INSTRUCTION = 'INSTRUCTION',
   IDL = 'IDL',
   PDA = 'PDA',
   ARGS = 'ARGS',
+  VERIFY = 'VERIFY',
 }
 
 const instructionNameSchema = z.object({
@@ -55,6 +59,9 @@ const instructionArgsSchema = z.object({
 });
 const instructionPDASchema = z.object({ instructionPDA: z.string() });
 const instructionIDLSchema = z.object({ idl: z.string() });
+const skipVerifySchema = z.object({
+  skipVerify: z.boolean().default(false).optional(),
+});
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const chain = await getCurrentChain();
@@ -163,6 +170,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
       return null;
     }
+    case Intent.VERIFY: {
+      const skipVerify = (data as { skipVerify: string }).skipVerify;
+      if (!skipVerify) {
+        logger.warn('⚠ Invalid skipVerify input', { data });
+        return null;
+      }
+      await setSkipVerify(feedId, cluster, skipVerify);
+      logger.info(
+        `📢 Verification skip set to ${skipVerify} on chain ${chainName} (${cluster})`,
+        { skipVerify }
+      );
+      return null;
+    }
     default: {
       return null;
     }
@@ -197,19 +217,20 @@ export async function loader({ params }: LoaderFunctionArgs) {
     });
   }
 
-  const [idl, instructionName, instructionPDA, instructionArgs] =
+  const [idl, instructionName, instructionPDA, instructionArgs, skipVerify] =
     await Promise.all([
       getIdl(feedId, cluster),
       getInstructionName(feedId, cluster),
       getInstructionPDA(feedId, cluster),
       getInstrutctionArgs(feedId, cluster),
+      getSkipVerify(feedId, cluster),
     ]);
 
-  return { idl, instructionName, instructionPDA, instructionArgs };
+  return { idl, instructionName, instructionPDA, instructionArgs, skipVerify };
 }
 
 export default function ContractSVM() {
-  const { idl, instructionName, instructionPDA, instructionArgs } =
+  const { idl, instructionName, instructionPDA, instructionArgs, skipVerify } =
     useLoaderData<typeof loader>();
   const submit = useSubmit();
 
@@ -278,6 +299,22 @@ export default function ContractSVM() {
     submit({ intent: Intent.IDL, idl: values.idl }, { method: 'post' });
   }
 
+  const skipVerifyForm = useForm<z.infer<typeof skipVerifySchema>>({
+    resolver: zodResolver(skipVerifySchema),
+    defaultValues: {
+      skipVerify: false,
+    },
+  });
+  function skipVerifyOnSubmit(values: z.infer<typeof skipVerifySchema>) {
+    submit(
+      {
+        intent: Intent.VERIFY,
+        skipVerify: values.skipVerify?.toString() || 'false',
+      },
+      { method: 'post' }
+    );
+  }
+
   return (
     <>
       <Card>
@@ -310,6 +347,48 @@ export default function ContractSVM() {
                       <Input placeholder="instructionName" {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Submit</Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Skip verification</CardTitle>
+          <div className="text-sm text-muted-foreground pt-2">
+            Skip verification before writing to the contract
+          </div>
+          <div className="text-sm text-destructive underline flex gap-2 pt-2">
+            <TriangleAlert /> Make sure that verification is implemented in the
+            program
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full flex gap-2 items-center pt-2 truncate">
+            <span>Skip verification status:</span>
+            <span className="truncate font-mono">{skipVerify}</span>
+          </div>
+          <Form {...skipVerifyForm}>
+            <form
+              onSubmit={skipVerifyForm.handleSubmit(skipVerifyOnSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={skipVerifyForm.control}
+                name="skipVerify"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-4">
+                    <FormLabel>Skip verification</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />
