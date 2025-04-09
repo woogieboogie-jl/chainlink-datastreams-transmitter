@@ -3,7 +3,7 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from '@remix-run/node';
-import { Plus, Trash2Icon } from 'lucide-react';
+import { Plus, Trash2Icon, TriangleAlert } from 'lucide-react';
 import { useLoaderData, useSubmit } from '@remix-run/react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,11 +16,13 @@ import {
   getFeedExists,
   getFunctionArgs,
   getFunctionName,
+  getSkipVerify,
+  getVm,
   setAbi,
   setContractAddress,
   setFunctionArgs,
   setFunctionName,
-  getVm,
+  setSkipVerify,
 } from 'server/store';
 import { printError } from 'server/utils';
 import { isAddress, zeroAddress } from 'viem';
@@ -38,12 +40,14 @@ import {
   FormLabel,
   FormMessage,
 } from '~/components/ui/form';
+import { Switch } from '~/components/ui/switch';
 
 enum Intent {
   CONTRACT = 'CONTRACT',
   ABI = 'ABI',
   FUNCTION = 'FUNCTION',
   ARGS = 'ARGS',
+  VERIFY = 'VERIFY',
 }
 
 const contractAddressSchema = z.object({
@@ -59,6 +63,9 @@ const functionArgsSchema = z.object({
   args: z.array(z.object({ name: z.string() })),
 });
 const contractABISchema = z.object({ abi: z.string() });
+const skipVerifySchema = z.object({
+  skipVerify: z.boolean().default(false).optional(),
+});
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const chain = await getCurrentChain();
@@ -116,6 +123,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
         {
           abi,
         }
+      );
+      return null;
+    }
+    case Intent.VERIFY: {
+      const skipVerify = (data as { skipVerify: string }).skipVerify;
+      if (!skipVerify) {
+        logger.warn('⚠ Invalid skipVerify input', { data });
+        return null;
+      }
+      await setSkipVerify(feedId, chainId, skipVerify);
+      logger.info(
+        `📢 Verification skip set to ${skipVerify} on chain ${chainName} (${chainId})`,
+        { skipVerify }
       );
       return null;
     }
@@ -188,17 +208,19 @@ export async function loader({ params }: LoaderFunctionArgs) {
     });
   }
 
-  const [contract, abi, functionName, args] = await Promise.all([
+  const [contract, abi, functionName, args, skipVerify] = await Promise.all([
     getContractAddress(feedId, chainId),
     getAbi(feedId, chainId),
     getFunctionName(feedId, chainId),
     getFunctionArgs(feedId, chainId),
+    getSkipVerify(feedId, chainId),
   ]);
-  return { contract, abi, functionName, args };
+  return { contract, abi, functionName, args, skipVerify };
 }
 
 export default function ContractEVM() {
-  const { contract, abi, functionName, args } = useLoaderData<typeof loader>();
+  const { contract, abi, functionName, args, skipVerify } =
+    useLoaderData<typeof loader>();
 
   const submit = useSubmit();
 
@@ -261,6 +283,22 @@ export default function ContractEVM() {
     submit({ intent: Intent.ABI, abi: values.abi }, { method: 'post' });
   }
 
+  const skipVerifyForm = useForm<z.infer<typeof skipVerifySchema>>({
+    resolver: zodResolver(skipVerifySchema),
+    defaultValues: {
+      skipVerify: false,
+    },
+  });
+  function skipVerifyOnSubmit(values: z.infer<typeof skipVerifySchema>) {
+    submit(
+      {
+        intent: Intent.VERIFY,
+        skipVerify: values.skipVerify?.toString() || 'false',
+      },
+      { method: 'post' }
+    );
+  }
+
   return (
     <>
       <Card>
@@ -297,6 +335,49 @@ export default function ContractEVM() {
           </Form>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Skip verification</CardTitle>
+          <div className="text-sm text-muted-foreground pt-2">
+            Skip verification before writing to the contract
+          </div>
+          <div className="text-sm text-destructive underline flex gap-2 pt-2">
+            <TriangleAlert /> Make sure that verification is implemented in the
+            contract
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full flex gap-2 items-center pt-2 truncate">
+            <span>Skip verification status:</span>
+            <span className="truncate font-mono">{skipVerify}</span>
+          </div>
+          <Form {...skipVerifyForm}>
+            <form
+              onSubmit={skipVerifyForm.handleSubmit(skipVerifyOnSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={skipVerifyForm.control}
+                name="skipVerify"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-4">
+                    <FormLabel>Skip verification</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Submit</Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Function</CardTitle>
@@ -337,7 +418,7 @@ export default function ContractEVM() {
         <CardHeader>
           <CardTitle>Function arguments</CardTitle>
           <div className="text-sm text-muted-foreground pt-2">
-            Enter report arguments field names in the sequense the contract
+            Enter report arguments field names in the sequence the contract
             expects them to be passed in the selected method.
             <br />
             Valid arguments:
@@ -385,6 +466,11 @@ export default function ContractEVM() {
               <li>
                 <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
                   ask
+                </span>
+              </li>
+              <li>
+                <span className="inline-flex items-center rounded-md bg-gray-100 px-1 py-1 text-xs font-semibold text-gray-600">
+                  rawReport
                 </span>
               </li>
             </ul>
@@ -491,18 +577,6 @@ export default function ContractEVM() {
               <Button type="submit">Submit</Button>
             </form>
           </Form>
-          {/* <Form method="post" className="space-y-2 w-full" id="abi-form">
-            <Input type="hidden" name="intent" value={Intent.ABI} />
-            <div>
-              <Label htmlFor="abi">New ABI</Label>
-              <Textarea
-                placeholder="Paste contract's ABI here"
-                className="font-mono"
-                name="abi"
-              />
-            </div>
-            <Button type="submit">Submit</Button>
-          </Form> */}
         </CardContent>
       </Card>
     </>

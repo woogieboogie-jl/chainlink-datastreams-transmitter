@@ -8,7 +8,7 @@ import {
 import {
   getCurrentChain as getCurrentEvmChain,
   accountAddress as evmAccountAddress,
-  getBalance as getEvmBalance,
+  getTokenBalance as getEvmBalance,
   getLinkBalance as getEvmLinkBalance,
   verifyReport as evmVerifyReport,
   executeContract as executeEVMContract,

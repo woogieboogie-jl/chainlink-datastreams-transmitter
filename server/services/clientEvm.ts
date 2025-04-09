@@ -20,6 +20,7 @@ import {
   waitForTransactionReceipt,
   writeContract,
   readContract,
+  getBalance,
 } from 'viem/actions';
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import { feeManagerAbi, verifierProxyAbi } from '../config/abi';
@@ -51,7 +52,7 @@ export async function executeContract({
   functionName,
   functionArgs,
 }: {
-  report: ReportV3 | ReportV4;
+  report: ReportV3 | ReportV4 | StreamReport;
   abi: Abi;
   functionName: string;
   functionArgs: string[];
@@ -111,7 +112,7 @@ export async function executeContract({
     );
     const gasCap = await getGasCap();
     if (gasCap && gas > BigInt(gasCap)) {
-      logger.info(
+      logger.warn(
         `🛑 Gas is above the limit of ${formatEther(
           BigInt(gasCap)
         )} | Aborting`,
@@ -298,7 +299,17 @@ export async function verifyReport(report: StreamReport) {
       walletClient,
       approveLinkRequest
     );
-    await waitForTransactionReceipt(publicClient, { hash: approveLinkHash });
+    const approveLinkReceipt = await waitForTransactionReceipt(publicClient, {
+      hash: approveLinkHash,
+    });
+
+    if (approveLinkReceipt.status !== 'success') {
+      logger.warn(
+        `🛑 LINK approval transaction was not successful | Aborting`,
+        { transactionReceipt: approveLinkReceipt }
+      );
+      return;
+    }
 
     const verifyReportGas = await estimateContractGas(publicClient, {
       account,
@@ -314,7 +325,7 @@ export async function verifyReport(report: StreamReport) {
       { verifyReportGas }
     );
     if (gasCap && verifyReportGas > BigInt(gasCap)) {
-      logger.info(
+      logger.warn(
         `🛑 Verification gas is above the limit of ${formatEther(
           BigInt(gasCap)
         )} | Aborting`,
@@ -334,7 +345,16 @@ export async function verifyReport(report: StreamReport) {
       walletClient,
       verifyReportRequest
     );
-    await waitForTransactionReceipt(publicClient, { hash: verifyReportHash });
+    const verifyReportReceipt = await waitForTransactionReceipt(publicClient, {
+      hash: verifyReportHash,
+    });
+
+    if (verifyReportReceipt.status !== 'success') {
+      logger.warn(`🛑 Verification transaction was not successful | Aborting`, {
+        transactionReceipt: verifyReportReceipt,
+      });
+      return;
+    }
 
     if (reportVersion === 3) {
       const [
@@ -371,7 +391,9 @@ export async function verifyReport(report: StreamReport) {
         price,
         bid,
         ask,
+        rawReport: report.rawReport,
       };
+      logger.info('✅ Report verified', { verifiedReport });
       return verifiedReport;
     }
     if (reportVersion === 4) {
@@ -406,7 +428,9 @@ export async function verifyReport(report: StreamReport) {
         expiresAt,
         price,
         marketStatus,
+        rawReport: report.rawReport,
       };
+      logger.info('✅ Report verified', { verifiedReport });
       return verifiedReport;
     }
   } catch (error) {
@@ -418,14 +442,14 @@ export async function verifyReport(report: StreamReport) {
 const isAddressValid = (address: string) =>
   !isAddress(address) || isAddressEqual(address, zeroAddress) ? false : true;
 
-async function getClients() {
+export async function getClients() {
   const chainId = await getChainId();
   if (!chainId) {
     logger.warn('⚠️ No chainId provided');
     return;
   }
   const storedChains = await getCustomEVMChains();
-  const storedChain = storedChains.find(
+  const storedChain = storedChains?.find(
     (chain) => chain.id === Number(chainId)
   );
 
@@ -463,7 +487,7 @@ async function getClients() {
   return { publicClient, walletClient };
 }
 
-export async function getBalance() {
+export async function getTokenBalance() {
   try {
     const clients = await getClients();
     if (!clients || !clients.publicClient) {
@@ -471,7 +495,7 @@ export async function getBalance() {
       return;
     }
     const { publicClient } = clients;
-    const balance = await publicClient.getBalance({ address: accountAddress });
+    const balance = await getBalance(publicClient, { address: accountAddress });
     return {
       value: formatEther(balance),
       symbol: publicClient.chain?.nativeCurrency.symbol,
