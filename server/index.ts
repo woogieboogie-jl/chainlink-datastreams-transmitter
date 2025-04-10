@@ -19,7 +19,6 @@ import {
   getLatestReport,
   getPriceDelta,
   getSavedReportBenchmarkPrice,
-  getSkipVerify,
   removeFeed,
   seedConfig,
   setInterval,

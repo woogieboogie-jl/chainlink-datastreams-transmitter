@@ -229,7 +229,6 @@ export async function verifyReport(report: StreamReport) {
     }
 
     const contractAddresses = await getContractAddresses();
-    console.log(contractAddresses);
     if (
       !contractAddresses ||
       Object.values(contractAddresses)
