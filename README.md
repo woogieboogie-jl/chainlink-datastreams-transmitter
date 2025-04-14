@@ -41,6 +41,11 @@ Chainlink Data Streams Transmitter is a service that bridges off-chain data stre
   - [Deployment Guide](#deployment-guide)
     - [Running with Docker Compose](#running-with-docker-compose)
     - [Production Deployment](#production-deployment)
+  - [WebSocket Reconnect Logic](#websocket-reconnect-logic)
+    - [How it works](#how-it-works)
+    - [When Reconnect Happens](#when-reconnect-happens)
+    - [Reconnect Configuration](#reconnect-configuration)
+    - [Retry Logic](#retry-logic)
   - [Infrastructural Considerations](#infrastructural-considerations)
   - [UI](#ui)
     - [UI Setup Instructions](#ui-setup-instructions)
@@ -128,16 +133,19 @@ Before setting up the , ensure you have the required dependencies installed.
 
 To make setting environment variables easier there is a `.env.example` file in the root folder of this project. You can copy it to a new `.env` file and replace the values with your own.
 
-| Name                        | Description                                                                                                                                                                                                                                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `REDIS_HOST`                | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis instance which should be running on localhost or 127.0.0.1 if ran with the provided docker compose setup.                                                |
-| `REDIS_PASSWORD`            | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis password.                                                                                                                                                |
-| `PRIVATE_KEY`               | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. This account will be used to pay for the transaction fees in the respective native currency for the target chain specified. |
-| `DATASTREAMS_HOSTNAME`      | Chainlink Data Streams Hostname **without** `https://`. Ex.: `api.testnet-dataengine.chain.link`                                                                                                                                                                          |
-| `DATASTREAMS_WS_HOSTNAME`   | WebSocket Hostname for Data Streams **without** `wss://`. Ex.: `ws.testnet-dataengine.chain.link`                                                                                                                                                                         |
-| `DATASTREAMS_CLIENT_ID`     | Client ID for authentication.                                                                                                                                                                                                                                             |
-| `DATASTREAMS_CLIENT_SECRET` | Client Secret for authentication.                                                                                                                                                                                                                                         |  |
-| `HEALTH_PORT`               | (Optional) Port on which the transmitter can be pinged for health check for integration with a monitoring service. Defaults to `8081`.                                                                                                                                    |  |
+| Name                                    | Description                                                                                                                                                                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `REDIS_HOST`                            | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis instance which should be running on localhost or 127.0.0.1 if ran with the provided docker compose setup.                                                |
+| `REDIS_PASSWORD`                        | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis password.                                                                                                                                                |
+| `PRIVATE_KEY`                           | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. This account will be used to pay for the transaction fees in the respective native currency for the target chain specified. |
+| `DATASTREAMS_HOSTNAME`                  | Chainlink Data Streams Hostname **with protocol prefix** `https://`. Ex.: `https://api.testnet-dataengine.chain.link`                                                                                                                                                     |
+| `DATASTREAMS_WS_HOSTNAME`               | WebSocket Hostname for Data Streams **with protocol prefix** `wss://`. Ex.: `wss://ws.testnet-dataengine.chain.link`                                                                                                                                                      |
+| `DATASTREAMS_CLIENT_ID`                 | Client ID for authentication.                                                                                                                                                                                                                                             |
+| `DATASTREAMS_CLIENT_SECRET`             | Client Secret for authentication.                                                                                                                                                                                                                                         |  |
+| `DATASTREAMS_WS_RECONNECT_ENABLED`      | Automatic reconnect                                                                                                                                                                                                                                                       |  |
+| `DATASTREAMS_WS_RECONNECT_MAX_ATTEMPTS` | Client Secret for authentication.                                                                                                                                                                                                                                         |  |
+| `DATASTREAMS_WS_RECONNECT_INTERVAL`     | Client Secret for authentication.                                                                                                                                                                                                                                         |  |
+| `HEALTH_PORT`                           | (Optional) Port on which the transmitter can be pinged for health check for integration with a monitoring service. Defaults to `8081`.                                                                                                                                    |  |
 
 > [!NOTE]
 > All other user configurations are stored locally using Redis file eliminating the need for separate configuration files. This ensures fast access and persistence across sessions without manual file handling. Only sensitive configurations, such as API keys and database credentials, are managed separately in the `.env` file. The application automatically loads and updates configurations in Redis as needed. Users do not need to manually edit or maintain configuration files, simplifying setup and deployment.
@@ -361,6 +369,44 @@ Before starting the application, ensure that all necessary environment variables
 
 - Modify `docker-compose.yml` to set up persistent storage and environment variables.
 - If the service is going to be accessible externally consider running it behind a reverse proxy like Nginx.
+
+## WebSocket Reconnect Logic
+
+The ChainlinkDataStreamsConsumer includes a built-in reconnect mechanism to ensure persistent data streaming even in the event of unexpected WebSocket disconnections.
+
+### How it works
+
+When the client is connected to the WebSocket via `connect()` or `setConnectedFeeds(...)`, the internal `connectImpl()` method is invoked. This handles socket setup, authentication headers, and subscription.
+
+If the socket closes unexpectedly, the reconnect logic kicks in automatically based on configuration.
+
+### When Reconnect Happens
+
+The client will attempt to reconnect if:
+
+Reconnect is enabled via options (reconnect.enabled === true)
+
+The client was not manually disconnected (i.e., .disconnect() wasn’t explicitly called)
+
+The reconnect attempt count hasn’t exceeded reconnect.maxAttempts
+
+### Reconnect Configuration
+
+Reconnect options can be passed as `env` variables `DATASTREAMS_WS_RECONNECT_ENABLED`, `DATASTREAMS_WS_RECONNECT_MAX_ATTEMPTS` and `DATASTREAMS_WS_RECONNECT_INTERVAL` (see table above).
+
+- Reconnect is enabled by default if not configured by the user otherwise;
+- Reconnect `maxAttempts` defaults to `Infinity`, so it will not stop retrying to reconnect in case of connection drop;
+- Default interval for reconnect attempt is 5000ms (5 seconds).
+
+### Retry Logic
+Each time the WebSocket closes:
+
+If reconnecting is allowed and not manually disconnected, a reconnect attempt is scheduled after interval ms.
+
+The attempt counter increments.
+
+If maxAttempts is exceeded, reconnect stops and an error is logged.
+
 
 ## Infrastructural Considerations
 
