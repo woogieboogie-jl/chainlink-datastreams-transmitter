@@ -1,7 +1,7 @@
-import ChainlinkDatastreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
+import ChainlinkDataStreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
 
 export const createDatastream = (feeds?: string[]) =>
-  new ChainlinkDatastreamsConsumer({
+  new ChainlinkDataStreamsConsumer({
     apiUrl: process.env.DATASTREAMS_HOSTNAME,
     wsUrl: process.env.DATASTREAMS_WS_HOSTNAME,
     clientId: process.env.DATASTREAMS_CLIENT_ID,
@@ -9,9 +9,8 @@ export const createDatastream = (feeds?: string[]) =>
     feeds,
     reconnect: {
       enabled: Boolean(process.env.DATASTREAMS_WS_RECONNECT_ENABLED) || true,
-      maxReconnectAttempts:
+      maxAttempts:
         Number(process.env.DATASTREAMS_WS_RECONNECT_MAX_ATTEMPTS) || Infinity,
-      reconnectInterval:
-        Number(process.env.DATASTREAMS_WS_RECONNECT_INTERVAL) || 5000,
+      interval: Number(process.env.DATASTREAMS_WS_RECONNECT_INTERVAL) || 5000,
     },
   });

@@ -4,7 +4,7 @@ import compression from 'compression';
 import express from 'express';
 import morgan from 'morgan';
 import { CronJob, CronTime } from 'cron';
-import type ChainlinkDatastreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
+import type ChainlinkDataStreamsConsumer from '@hackbg/chainlink-datastreams-consumer';
 import { CronExpressionParser } from 'cron-parser';
 import { logger } from 'server/services/logger.js';
 import {
@@ -240,7 +240,7 @@ router.get('/status/:feedId', async (req, res) => {
   const job = jobs.find((j) => j.feedId === feedId);
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const status = job?.consumer.ws?.readyState;
+  const status = job?.consumer.socketState;
   res.send({ status });
 });
 
@@ -282,7 +282,7 @@ healthApp.listen(healthPort, () => {
 const jobs: {
   job: CronJob<null, null>;
   feedId: string;
-  consumer: ChainlinkDatastreamsConsumer;
+  consumer: ChainlinkDataStreamsConsumer;
 }[] = [];
 
 app.listen(appPort, async () => {
