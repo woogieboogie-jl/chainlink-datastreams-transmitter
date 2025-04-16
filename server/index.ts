@@ -238,8 +238,6 @@ router.get('/latest/:feedId', async (req, res) => {
 router.get('/status/:feedId', async (req, res) => {
   const feedId = req.params.feedId;
   const job = jobs.find((j) => j.feedId === feedId);
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
   const status = job?.consumer.socketState;
   res.send({ status });
 });
@@ -311,7 +309,6 @@ async function dataUpdater({ report }: { report: StreamReport }) {
       );
       return;
     }
-
     const { feedId } = report;
     const functionName = await getFunctionName(feedId, chainId);
     if (!functionName) {
@@ -369,6 +366,7 @@ function createCronJob(feedId: string, interval: string) {
         logger.warn(`🛑 No report logged | Aborting`);
         return;
       }
+      await reconnectDataStreamIfStale(report);
       const latestBenchmarkPrice = getReportPrice(report);
       if (!latestBenchmarkPrice) return;
       const savedBenchmarkPrice = await getSavedReportBenchmarkPrice(feedId);
@@ -416,6 +414,39 @@ function initJobs({ feeds, interval }: { feeds: string[]; interval: string }) {
         };
       })
     );
+  } catch (error) {
+    logger.error(printError(error), error);
+    console.error(error);
+  }
+}
+
+async function reconnectDataStreamIfStale(report: StreamReport) {
+  try {
+    const { feedId } = report;
+    const reportTimestamp = Number(report.validFromTimestamp) * 1000;
+    const nowTimestamp = Math.floor(Date.now());
+    const staleInterval =
+      Number(process.env.DATASTREAMS_WS_RECONNECT_STALE_INTERVAL) || 60000;
+    if (nowTimestamp - reportTimestamp > staleInterval) {
+      logger.info(
+        `🔄 Last report is older than ${staleInterval} ms. | Reconnecting...`
+      );
+      const consumer = jobs.find((j) => j.feedId === feedId)?.consumer;
+      if (!consumer) {
+        logger.warn(`‼️ Invalid datastreams consumer | Aborting`);
+        return;
+      }
+      const status = consumer.socketState;
+      if (status !== 1) {
+        logger.info(
+          '⌛️ Reconnection was already initiated | Waiting for connection'
+        );
+        return;
+      }
+      await consumer.unsubscribeAll();
+      await consumer.subscribeTo([feedId]);
+      return;
+    }
   } catch (error) {
     logger.error(printError(error), error);
     console.error(error);
