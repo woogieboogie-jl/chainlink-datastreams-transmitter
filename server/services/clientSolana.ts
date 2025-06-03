@@ -348,8 +348,8 @@ export async function executeSolanaProgram({
     }
     const args = instructionArgs.map(({ name, type }) =>
       type === 'number'
-        ? new BN(report[name as keyof typeof report].toString().slice(0, 4))
-        : report[name as keyof typeof report].toString().slice(0, 4)
+        ? new BN(report[name as keyof typeof report].toString())
+        : report[name as keyof typeof report].toString()
     );
     const tx = await method(...args)
       .accounts({
