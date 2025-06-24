@@ -1,4 +1,5 @@
 import { formatUnits } from 'viem';
+import { PublicKey } from '@solana/web3.js';
 
 export const formatUSD = (n: bigint) =>
   (Number(formatUnits(n, 8)) / 10 ** 10).toFixed(2);
@@ -23,4 +24,13 @@ export function base64ToHex(base64: string): string {
 
 export function kebabToCamel(str: string): string {
   return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+export function isValidSolanaId(id: string): boolean {
+  try {
+    new PublicKey(id);
+    return true;
+  } catch {
+    return false;
+  }
 }

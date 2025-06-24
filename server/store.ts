@@ -14,7 +14,7 @@ import {
 import { getReportPrice } from '../app/lib/utils';
 import { logger } from './services/logger';
 import { CronExpressionParser } from 'cron-parser';
-import { printError } from './utils';
+import { isValidSolanaId, printError } from './utils';
 
 const latestReports: { [key: string]: StreamReport } = {};
 
@@ -461,11 +461,11 @@ const seedConfig = async (config: Config) => {
               logger.warn('⚠ Invalid verifier cluster', { verifier });
               return;
             }
-            if (!isAddress(verifier.verifierProgramID)) {
+            if (!isValidSolanaId(verifier.verifierProgramID)) {
               logger.warn('⚠ Invalid verifier program ID', { verifier });
               return;
             }
-            if (!isAddress(verifier.accessControllerAccount)) {
+            if (!isValidSolanaId(verifier.accessControllerAccount)) {
               logger.warn('⚠ Invalid access controller account', { verifier });
               return;
             }
