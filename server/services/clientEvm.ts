@@ -494,6 +494,13 @@ export async function getTokenBalance() {
       return;
     }
     const { publicClient } = clients;
+    if (!isAddress(accountAddress) || accountAddress === zeroAddress) {
+      logger.warn('⚠️ Invalid account address', { accountAddress });
+      return {
+        value: formatEther(0n),
+        symbol: '',
+      };
+    }
     const balance = await getBalance(publicClient, { address: accountAddress });
     return {
       value: formatEther(balance),
@@ -527,6 +534,13 @@ export async function getLinkBalance() {
       return;
     }
     const { feeTokenAddress } = contractAddresses;
+    if (!isAddress(accountAddress) || accountAddress === zeroAddress) {
+      logger.warn('⚠️ Invalid account address', { accountAddress });
+      return {
+        value: formatEther(0n),
+        symbol: '',
+      };
+    }
     const [balance, decimals, symbol] = await Promise.all([
       publicClient.readContract({
         address: feeTokenAddress,
