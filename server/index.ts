@@ -30,6 +30,9 @@ import { getReportPrice } from '~/lib/utils.js';
 import { config } from './config/config.js';
 import { isHex } from 'viem';
 import { dataUpdater } from './services/client.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
