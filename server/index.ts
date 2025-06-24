@@ -156,7 +156,7 @@ router.post('/feeds/remove', async (req, res) => {
     return res.send({ warning: 'Remove feed invalid input' });
   }
 
-  const feedExists = getFeedExists(feedId);
+  const feedExists = await getFeedExists(feedId);
 
   if (!feedExists) {
     logger.warn('⚠️ Feed does not exists', { feedId });
