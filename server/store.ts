@@ -16,7 +16,7 @@ import { logger } from './services/logger';
 import { CronExpressionParser } from 'cron-parser';
 import { isValidSolanaId, printError } from './utils';
 
-const latestReports: { [key: string]: StreamReport } = {};
+const latestReports: { [key: string]: StreamReport | null } = {};
 
 const getInterval = async () => await getValue('interval');
 const setInterval = async (interval: string) =>
@@ -24,6 +24,11 @@ const setInterval = async (interval: string) =>
 const getLatestReport = (feedId: string) => latestReports[feedId];
 const setLatestReport = (report: StreamReport) =>
   (latestReports[report.feedId] = report);
+const removeLatestReport = (feedId: string) => {
+  if (latestReports[feedId]) {
+    latestReports[feedId] = null;
+  }
+};
 const getSavedReportBenchmarkPrice = async (feedId: string) =>
   await getValue(`price:${feedId}`);
 const setSavedReport = async (report: StreamReport) =>
@@ -37,6 +42,7 @@ const addFeed = async (feed: { feedId: string; name: string }) => {
 const removeFeed = async (feedId: string) => {
   await removeFromSet('feeds', feedId);
   await deleteValue(`name:${feedId}`);
+  removeLatestReport(feedId);
 };
 const getFeedExists = async (feedId: string) =>
   await isSetMember('feeds', feedId);
