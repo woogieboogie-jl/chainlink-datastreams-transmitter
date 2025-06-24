@@ -14,7 +14,7 @@ import {
   getIdl,
   getInstructionName,
   getInstructionPDA,
-  getInstrutctionArgs,
+  getInstructionArgs,
   getSkipVerify,
   getVm,
   setIdl,
@@ -222,7 +222,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
       getIdl(feedId, cluster),
       getInstructionName(feedId, cluster),
       getInstructionPDA(feedId, cluster),
-      getInstrutctionArgs(feedId, cluster),
+      getInstructionArgs(feedId, cluster),
       getSkipVerify(feedId, cluster),
     ]);
 
@@ -403,7 +403,7 @@ export default function ContractSVM() {
           <CardTitle>Instruction arguments</CardTitle>
           <div className="text-sm text-muted-foreground pt-2">
             Enter report arguments field names and their type (number or string)
-            in the sequense the program instruction expects them to be passed.
+            in the sequence the program instruction expects them to be passed.
             <br />
             Valid arguments:
             <ul className="list-disc list-inside">

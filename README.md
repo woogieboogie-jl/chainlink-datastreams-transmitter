@@ -137,8 +137,8 @@ To make setting environment variables easier there is a `.env.example` file in t
 
 | Name | Description|
 | -------------|------------- | 
-| `REDIS_HOST`                            | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis instance which should be running on localhost or 127.0.0.1 if ran with the provided docker compose setup.                                                |
-| `REDIS_PASSWORD`                        | Required for the local persistance layer operation. If not provided the setup will fallback to the default Redis password.                                                                                                                                                |
+| `REDIS_HOST`                            | Required for the local persistence layer operation. If not provided the setup will fallback to the default Redis instance which should be running on localhost or 127.0.0.1 if ran with the provided docker compose setup.                                                |
+| `REDIS_PASSWORD`                        | Required for the local persistence layer operation. If not provided the setup will fallback to the default Redis password.                                                                                                                                                |
 | `PRIVATE_KEY`                           | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. This account will be used to pay for the transaction fees in the respective native currency for the target chain specified. |
 | `DATASTREAMS_HOSTNAME`                  | Chainlink Data Streams Hostname **with protocol prefix** `https://`. Ex.: `https://api.testnet-dataengine.chain.link`                                                                                                                                                     |
 | `DATASTREAMS_WS_HOSTNAME`               | WebSocket Hostname for Data Streams **with protocol prefix** `wss://`. Ex.: `wss://ws.testnet-dataengine.chain.link`                                                                                                                                                      |
@@ -352,7 +352,7 @@ docker compose restart
 
 ## Deployment Guide
 
-The entire application is containerized and is designed to be run using the provided `docker-compose` setup. This ensures a seamless environment by automatically managing all required services, including the local Redis database, WebSocket listeners, logging, verification services, and the frontend management application. Running `docker compose up` will spin up all necessary containers with minimal setup. This approach simplifies deployment, ensures consistency across environments, and reduces configuration overhead. For production use, consider customizing the `docker-composе.yml` file or extending the setup as needed.
+The entire application is containerized and is designed to be run using the provided `docker-compose` setup. This ensures a seamless environment by automatically managing all required services, including the local Redis database, WebSocket listeners, logging, verification services, and the frontend management application. Running `docker compose up` will spin up all necessary containers with minimal setup. This approach simplifies deployment, ensures consistency across environments, and reduces configuration overhead. For production use, consider customizing the `docker-compose.yml` file or extending the setup as needed.
 
 Before starting the application, ensure that all necessary environment variables are set in the `.env` file. Missing variables may cause services to fail or behave unexpectedly.
 
@@ -527,7 +527,7 @@ Add custom program, define IDL and specify instructions to store feed results.
 
 **Instruction**
 ![instruction](public/readme/instruction.png)
-View/Add or Edit the name of the target program instructin to be called to store report result data on-chain.
+View/Add or Edit the name of the target program instruction to be called to store report result data on-chain.
 
 **Instruction arguments**
 ![instruction-arguments](public/readme/instruction-arguments.png)

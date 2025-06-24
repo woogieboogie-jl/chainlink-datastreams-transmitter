@@ -154,7 +154,7 @@ const setInstructionName = async (
   cluster: string,
   instructionName: string
 ) => await setValue(`instructionName:${feedId}:${cluster}`, instructionName);
-const getInstrutctionArgs = async (feedId: string, cluster: string) =>
+const getInstructionArgs = async (feedId: string, cluster: string) =>
   await getList(`instructionArgs:${feedId}:${cluster}`);
 const setInstructionArgs = async (
   feedId: string,
@@ -638,7 +638,7 @@ export {
   setIdl,
   getInstructionName,
   setInstructionName,
-  getInstrutctionArgs,
+  getInstructionArgs,
   setInstructionArgs,
   getInstructionPDA,
   setInstructionPDA,

@@ -238,7 +238,7 @@ describe('Client', () => {
       );
       expect(result).toEqual(undefined);
     });
-    it('should abort if verification transaction is not sufccessful', async () => {
+    it('should abort if verification transaction is not successful', async () => {
       const logSpy = jest.spyOn(logger, 'warn');
       getChainIdMock.mockResolvedValue('31337');
       getCustomChainsMock.mockResolvedValue([hardhat]);

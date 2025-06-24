@@ -1,7 +1,7 @@
 import {
   getCurrentChain as getCurrentSolanaChain,
   accountAddress as solanaAccountAddress,
-  getBalance as getSolanaBalanace,
+  getBalance as getSolanaBalance,
   verifyReport as solanaVerifyReport,
   executeSolanaProgram,
 } from './clientSolana';
@@ -23,7 +23,7 @@ import {
   getIdl,
   getInstructionName,
   getInstructionPDA,
-  getInstrutctionArgs,
+  getInstructionArgs,
   getSkipVerify,
   getVm,
   setSavedReport,
@@ -48,7 +48,7 @@ export async function getAddress() {
 
 export async function getTokenBalance() {
   const vm = await getVm();
-  if (vm === 'svm') return getSolanaBalanace();
+  if (vm === 'svm') return getSolanaBalance();
   return getEvmBalance();
 }
 
@@ -99,7 +99,7 @@ export async function dataUpdater({ report }: { report: StreamReport }) {
         );
         return;
       }
-      const instructionArgs = (await getInstrutctionArgs(feedId, cluster)).map(
+      const instructionArgs = (await getInstructionArgs(feedId, cluster)).map(
         (arg) => JSON.parse(arg) as { name: string; type: string }
       );
       if (!instructionArgs || instructionArgs.length === 0) {

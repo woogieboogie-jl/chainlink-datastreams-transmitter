@@ -60,8 +60,8 @@ export async function action({ request }: ActionFunctionArgs) {
       return 'Invalid chain cluster';
     }
     if (!data.verifierProgramID) {
-      logger.warn('⚠ Invalid verifier porogram ID', { data });
-      return 'Invalid porogram ID';
+      logger.warn('⚠ Invalid verifier program ID', { data });
+      return 'Invalid program ID';
     }
     if (!data.accessControllerAccount) {
       logger.warn('⚠ Invalid verifier access controller account', { data });
