@@ -12,6 +12,11 @@ describe('formatUSD', () => {
     expect(formatUSD(value)).toBe('5000.00');
   });
 
+  it('formats extra large values correctly', () => {
+    const value = 123456789123456789000000000000000000n;
+    expect(formatUSD(value)).toBe('123456789123456789.00');
+  });
+
   it('formats zero correctly', () => {
     expect(formatUSD(0n)).toBe('0.00');
   });

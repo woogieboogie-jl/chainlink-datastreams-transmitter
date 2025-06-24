@@ -1,8 +1,13 @@
-import { formatUnits } from 'viem';
 import { PublicKey } from '@solana/web3.js';
 
-export const formatUSD = (n: bigint) =>
-  (Number(formatUnits(n, 8)) / 10 ** 10).toFixed(2);
+export const formatUSD = (n: bigint): string => {
+  const divisor = 10n ** 18n;
+  const whole = n / divisor;
+  const remainder = n % divisor;
+  const decimals = (remainder * 100n) / divisor;
+  const decimalsStr = decimals.toString().padStart(2, '0');
+  return `${whole.toString()}.${decimalsStr}`;
+};
 export const abs = (n: bigint) => (n < 0n ? -n : n);
 export const isPositive = (n: bigint) => (n >= 0n ? true : false);
 export function printError(error: unknown) {
