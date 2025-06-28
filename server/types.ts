@@ -13,6 +13,8 @@ export type StreamReport = Report & {
 };
 
 export type ReportV3 = {
+  reportVersion?: number;
+  verifiedReport?: Hex;
   feedId: Hex;
   validFromTimestamp: number;
   observationsTimestamp: number;
@@ -22,10 +24,14 @@ export type ReportV3 = {
   price: bigint;
   bid: bigint;
   ask: bigint;
+  /** Encoded address to pay fees (needed for verifyAndUpdateReport) */
+  parameterPayload?: Hex;
   rawReport: Hex;
 };
 
 export type ReportV4 = {
+  reportVersion?: number;
+  verifiedReport?: Hex;
   feedId: Hex;
   validFromTimestamp: number;
   observationsTimestamp: number;
@@ -34,6 +40,8 @@ export type ReportV4 = {
   expiresAt: number;
   price: bigint;
   marketStatus: number;
+  /** Encoded address to pay fees (needed for verifyAndUpdateReport) */
+  parameterPayload?: Hex;
   rawReport: Hex;
 };
 

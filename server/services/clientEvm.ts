@@ -381,6 +381,8 @@ export async function verifyReport(report: StreamReport) {
         verifiedReportData
       );
       const verifiedReport: ReportV3 = {
+        reportVersion,
+        verifiedReport: verifiedReportData as Hex,
         feedId,
         validFromTimestamp,
         observationsTimestamp,
@@ -390,6 +392,7 @@ export async function verifyReport(report: StreamReport) {
         price,
         bid,
         ask,
+        parameterPayload: feeTokenAddressEncoded as Hex,
         rawReport: report.rawReport,
       };
       logger.info('✅ Report verified', { verifiedReport });
@@ -419,6 +422,8 @@ export async function verifyReport(report: StreamReport) {
         verifiedReportData
       );
       const verifiedReport: ReportV4 = {
+        reportVersion,
+        verifiedReport: verifiedReportData as Hex,
         feedId,
         validFromTimestamp,
         observationsTimestamp,
@@ -427,6 +432,7 @@ export async function verifyReport(report: StreamReport) {
         expiresAt,
         price,
         marketStatus,
+        parameterPayload: feeTokenAddressEncoded as Hex,
         rawReport: report.rawReport,
       };
       logger.info('✅ Report verified', { verifiedReport });

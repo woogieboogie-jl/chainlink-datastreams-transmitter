@@ -14,7 +14,7 @@ import { getAllSolanaChains } from '../config/chains';
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import idl from '../config/idl.json';
 import { Verifier } from '../config/idlType';
-import { decodeAbiParameters } from 'viem';
+import { decodeAbiParameters, Hex } from 'viem';
 import { getSolanaVerifier } from '../config/verifiers';
 import { base64ToHex, kebabToCamel, printError } from '../utils';
 import { BN } from 'bn.js';
@@ -257,6 +257,7 @@ export async function verifyReport(report: StreamReport) {
             bid,
             ask,
             rawReport: report.rawReport,
+            verifiedReport: `0x${base64ToHex(verifiedReportData)}` as Hex,
           };
           return verifiedReport;
         }
@@ -293,6 +294,7 @@ export async function verifyReport(report: StreamReport) {
             price,
             marketStatus,
             rawReport: report.rawReport,
+            verifiedReport: `0x${base64ToHex(verifiedReportData)}` as Hex,
           };
           return verifiedReport;
         }
