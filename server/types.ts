@@ -12,6 +12,8 @@ export type StreamReport = Report & {
 };
 
 export type ReportV3 = {
+  reportVersion: number;
+  verifiedReport: Hex;
   feedId: Hex;
   validFromTimestamp: number;
   observationsTimestamp: number;
@@ -25,6 +27,8 @@ export type ReportV3 = {
 };
 
 export type ReportV4 = {
+  reportVersion: number;
+  verifiedReport: Hex;
   feedId: Hex;
   validFromTimestamp: number;
   observationsTimestamp: number;
