@@ -3,6 +3,12 @@ node_modules
 /.cache
 /build
 /coverage
+
+# for sample contracts when they compile
+cache
+out
+
+# env settings
 .env
 
 logs

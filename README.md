@@ -389,9 +389,9 @@ The client will attempt to reconnect if:
 
 Reconnect is enabled via options (reconnect.enabled === true)
 
-The client was not manually disconnected (i.e., .disconnect() wasn’t explicitly called)
+The client was not manually disconnected (i.e., .disconnect() wasn't explicitly called)
 
-The reconnect attempt count hasn’t exceeded reconnect.maxAttempts
+The reconnect attempt count hasn't exceeded reconnect.maxAttempts
 
 ### Reconnect Configuration
 
@@ -423,12 +423,12 @@ These application-level security controls could be supplemented through the foll
   - For a local instance run on your machine, the operator should only interact with the web server over localhost, to avoid a man-in-the-middle attack.
   - For a cloud instance (e.g., AWS), the operator should avoid directly exposing the web server, instead introducing a load balancer that enforces TLS in front of the web server.
 - The web server does not employ any authentication mechanism such as credential-based logins. It is accessible by anyone it is exposed to.
-  - For a local instance run on your machine, the operator should ensure the guest (container)’s ports that are forwarded to the host cannot be indirectly accessed by another machine through the host over the local network.
-  - The system should use Docker configurations to restrict such accesses, or leverage the operating system’s firewall to deny such access.
+  - For a local instance run on your machine, the operator should ensure the guest (container)'s ports that are forwarded to the host cannot be indirectly accessed by another machine through the host over the local network.
+  - The system should use Docker configurations to restrict such accesses, or leverage the operating system's firewall to deny such access.
   - For a cloud instance (e.g., AWS), the operator should not directly expose the web server, instead introducing a gateway component that enforces authentication in front of the web server. Alternatively, operators may opt to not allow external access to the component, leveraging a VPN to access it.
 - The web server may be exposed to other components on the same network. An attacker that compromised a component within the same network could use it to access the web server.
-  - For a local instance run on your machine, the operator should ensure the guest (container)’s ports that are forwarded to the host cannot be indirectly accessed by another machine through the host over the local network.
-  - The system should use Docker configurations to restrict such accesses, or leverage the operating system’s firewall to deny such access.
+  - For a local instance run on your machine, the operator should ensure the guest (container)'s ports that are forwarded to the host cannot be indirectly accessed by another machine through the host over the local network.
+  - The system should use Docker configurations to restrict such accesses, or leverage the operating system's firewall to deny such access.
   - For a cloud instance (e.g., AWS), the operator should enforce strict ingress/egress rules that allow only expected component communications.
   E.g., with three components, A, B, and C, where only A should communicate
 with C, but B should not, ingress and egress rules can be used to enforce these patterns.
@@ -689,9 +689,9 @@ After deployment, verify the setup with:
 > [!IMPORTANT]
 > The Transmitter uses [cron-parser](https://github.com/harrisiirak/cron-parser?tab=readme-ov-file#cron-format) for handling cron expressions.
 >
-> The cron-parser dependency is noted to lose some pattern information when serializing a cron pattern, such as “?” characters. The transmitter is also prone to this when setting a schedule cron pattern using "?" character which is an alias for "*" in cron-parser.
+> The cron-parser dependency is noted to lose some pattern information when serializing a cron pattern, such as "?" characters. The transmitter is also prone to this when setting a schedule cron pattern using "?" character which is an alias for "*" in cron-parser.
 >
-> For example, using “* * * ? * *” will actually set “* * * * * *”, where in other libraries the “?” character denotes an unspecified one-of (“?”), but not all (“*”).
+> For example, using "*" will actually set "* * * * * *", where in other libraries the "?" character denotes an unspecified one-of ("?"), but not all ("*").
 >
 >Make sure to check and test your cron expressions.
 
@@ -767,3 +767,24 @@ By contributing to this project, you agree that your contributions will be gover
 
 - [Chainlink Data Streams Documentation](https://docs.chain.link/data-streams)
 - [Chainlink Documentation](https://docs.chain.link/)
+
+## ✨ Sample on-chain **receiver**
+
+For quick local testing the repository ships with a
+[`contracts/DataStreamsFeed.sol`](contracts/DataStreamsFeed.sol) file – an
+unaltered copy of the **Adrastia community implementation** (see original
+source
+[here](https://github.com/adrastia-oracle/adrastia-chainlink-data-streams/blob/main/contracts/feed/DataStreamsFeed.sol)).
+
+* It is a **stand-alone Solidity file**, no Foundry/Hardhat project scaffold
+  around it.  Compile it in whichever tool-chain you prefer once you have the
+  required dependencies (`@openzeppelin/contracts`, `@chainlink/contracts`) in
+  your `node_modules`.
+* The contract retains Adrastia's built-in mechanism for discovering the Chainlink
+  **fee manager** on-chain; no extra "manager" wrapper is included here.
+* Only the single Solidity contract and it's custom dependencies are present – **none of the OpenZeppelin or
+  Chainlink source files are vendored in this repo** to keep it lightweight.
+  Install those packages yourself (`pnpm add @openzeppelin/contracts @chainlink/contracts`) or point your compiler's remappings to an existing
+  node_modules folder.
+* **Not audited.** Use it for demos, PoCs, or to inspect the interface, but
+  perform your own security review before main-net deployments.
