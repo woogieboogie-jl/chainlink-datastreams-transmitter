@@ -247,6 +247,8 @@ export async function verifyReport(report: StreamReport) {
             `0x${base64ToHex(verifiedReportData)}`
           );
           const verifiedReport: ReportV3 = {
+            reportVersion,
+            verifiedReport: `0x${base64ToHex(verifiedReportData)}` as Hex,
             feedId,
             validFromTimestamp,
             observationsTimestamp,
@@ -257,7 +259,7 @@ export async function verifyReport(report: StreamReport) {
             bid,
             ask,
             rawReport: report.rawReport,
-            verifiedReport: `0x${base64ToHex(verifiedReportData)}` as Hex,
+            parameterPayload: undefined, // Solana doesn't use parameter payload
           };
           return verifiedReport;
         }
@@ -285,6 +287,8 @@ export async function verifyReport(report: StreamReport) {
             `0x${base64ToHex(verifiedReportData)}`
           );
           const verifiedReport: ReportV4 = {
+            reportVersion,
+            verifiedReport: `0x${base64ToHex(verifiedReportData)}` as Hex,
             feedId,
             validFromTimestamp,
             observationsTimestamp,
@@ -294,7 +298,7 @@ export async function verifyReport(report: StreamReport) {
             price,
             marketStatus,
             rawReport: report.rawReport,
-            verifiedReport: `0x${base64ToHex(verifiedReportData)}` as Hex,
+            parameterPayload: undefined, // Solana doesn't use parameter payload
           };
           return verifiedReport;
         }

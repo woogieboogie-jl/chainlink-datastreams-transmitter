@@ -46,6 +46,12 @@ export async function getAddress() {
   return evmAccountAddress;
 }
 
+export async function verifyReport(report: StreamReport) {
+  const vm = await getVm();
+  if (vm === 'svm') return solanaVerifyReport(report);
+  return evmVerifyReport(report);
+}
+
 export async function getTokenBalance() {
   const vm = await getVm();
   if (vm === 'svm') return getSolanaBalance();
