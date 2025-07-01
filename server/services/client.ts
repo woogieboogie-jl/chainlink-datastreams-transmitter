@@ -394,6 +394,7 @@ export async function verifyReport(report: StreamReport) {
         bid,
         ask,
         rawReport: report.rawReport,
+        parameterPayload: feeTokenAddressEncoded as Hex,
       };
       logger.info('✅ Report verified', { verifiedReport });
       return verifiedReport;
@@ -433,6 +434,7 @@ export async function verifyReport(report: StreamReport) {
         price,
         marketStatus,
         rawReport: report.rawReport,
+        parameterPayload: feeTokenAddressEncoded as Hex,
       };
       logger.info('✅ Report verified', { verifiedReport });
       return verifiedReport;

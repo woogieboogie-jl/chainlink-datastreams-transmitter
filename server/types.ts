@@ -24,6 +24,11 @@ export type ReportV3 = {
   bid: bigint;
   ask: bigint;
   rawReport: Hex;
+  /**
+   * Encoded parameter payload (e.g. LINK token address) that must be passed
+   * as the second argument to `verifyAndUpdateReport`.
+   */
+  parameterPayload: Hex;
 };
 
 export type ReportV4 = {
@@ -38,6 +43,11 @@ export type ReportV4 = {
   price: bigint;
   marketStatus: number;
   rawReport: Hex;
+  /**
+   * Encoded parameter payload (e.g. LINK token address) that must be passed
+   * as the second argument to `verifyAndUpdateReport`.
+   */
+  parameterPayload: Hex;
 };
 
 export type Feed = { name: string; feedId: string };
