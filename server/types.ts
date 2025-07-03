@@ -10,9 +10,12 @@ export type StreamReport = Report & {
   bid: bigint;
   ask: bigint;
   rawReport: Hex;
+  parameterPayload?: Hex;
 };
 
 export type ReportV3 = {
+  reportVersion: number;
+  verifiedReport: Hex;
   feedId: Hex;
   validFromTimestamp: number;
   observationsTimestamp: number;
@@ -23,9 +26,12 @@ export type ReportV3 = {
   bid: bigint;
   ask: bigint;
   rawReport: Hex;
+  parameterPayload?: Hex;
 };
 
 export type ReportV4 = {
+  reportVersion: number;
+  verifiedReport: Hex;
   feedId: Hex;
   validFromTimestamp: number;
   observationsTimestamp: number;
@@ -35,6 +41,7 @@ export type ReportV4 = {
   price: bigint;
   marketStatus: number;
   rawReport: Hex;
+  parameterPayload?: Hex;
 };
 
 export type Feed = { name: string; feedId: string };

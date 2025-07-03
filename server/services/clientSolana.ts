@@ -14,7 +14,7 @@ import { getAllSolanaChains } from '../config/chains';
 import { ReportV3, ReportV4, StreamReport } from '../types';
 import idl from '../config/idl.json';
 import { Verifier } from '../config/idlType';
-import { decodeAbiParameters } from 'viem';
+import { decodeAbiParameters, Hex } from 'viem';
 import { getSolanaVerifier } from '../config/verifiers';
 import { base64ToHex, kebabToCamel, printError } from '../utils';
 import { BN } from 'bn.js';
@@ -247,6 +247,8 @@ export async function verifyReport(report: StreamReport) {
             `0x${base64ToHex(verifiedReportData)}`
           );
           const verifiedReport: ReportV3 = {
+            reportVersion,
+            verifiedReport: `0x${base64ToHex(verifiedReportData)}` as Hex,
             feedId,
             validFromTimestamp,
             observationsTimestamp,
@@ -257,6 +259,7 @@ export async function verifyReport(report: StreamReport) {
             bid,
             ask,
             rawReport: report.rawReport,
+            parameterPayload: undefined, // Solana doesn't use parameter payload
           };
           return verifiedReport;
         }
@@ -284,6 +287,8 @@ export async function verifyReport(report: StreamReport) {
             `0x${base64ToHex(verifiedReportData)}`
           );
           const verifiedReport: ReportV4 = {
+            reportVersion,
+            verifiedReport: `0x${base64ToHex(verifiedReportData)}` as Hex,
             feedId,
             validFromTimestamp,
             observationsTimestamp,
@@ -293,6 +298,7 @@ export async function verifyReport(report: StreamReport) {
             price,
             marketStatus,
             rawReport: report.rawReport,
+            parameterPayload: undefined, // Solana doesn't use parameter payload
           };
           return verifiedReport;
         }
@@ -348,8 +354,10 @@ export async function executeSolanaProgram({
     }
     const args = instructionArgs.map(({ name, type }) =>
       type === 'number'
-        ? new BN(report[name as keyof typeof report].toString())
-        : report[name as keyof typeof report].toString()
+        ? new BN(
+            (report[name as keyof typeof report] ?? 0).toString().slice(0, 4)
+          )
+        : (report[name as keyof typeof report] ?? '').toString().slice(0, 4)
     );
     const tx = await method(...args)
       .accounts({
