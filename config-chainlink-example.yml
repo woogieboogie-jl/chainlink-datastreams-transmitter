@@ -6,13 +6,22 @@
 # This file configures which data feeds to monitor and which on-chain
 # contracts to send the data to.
 
+# -----------------------------------------------------------------
+# ✅  ON-CHAIN VERIFICATION CONFIG (LINK-FUNDED FEED) ✅
+# -----------------------------------------------------------------
+# • The transmitter sends the raw report and fee-token parameter to
+#   `verifyAndUpdateReport(bytes unverifiedReportData, bytes parameterPayload)`.
+# • No REPORT_VERIFIER role assignment is required; the function is public.
+# • The DataStreamsFeed contract MUST hold enough LINK (fee token) so the
+#   VerifierProxy can deduct the verification fee from the contract.
+#   Native gas for storage is, as always, paid by the caller.
+# -----------------------------------------------------------------
+
 # A list of all unique off-chain Data Streams to subscribe to.
 # Find more feed IDs in the Chainlink documentation.
 feeds:
   - name: 'ETH/USD'
     feedId: '0x000359843a543ee2fe414dc14c7e7920ef10f4372990b79d6361cdc0dd1ba782'
-  - name: 'AVAX/USD'
-    feedId: '0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796'
 
 # --- Default Global Settings ---
 
@@ -68,15 +77,27 @@ targetChains:
         # TODO: Replace with the address of your deployed contract on Fuji
         address: '0xYourDataStreamsFeedContractOnFuji' # <-- CHANGED
         # The name of the function to call on your smart contract
-        functionName: 'updateReport'
+        functionName: 'verifyAndUpdateReport'
         # The arguments the Transmitter should prepare and send to the function
-        functionArgs: ['reportVersion', 'verifiedReport']
+        #   • rawReport          = the unverified payload from the Data Streams websocket
+        #   • parameterPayload   = abi.encode(address feeToken) – produced automatically by the transmitter
+        functionArgs: ['rawReport', 'parameterPayload']
         # The ABI for the target function, required to encode the transaction
         abi:
-          - name: 'updateReport'
+          - name: 'verifyAndUpdateReport'
             type: 'function'
             stateMutability: 'nonpayable'
             inputs:
-              - { "internalType": "uint16", "name": "reportVersion", "type": "uint16" }
-              - { "internalType": "bytes", "name": "verifiedReportData", "type": "bytes" }
+              - {
+                  'internalType': 'bytes',
+                  'name': 'unverifiedReportData',
+                  'type': 'bytes',
+                }
+              - {
+                  'internalType': 'bytes',
+                  'name': 'parameterPayload',
+                  'type': 'bytes',
+                }
             outputs: []
+        # Off-chain verification must run so keep skipVerify false (default)
+        skipVerify: false
