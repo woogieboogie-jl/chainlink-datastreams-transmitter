@@ -75,7 +75,7 @@ targetChains:
       # This configuration sends ETH/USD data to a contract on Fuji
       - feedId: '0x000359843a543ee2fe414dc14c7e7920ef10f4372990b79d6361cdc0dd1ba782'
         # TODO: Replace with the address of your deployed contract on Fuji
-        address: '0xYourDataStreamsFeedContractOnFuji' # <-- CHANGED
+        address: '0xYourDataStreamsFeedContractOnFuji'
         # The name of the function to call on your smart contract
         functionName: 'verifyAndUpdateReport'
         # The arguments the Transmitter should prepare and send to the function

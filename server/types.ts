@@ -44,6 +44,122 @@ export type ReportV4 = {
   parameterPayload?: Hex;
 };
 
+// Add individual report types for standardization
+export type ReportV2 = {
+  reportVersion: number;
+  verifiedReport: Hex;
+  feedId: Hex;
+  validFromTimestamp: number;
+  observationsTimestamp: number;
+  nativeFee: bigint;
+  linkFee: bigint;
+  expiresAt: number;
+  price: bigint;
+  rawReport: Hex;
+  parameterPayload?: Hex;
+};
+
+export type ReportV5 = {
+  reportVersion: number;
+  verifiedReport: Hex;
+  feedId: Hex;
+  validFromTimestamp: number;
+  observationsTimestamp: number;
+  nativeFee: bigint;
+  linkFee: bigint;
+  expiresAt: number;
+  rate: bigint;
+  timestamp: number;
+  duration: number;
+  rawReport: Hex;
+  parameterPayload?: Hex;
+};
+
+export type ReportV6 = {
+  reportVersion: number;
+  verifiedReport: Hex;
+  feedId: Hex;
+  validFromTimestamp: number;
+  observationsTimestamp: number;
+  nativeFee: bigint;
+  linkFee: bigint;
+  expiresAt: number;
+  price: bigint;
+  price2: bigint;
+  price3: bigint;
+  price4: bigint;
+  price5: bigint;
+  rawReport: Hex;
+  parameterPayload?: Hex;
+};
+
+export type ReportV7 = {
+  reportVersion: number;
+  verifiedReport: Hex;
+  feedId: Hex;
+  validFromTimestamp: number;
+  observationsTimestamp: number;
+  nativeFee: bigint;
+  linkFee: bigint;
+  expiresAt: number;
+  exchangeRate: bigint;
+  rawReport: Hex;
+  parameterPayload?: Hex;
+};
+
+export type ReportV8 = {
+  reportVersion: number;
+  verifiedReport: Hex;
+  feedId: Hex;
+  validFromTimestamp: number;
+  observationsTimestamp: number;
+  nativeFee: bigint;
+  linkFee: bigint;
+  expiresAt: number;
+  lastUpdateTimestamp: bigint;
+  price: bigint;
+  marketStatus: number;
+  rawReport: Hex;
+  parameterPayload?: Hex;
+};
+
+export type ReportV9 = {
+  reportVersion: number;
+  verifiedReport: Hex;
+  feedId: Hex;
+  validFromTimestamp: number;
+  observationsTimestamp: number;
+  nativeFee: bigint;
+  linkFee: bigint;
+  expiresAt: number;
+  benchmark: bigint;
+  navDate: bigint;
+  aum: bigint;
+  ripcord: number;
+  rawReport: Hex;
+  parameterPayload?: Hex;
+};
+
+export type ReportV10 = {
+  reportVersion: number;
+  verifiedReport: Hex;
+  feedId: Hex;
+  validFromTimestamp: number;
+  observationsTimestamp: number;
+  nativeFee: bigint;
+  linkFee: bigint;
+  expiresAt: number;
+  lastUpdateTimestamp: bigint;
+  price: bigint;
+  marketStatus: number;
+  currentMultiplier: bigint;
+  newMultiplier: bigint;
+  activationDateTime: number;
+  tokenizedPrice: bigint;
+  rawReport: Hex;
+  parameterPayload?: Hex;
+};
+
 export type Feed = { name: string; feedId: string };
 export type Interval = { interval: string };
 
