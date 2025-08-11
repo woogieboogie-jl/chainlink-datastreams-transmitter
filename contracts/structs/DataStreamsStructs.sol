@@ -45,4 +45,10 @@ interface DataStreamsStructs {
         int192 price; // DON consensus median benchmark price (8 or 18 decimals).
         uint32 marketStatus; // The DON's consensus on whether the market is currently open.
     }
+
+    /// @notice The asset struct to hold the address of an asset and amount
+    struct Asset {
+        address assetAddress;
+        uint256 amount;
+    }
 }

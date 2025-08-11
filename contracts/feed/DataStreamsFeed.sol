@@ -2,22 +2,27 @@
 pragma solidity ^0.8.0;
 
 // --- OpenZeppelin Interfaces ---
-import {AccessControlEnumerable} from "./openzeppelin/contracts/access/AccessControlEnumerable.sol";
-import {IERC20} from "./openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "./openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC165} from "./openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {AccessControlEnumerable} from "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // --- Chainlink Interfaces ---
-import {AggregatorV2V3Interface} from "./chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
+import {AggregatorInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorInterface.sol";
+import {AggregatorV2V3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 // --- Project-Specific Interfaces & Libraries ---
-import {AdrastiaDataStreamsCommon} from "./common/AdrastiaDataStreamsCommon.sol";
-import {IAdrastiaVerifierProxy} from "./interfaces/IAdrastiaVerifierProxy.sol";
-import {IAdrastiaFeeManager} from "./interfaces/IAdrastiaFeeManager.sol";
-import {IDataStreamsFeed} from "./interfaces/IDataStreamsFeed.sol";
-import {DataStreamsStructs} from "./structs/DataStreamsStructs.sol";
-import {Roles} from "./common/Roles.sol";
-import {IDataStreamsUpdateHook} from "./interfaces/IDataStreamsUpdateHook.sol";
+import {AdrastiaDataStreamsCommon} from "src/common/AdrastiaDataStreamsCommon.sol";
+import {IAdrastiaVerifierProxy} from "src/interfaces/IAdrastiaVerifierProxy.sol";
+import {IAdrastiaFeeManager} from "src/interfaces/IAdrastiaFeeManager.sol";
+import {IDataStreamsFeed} from "src/interfaces/IDataStreamsFeed.sol";
+import {DataStreamsStructs} from "src/structs/DataStreamsStructs.sol";
+import {Roles} from "src/common/Roles.sol";
+import {IDataStreamsPreUpdateHook} from "src/interfaces/IDataStreamsPreUpdateHook.sol";
+import {IDataStreamsPostUpdateHook} from "src/interfaces/IDataStreamsPostUpdateHook.sol";
 
 /**
  * @title DataStreamsFeed (Patched for Compatibility)
@@ -31,7 +36,7 @@ import {IDataStreamsUpdateHook} from "./interfaces/IDataStreamsUpdateHook.sol";
  *
  * Access is controlled using OpenZeppelin's AccessControlEnumerable, allowing for fine-grained permissions.
  * The roles are setup as follows:
- * - ADMIN: Can manage the role and sub-roles. Cam witjdraw ERC20 tokens from the contract. Can set the update
+ * - ADMIN: Can manage the role and sub-roles. Can withdraw ERC20 tokens from the contract. Can set the update
  *  hook configuration.
  *   - REPORT_VERIFIER: Can call `updateReport` to update the latest report data. Ideally, accounts with this role
  *     should be the Adrastia Data Streams Updater contract that verifies reports in bulk. This role is not required
@@ -51,22 +56,22 @@ import {IDataStreamsUpdateHook} from "./interfaces/IDataStreamsUpdateHook.sol";
  * Updates to the feed can be paused using the `setPaused` function, which can only be called by accounts with the
  * UPDATE_PAUSE_ADMIN role. This is useful for emergency situations or maintenance.
  *
- * The `setUpdateHook` function allows for setting a post-update hook that is called after a report is updated.
- * The hook can be used to trigger additional actions after a report is updated. Note that reentrancy by hooks is
- * allowed, but unless subsequent update calls provide a more recent report, such subsequent calls will revert.
- */ 
-
-
+ * The `setHookConfig` function allows for setting a hook before and/or after a report is updated.
+ */
 contract DataStreamsFeed is
     IDataStreamsFeed,
     AggregatorV2V3Interface,
     AdrastiaDataStreamsCommon,
     DataStreamsStructs,
-    AccessControlEnumerable
+    AccessControlEnumerable,
+    ReentrancyGuard
 {
     /**
      * @notice The report data structure. This is a truncated version of the full report data to only occupy two storage
      * slots.
+     * @dev This struct uses uint32 for timestamps for gas optimization. This is subject to the
+     * "Year 2106 problem" where the unsigned 32-bit integer will overflow. This is an
+     * accepted trade-off for the intended lifespan of this contract version.
      */
     struct TruncatedReport {
         // SLOT 1
@@ -96,30 +101,25 @@ contract DataStreamsFeed is
     }
 
     /**
-     * @notice The update hook configuration. This is used to store the post-update hook configuration.
-     *
-     * @dev The hook is called after a report is updated, allowing for additional actions to be taken.
+     * @notice Hook configuration.
      */
-    struct UpdateHook {
+    struct Hook {
         /**
-         * @notice A flag indicating whether the post-update hook is allowed to fail. If true, the post-update hook can
-         * fail without reverting the transaction.
+         * @notice A flag indicating whether the hook is allowed to fail. If true, the hook can fail without reverting
+         * the transaction.
          */
         bool allowHookFailure;
         /**
-         * @notice The gas limit for the post-update hook. This is used to ensure that the hook does not consume too
-         * much gas and cause the transaction unintentially to fail.
+         * @notice The gas limit for the hook. This is used to ensure that the hook does not consume too much gas and
+         * cause the transaction unintentially to fail.
          *
          * @dev This is a uint64 to save on storage costs, as the gas limit is typically a small number.
          */
         uint64 hookGasLimit;
         /**
-         * @notice The address of the post-update hook. This is called after a report is updated. The zero address
-         * indicates that no post-update hook is set.
-         *
-         * @dev This can be used to trigger additional actions after a report is updated.
+         * @notice The address of the hook. The zero address indicates that no post-update hook is set.
          */
-        IDataStreamsUpdateHook hookAddress;
+        address hookAddress;
     }
 
     /**
@@ -131,20 +131,21 @@ contract DataStreamsFeed is
          */
         bool updatesPaused;
         /**
-         * @notice The update hook config, if any.
+         * @notice A bitfield of active hook types.
+         * @dev Up to 16 hook types can be supported.
          */
-        UpdateHook updateHook;
+        uint16 activeHookTypes;
+    }
+
+    enum HookType {
+        PreUpdate, // onPreReportUpdate is called immediately before pushing a new report
+        PostUpdate // onPostReportUpdate is called immediately after pushing a new report
     }
 
     /**
-     * @notice The IAdrastiaVerifierProxy verifier proxy contract.
+     * @notice The Chainlink verifier proxy contract.
      */
     IAdrastiaVerifierProxy public immutable override verifierProxy;
-
-    /**
-     * @notice The ID of the feed. This is the same as the feedId in the report.
-     */
-    bytes32 public immutable override feedId;
 
     /**
      * @notice The number of decimals used in the feed. This is the same as the decimals used in the report.
@@ -157,6 +158,16 @@ contract DataStreamsFeed is
     string public override description;
 
     /**
+     * @notice The ID of the feed. This is the same as the feedId in the report.
+     */
+    bytes32 internal immutable _feedId;
+
+    /**
+     * @notice The maximum expiration duration to be set in the constructor. ADMIN has authority to change the set value
+     */
+    uint32 public maxReportExpirationSeconds;
+
+    /**
      * @notice The latest report data.
      */
     TruncatedReport internal latestReport;
@@ -167,6 +178,11 @@ contract DataStreamsFeed is
      * @dev This is used to store the updatesPaused flag and the updateHook address.
      */
     ConfigAndState internal configAndState;
+
+    /**
+     * @notice Maps a hook type to its hook configuration.
+     */
+    mapping(uint256 => Hook) internal hooks;
 
     /**
      * @notice A mapping of round IDs to historical reports.
@@ -197,15 +213,6 @@ contract DataStreamsFeed is
     );
 
     /**
-     * @notice An event emitted when the post update hook reverts, but the failure is allowed.
-     *
-     * @param hook The address of the post update hook that failed.
-     * @param reason The reason for the failure, encoded as bytes.
-     * @param timestamp The block timestamp at which the hook failed, in seconds since the Unix epoch.
-     */
-    event PostUpdateHookFailed(address indexed hook, bytes reason, uint256 timestamp);
-
-    /**
      * @notice An event emitted when the update pause status is changed.
      *
      * @param caller The address of the account that changed the pause status.
@@ -215,14 +222,31 @@ contract DataStreamsFeed is
     event PauseStatusChanged(address indexed caller, bool paused, uint256 timestamp);
 
     /**
-     * @notice An event emitted when the update hook is changed.
+     * @notice An event emitted when a hook reverts, but the failure is allowed.
      *
-     * @param caller The address of the account that changed the update hook.
-     * @param oldHook The old update hook config.
-     * @param newHook The new update hook config.
-     * @param timestamp The block timestamp at which the update hook was changed, in seconds since the Unix epoch.
+     * @param hookType The type of the hook that failed.
+     * @param hook The address of the hook that failed.
+     * @param reason The reason for the failure, encoded as bytes.
+     * @param timestamp The block timestamp at which the hook failed, in seconds since the Unix epoch.
      */
-    event UpdateHookChanged(address indexed caller, UpdateHook oldHook, UpdateHook newHook, uint256 timestamp);
+    event HookFailed(uint256 indexed hookType, address indexed hook, bytes reason, uint256 timestamp);
+
+    /**
+     * @notice An event emitted when a hook is changed.
+     *
+     * @param caller The address of the account that changed the hook.
+     * @param hookType The type of the hook that was changed.
+     * @param oldHook The old hook config.
+     * @param newHook The new hook config.
+     * @param timestamp The block timestamp at which the hook was changed, in seconds since the Unix epoch.
+     */
+    event HookConfigUpdated(
+        address indexed caller,
+        uint256 indexed hookType,
+        Hook oldHook,
+        Hook newHook,
+        uint256 timestamp
+    );
 
     /**
      * @notice An errror thrown passing invalid constructor arguments.
@@ -240,6 +264,14 @@ contract DataStreamsFeed is
      * @param currentTimestamp The current timestamp.
      */
     error ReportIsExpired(uint32 expiresAt, uint32 currentTimestamp);
+
+
+    /**
+     * @notice An error thrown when, upon updating the report, the report's expiresAt exceeds the value(maxReportExpirationSeconds) set by the ADMIN
+     * @param expiresAt The timestamp at which the report expired.
+     * @param maxAllowed The max expiration duration set by the ADMIN
+     */ 
+    error ReportExpirationTooFarInFuture(uint32 expiresAt, uint32 maxAllowed);
 
     /**
      * @notice An error thrown when, upon updating the report, the report's feed ID does not match this contract's feed
@@ -287,10 +319,13 @@ contract DataStreamsFeed is
     error UpdatesPaused();
 
     /**
-     * @notice An error thrown when the post update hook fails to execute.
+     * @notice An error thrown when a hook fails to execute.
+     *
+     * @param hookType The type of the hook that failed.
+     * @param hookAddress The address of the hook that failed.
      * @param reason The reason for the failure, encoded as bytes.
      */
-    error PostUpdateHookFailedError(bytes reason);
+    error HookFailedError(uint256 hookType, address hookAddress, bytes reason);
 
     /**
      * @notice An error thrown when attempting to set the paused status of the feed, but the status did not change.
@@ -298,45 +333,67 @@ contract DataStreamsFeed is
     error PauseStatusNotChanged();
 
     /**
-     * @notice An error thrown when attempting to set the update hook, but the hook did not change.
+     * @notice An error thrown when attempting to set a hook, but the hook did not change.
+     *
+     * @param hookType The type of the hook that was not changed.
      */
-    error UpdateHookNotChanged();
+    error HookConfigUnchanged(uint256 hookType);
 
     /**
-     * @notice An error thrown when the update hook configuration is invalid.
+     * @notice An error thrown when the hook configuration is invalid.
      */
-    error InvalidUpdateHookConfig();
+    error InvalidHookConfig(uint256 hookType);
+
+    /**
+     * @notice An error thrown when a hook does not support the expected interface.
+     *
+     * @param hookType The type of the hook that does not support the interface.
+     * @param hookAddress The address of the hook that does not support the interface.
+     * @param interfaceId The interface ID that the hook is expected to support.
+     */
+    error HookDoesntSupportInterface(uint256 hookType, address hookAddress, bytes4 interfaceId);
+
+    /**
+     * @notice An error thrown when an invalid hook type is provided.
+     */
+    error InvalidHookType(uint256 hookType);
 
     /**
      * @notice Constructs a new DataStreamsFeed contract, granting the ADMIN role to the creator of the contract.
      *
      * @param verifierProxy_ The address of the Chainlink verifier proxy contract.
-     * @param _feedId The ID of the feed. This is the same as the feedId in the report.
-     * @param _decimals The number of decimals used in the feed. This is the same as the decimals used in the report.
-     * @param _description The description of the feed.
+     * @param feedId_ The ID of the feed. This is the same as the feedId in the report.
+     * @param decimals_ The number of decimals used in the feed. This is the same as the decimals used in the report.
+     * @param description_ The description of the feed.
      */
-    constructor(address verifierProxy_, bytes32 _feedId, uint8 _decimals, string memory _description) {
-        if (verifierProxy_ == address(0) || _feedId == bytes32(0)) {
+    constructor(address verifierProxy_, bytes32 feedId_, uint8 decimals_, uint32 maxReportExpirationSeconds_, string memory description_ ) {
+        if (verifierProxy_ == address(0) || feedId_ == bytes32(0)) {
             // These are definitely invalid arguments
             revert InvalidConstructorArguments();
         }
 
         verifierProxy = IAdrastiaVerifierProxy(verifierProxy_);
-        feedId = _feedId;
-        decimals = _decimals;
-        description = _description;
+        _feedId = feedId_;
+        decimals = decimals_;
+        maxReportExpirationSeconds = maxReportExpirationSeconds_;
+        description = description_;
 
         latestReport = TruncatedReport(0, 0, 0, 0, 0);
         configAndState = ConfigAndState({
             updatesPaused: false,
-            updateHook: UpdateHook({
-                allowHookFailure: false,
-                hookGasLimit: 0,
-                hookAddress: IDataStreamsUpdateHook(address(0))
-            })
+            activeHookTypes: 0 // No hooks are active by default
         });
 
         _initializeRoles(msg.sender);
+    }
+
+    /**
+     * @notice Returns the ID of the feed. This is the same as the feedId in the report.
+     *
+     * @return The ID of the feed.
+     */
+    function feedId() external view virtual override returns (bytes32) {
+        return _feedId;
     }
 
     /**
@@ -366,28 +423,28 @@ contract DataStreamsFeed is
         emit PauseStatusChanged(msg.sender, paused_, block.timestamp);
     }
 
-    /**
-     * @notice Gets the config for the update hook, if any. A zero address for the hookAddress indicates that
-     * no update hook is set.
-     *
-     * @return allowHookFailure A flag indicating whether the post-update hook is allowed to fail.
-     * @return hookGasLimit The gas limit for the post-update hook.
-     * @return hookAddress The address of the post-update hook. A zero address indicates that no hook is set.
-     */
-    function getUpdateHook()
-        external
-        view
-        virtual
-        returns (bool allowHookFailure, uint64 hookGasLimit, IDataStreamsUpdateHook hookAddress)
-    {
-        UpdateHook memory updateHook = configAndState.updateHook;
 
-        return (updateHook.allowHookFailure, updateHook.hookGasLimit, updateHook.hookAddress);
+    /**
+     * @notice Allows the ADMIN to set the maximum expiration duration for incoming reports.
+     */
+    function setMaxReportExpiration(uint32 _newMaxExpirationSeconds) external onlyRole(Roles.ADMIN) {
+        maxReportExpirationSeconds = _newMaxExpirationSeconds;
     }
 
     /**
-     * @notice Sets the update hook configuration. This allows for setting a post-update hook that is called after a
-     * report is updated.
+     * @notice Gets the hook configuration for a specific hook type. A zero address indicates that no hook is set.
+     *
+     * @param hookType The type of the hook to retrieve the configuration for.
+     *
+     * @return The configuration of the hook, including whether it allows failure, the gas limit for the hook, and the
+     * address of the hook.
+     */
+    function getHookConfig(uint8 hookType) external view virtual returns (Hook memory) {
+        return hooks[hookType];
+    }
+
+    /**
+     * @notice Sets the hook configuration for a specific hook type.
      *
      * If the hookAddress is set to the zero address, it indicates that no post-update hook is set. In that case,
      * hookGasLimit must be 0 and allowHookFailure must be false to prevent accidental misconfiguration.
@@ -395,51 +452,58 @@ contract DataStreamsFeed is
      * If the hookAddress is set to a non-zero address, hookGasLimit must be non-zero to prevent accidental
      * misconfiguration.
      *
+     * Please ensure that the hook implements ERC165 and supports the expected interface for the hook type.
+     *
      * @dev This function can only be called by accounts with the ADMIN role.
      *
-     * @param allowHookFailure A flag indicating whether the post-update hook is allowed to fail. If true, the hook can
-     * fail without reverting the transaction.
-     * @param hookGasLimit The gas limit for the post-update hook. This is used to ensure that the hook does not consume
-     * too much gas and cause the transaction unintentionally to fail.
-     * @param hookAddress The address of the post-update hook. This is called after a report is updated. The zero
-     * address indicates that no post-update hook is set.
+     * @param hookType The type of the hook to set the configuration for.
+     * @param hookConfig The configuration of the hook to set, including whether it allows failure, the gas limit for
+     * the hook, and the address of the hook.
      */
-    function setUpdateHook(
-        bool allowHookFailure,
-        uint64 hookGasLimit,
-        IDataStreamsUpdateHook hookAddress
-    ) external virtual onlyRole(Roles.ADMIN) {
-        UpdateHook memory oldHook = configAndState.updateHook;
-
-        if (
-            oldHook.allowHookFailure == allowHookFailure &&
-            oldHook.hookGasLimit == hookGasLimit &&
-            oldHook.hookAddress == hookAddress
-        ) {
-            // The update hook did not change. Revert to help the user be aware of this.
-            revert UpdateHookNotChanged();
-        }
-
-        if (address(hookAddress) == address(0)) {
+    function setHookConfig(uint8 hookType, Hook calldata hookConfig) external virtual onlyRole(Roles.ADMIN) {
+        if (address(hookConfig.hookAddress) == address(0)) {
             // hookGasLimit must be 0 and allowHookFailure must be false if the hookAddress is zero
             // This is to prevent accidental misconfiguration
-            if (hookGasLimit != 0 || allowHookFailure) {
-                revert InvalidUpdateHookConfig();
+            if (hookConfig.hookGasLimit != 0 || hookConfig.allowHookFailure) {
+                revert InvalidHookConfig(hookType);
             }
         } else {
             // We have an update hook. Ensure that hookGasLimit is not zero. If so, it's likely a misconfiguration.
-            if (hookGasLimit == 0) {
-                revert InvalidUpdateHookConfig();
+            if (hookConfig.hookGasLimit == 0) {
+                revert InvalidHookConfig(hookType);
             }
         }
 
-        configAndState.updateHook = UpdateHook({
-            allowHookFailure: allowHookFailure,
-            hookGasLimit: hookGasLimit,
-            hookAddress: hookAddress
-        });
+        Hook memory oldHook = _getHook(hookType);
 
-        emit UpdateHookChanged(msg.sender, oldHook, configAndState.updateHook, block.timestamp);
+        if (
+            oldHook.allowHookFailure == hookConfig.allowHookFailure &&
+            oldHook.hookGasLimit == hookConfig.hookGasLimit &&
+            oldHook.hookAddress == hookConfig.hookAddress
+        ) {
+            // The hook did not change. Revert to help the user be aware of this.
+            revert HookConfigUnchanged(hookType);
+        }
+
+        if (address(hookConfig.hookAddress) != address(0)) {
+            // Ensure that the hook supports the expected interface
+            bytes4 expectedInterfaceId = _getHookInterfaceId(hookType);
+            if (!ERC165Checker.supportsInterface(hookConfig.hookAddress, expectedInterfaceId)) {
+                revert HookDoesntSupportInterface(hookType, hookConfig.hookAddress, expectedInterfaceId);
+            }
+        }
+
+        if (address(hookConfig.hookAddress) != address(0)) {
+            // We are setting a new hook, so we need to add it to the active hook types
+            configAndState.activeHookTypes |= (uint16(1) << hookType);
+        } else {
+            // We are removing a hook, so we need to remove it from the active hook types
+            configAndState.activeHookTypes &= ~(uint16(1) << hookType);
+        }
+
+        hooks[hookType] = hookConfig;
+
+        emit HookConfigUpdated(msg.sender, hookType, oldHook, hookConfig, block.timestamp);
     }
 
     /**
@@ -631,7 +695,7 @@ contract DataStreamsFeed is
     function updateReport(
         uint16 reportVersion,
         bytes calldata verifiedReportData
-    ) external virtual override onlyRole(Roles.REPORT_VERIFIER) {
+    ) external virtual override onlyRole(Roles.REPORT_VERIFIER) nonReentrant {
         _updateReport(reportVersion, verifiedReportData);
     }
 
@@ -639,16 +703,12 @@ contract DataStreamsFeed is
     function verifyAndUpdateReport(
         bytes calldata unverifiedReportData,
         bytes calldata parameterPayload
-    ) external virtual override {
+    ) external virtual override nonReentrant {
         // Decode unverified report to extract report data
         (, bytes memory reportData) = abi.decode(unverifiedReportData, (bytes32[3], bytes));
 
         // Extract report version from reportData
         uint16 reportVersion = (uint16(uint8(reportData[0])) << 8) | uint16(uint8(reportData[1]));
-        if (reportVersion < 2 || reportVersion > 4) {
-            // Invalid report version. Revert early to save on gas (skip verification).
-            revert InvalidReportVersion(reportVersion);
-        }
 
         // Handle fee approval (if any)
         _handleFeeApproval();
@@ -703,6 +763,8 @@ contract DataStreamsFeed is
         return
             interfaceID == type(IDataStreamsFeed).interfaceId ||
             interfaceID == type(AggregatorV2V3Interface).interfaceId ||
+            interfaceID == type(AggregatorInterface).interfaceId ||
+            interfaceID == type(AggregatorV3Interface).interfaceId ||
             AccessControlEnumerable.supportsInterface(interfaceID);
     }
 
@@ -730,6 +792,40 @@ contract DataStreamsFeed is
         uint256 allowance = feeToken.allowance(address(this), rewardManager);
         if (allowance == 0) {
             feeToken.approve(rewardManager, type(uint256).max);
+        }
+    }
+
+    function _getHookInterfaceId(uint256 hookType) internal pure virtual returns (bytes4) {
+        if (hookType == uint256(HookType.PreUpdate)) {
+            return type(IDataStreamsPreUpdateHook).interfaceId;
+        } else if (hookType == uint256(HookType.PostUpdate)) {
+            return type(IDataStreamsPostUpdateHook).interfaceId;
+        } else {
+            revert InvalidHookType(hookType);
+        }
+    }
+
+    function _isHookSet(uint256 activeHooks, uint256 hookType) internal view virtual returns (bool) {
+        return (activeHooks & (uint256(1) << hookType)) != 0;
+    }
+
+    function _getHook(uint256 hookType) internal view virtual returns (Hook memory) {
+        return hooks[hookType];
+    }
+
+    function _executeHook(uint256 hookType, bytes memory callData) internal virtual {
+        Hook memory hook = _getHook(hookType);
+
+        (bool success, bytes memory returnData) = hook.hookAddress.call{gas: hook.hookGasLimit}(callData);
+
+        if (!success) {
+            if (hook.allowHookFailure) {
+                // The hook failed, but we allow it to fail
+                emit HookFailed(hookType, hook.hookAddress, returnData, block.timestamp);
+            } else {
+                // The hook failed, and we do not allow it to fail
+                revert HookFailedError(hookType, hook.hookAddress, returnData);
+            }
         }
     }
 
@@ -785,12 +881,21 @@ contract DataStreamsFeed is
             revert InvalidReportVersion(reportVersion);
         }
 
-        if (reportFeedId != feedId) {
-            revert FeedMismatch(feedId, reportFeedId);
+        if (reportFeedId != _feedId) {
+            revert FeedMismatch(_feedId, reportFeedId);
+        }
+
+        if (reportTimestamp == 0) {
+            // The report is invalid
+            revert InvalidReport();
         }
 
         if (block.timestamp >= reportExpiresAt) {
             revert ReportIsExpired(reportExpiresAt, uint32(block.timestamp));
+        }
+
+        if (reportExpiresAt > reportTimestamp + maxReportExpirationSeconds) {
+            revert ReportExpirationTooFarInFuture(reportExpiresAt, reportTimestamp + maxReportExpirationSeconds);
         }
 
         if (block.timestamp < reportValidFromTimestamp) {
@@ -819,12 +924,17 @@ contract DataStreamsFeed is
             revert StaleReport(lastReport.observationTimestamp, reportTimestamp);
         }
 
-        if (reportTimestamp == 0) {
-            // The report is invalid
-            revert InvalidReport();
-        }
-
         uint32 newRoundId = lastReport.roundId + 1;
+
+        if (_isHookSet(config.activeHookTypes, uint256(HookType.PreUpdate))) {
+            _executeHook(
+                uint256(HookType.PreUpdate),
+                abi.encodeCall(
+                    IDataStreamsPreUpdateHook.onPreReportUpdate,
+                    (_feedId, newRoundId, reportPrice, reportTimestamp, reportExpiresAt, uint32(block.timestamp))
+                )
+            );
+        }
 
         historicalReports[newRoundId] = latestReport = TruncatedReport({
             price: reportPrice,
@@ -847,30 +957,14 @@ contract DataStreamsFeed is
             uint32(block.timestamp)
         );
 
-        // Call the post-update hook, if set
-        address postUpdateHook = address(config.updateHook.hookAddress);
-        if (postUpdateHook != address(0)) {
-            (bool success, bytes memory returnData) = postUpdateHook.call{gas: config.updateHook.hookGasLimit}(
-                abi.encodeWithSelector(
-                    IDataStreamsUpdateHook.onReportUpdated.selector,
-                    feedId,
-                    newRoundId,
-                    reportPrice,
-                    reportTimestamp,
-                    reportExpiresAt,
-                    uint32(block.timestamp)
+        if (_isHookSet(config.activeHookTypes, uint256(HookType.PostUpdate))) {
+            _executeHook(
+                uint256(HookType.PostUpdate),
+                abi.encodeCall(
+                    IDataStreamsPostUpdateHook.onPostReportUpdate,
+                    (_feedId, newRoundId, reportPrice, reportTimestamp, reportExpiresAt, uint32(block.timestamp))
                 )
             );
-
-            if (!success) {
-                if (config.updateHook.allowHookFailure) {
-                    // The hook failed, but we allow it to fail
-                    emit PostUpdateHookFailed(postUpdateHook, returnData, block.timestamp);
-                } else {
-                    // The hook failed, and we do not allow it to fail
-                    revert PostUpdateHookFailedError(returnData);
-                }
-            }
         }
     }
 
