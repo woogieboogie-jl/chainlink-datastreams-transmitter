@@ -139,6 +139,8 @@ export async function executeContract({
   }
 }
 
+
+
 async function getContractAddresses() {
   try {
     const clients = await getClients();
@@ -246,6 +248,12 @@ export async function verifyReport(report: StreamReport) {
       verifierProxyAddress,
     } = contractAddresses;
 
+    // Generate parameter payload for verifyAndUpdateReport calls
+    const feeTokenAddressEncoded = encodeAbiParameters(
+      [{ type: 'address', name: 'parameterPayload' }],
+      [feeTokenAddress]
+    );
+
     const [fee] = await readContract(publicClient, {
       address: feeManagerAddress,
       abi: feeManagerAbi,
@@ -253,11 +261,6 @@ export async function verifyReport(report: StreamReport) {
       args: [account.address, reportData, feeTokenAddress],
     });
     logger.info(`⛽️ Estimated fee: ${formatEther(fee.amount)} LINK`, { fee });
-
-    const feeTokenAddressEncoded = encodeAbiParameters(
-      [{ type: 'address', name: 'parameterPayload' }],
-      [feeTokenAddress]
-    );
 
     const approveLinkGas = await estimateContractGas(publicClient, {
       account,
@@ -381,6 +384,8 @@ export async function verifyReport(report: StreamReport) {
         verifiedReportData
       );
       const verifiedReport: ReportV3 = {
+        reportVersion,
+        verifiedReport: verifiedReportData as Hex,
         feedId,
         validFromTimestamp,
         observationsTimestamp,
@@ -391,6 +396,7 @@ export async function verifyReport(report: StreamReport) {
         bid,
         ask,
         rawReport: report.rawReport,
+        parameterPayload: feeTokenAddressEncoded,
       };
       logger.info('✅ Report verified', { verifiedReport });
       return verifiedReport;
@@ -419,6 +425,8 @@ export async function verifyReport(report: StreamReport) {
         verifiedReportData
       );
       const verifiedReport: ReportV4 = {
+        reportVersion,
+        verifiedReport: verifiedReportData as Hex,
         feedId,
         validFromTimestamp,
         observationsTimestamp,
@@ -428,6 +436,7 @@ export async function verifyReport(report: StreamReport) {
         price,
         marketStatus,
         rawReport: report.rawReport,
+        parameterPayload: feeTokenAddressEncoded,
       };
       logger.info('✅ Report verified', { verifiedReport });
       return verifiedReport;
