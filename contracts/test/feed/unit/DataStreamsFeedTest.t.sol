@@ -291,13 +291,12 @@ contract DataStreamsFeedTest is Test, FeedConstants, FeedDataFixture {
 
         address verifier = address(0x123);
         bytes32 role = feed.REPORT_VERIFIER();
-        bytes32 adminRole = feed.getRoleAdmin(role);
+        bytes32 adminRole = feed.ADMIN();
 
-        bytes memory revertReason = abi.encodePacked(
-            "AccessControl: account ",
-            Strings.toHexString(unauthorizedUser),
-            " is missing role ",
-            Strings.toHexString(uint256(adminRole), 32)
+        bytes memory revertReason = abi.encodeWithSelector(
+            IAccessControl.AccessControlUnauthorizedAccount.selector,
+            unauthorizedUser,
+            adminRole
         );
 
         vm.expectRevert(revertReason);
@@ -321,11 +320,10 @@ contract DataStreamsFeedTest is Test, FeedConstants, FeedDataFixture {
         bytes32 role = feed.UPDATE_PAUSE_ADMIN();
         bytes32 adminRole = feed.getRoleAdmin(role);
 
-        bytes memory revertReason = abi.encodePacked(
-            "AccessControl: account ",
-            Strings.toHexString(unauthorizedUser),
-            " is missing role ",
-            Strings.toHexString(uint256(adminRole), 32)
+        bytes memory revertReason = abi.encodeWithSelector(
+            IAccessControl.AccessControlUnauthorizedAccount.selector,
+            unauthorizedUser,
+            adminRole
         );
 
         vm.expectRevert(revertReason);
@@ -347,11 +345,10 @@ contract DataStreamsFeedTest is Test, FeedConstants, FeedDataFixture {
         address unauthorizedUser = address(0x456);
         vm.startPrank(unauthorizedUser);
 
-        bytes memory revertReason = abi.encodePacked(
-            "AccessControl: account ",
-            Strings.toHexString(unauthorizedUser),
-            " is missing role ",
-            Strings.toHexString(uint256(role), 32)
+        bytes memory revertReason = abi.encodeWithSelector(
+            IAccessControl.AccessControlUnauthorizedAccount.selector,
+            unauthorizedUser,
+            role
         );
 
         vm.expectRevert(revertReason);
@@ -598,17 +595,16 @@ contract DataStreamsFeedTest is Test, FeedConstants, FeedDataFixture {
         );
 
         UpdateHookStub hook = new UpdateHookStub();
-
-        bytes32 adminRole = feed.ADMIN();
-
+        
+        bytes32 role = feed.ADMIN();
+        bytes32 adminRole = feed.getRoleAdmin(role);
         address unauthorizedUser = address(0x456);
         vm.startPrank(unauthorizedUser);
 
-        bytes memory revertReason = abi.encodePacked(
-            "AccessControl: account ",
-            Strings.toHexString(unauthorizedUser),
-            " is missing role ",
-            Strings.toHexString(uint256(adminRole), 32)
+        bytes memory revertReason = abi.encodeWithSelector(
+            IAccessControl.AccessControlUnauthorizedAccount.selector,
+            unauthorizedUser,
+            adminRole
         );
 
         vm.expectRevert(revertReason);
@@ -1475,14 +1471,15 @@ contract DataStreamsFeedTest is Test, FeedConstants, FeedDataFixture {
         uint256 amount = 1 * 10 ** fakeErc20.decimals();
         fakeErc20.transfer(address(feed), amount);
 
+        bytes32 role = feed.ADMIN();
+        bytes32 adminRole = feed.getRoleAdmin(role);
         address unauthorizedUser = address(0x456);
         vm.startPrank(unauthorizedUser);
-
-        bytes memory revertReason = abi.encodePacked(
-            "AccessControl: account ",
-            Strings.toHexString(unauthorizedUser),
-            " is missing role ",
-            Strings.toHexString(uint256(feed.ADMIN()), 32)
+        
+        bytes memory revertReason = abi.encodeWithSelector(
+            IAccessControl.AccessControlUnauthorizedAccount.selector,
+            unauthorizedUser,
+            adminRole
         );
 
         vm.expectRevert(revertReason);
@@ -3443,11 +3440,10 @@ contract DataStreamsFeedTest is Test, FeedConstants, FeedDataFixture {
         address unauthorizedUser = address(0x456);
         vm.startPrank(unauthorizedUser);
 
-        bytes memory revertReason = abi.encodePacked(
-            "AccessControl: account ",
-            Strings.toHexString(unauthorizedUser),
-            " is missing role ",
-            Strings.toHexString(uint256(verifierRole), 32)
+        bytes memory revertReason = abi.encodeWithSelector(
+            IAccessControl.AccessControlUnauthorizedAccount.selector,
+            unauthorizedUser,
+            verifierRole
         );
 
         vm.expectRevert(revertReason);
