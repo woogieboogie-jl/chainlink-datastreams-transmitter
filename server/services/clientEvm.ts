@@ -139,8 +139,6 @@ export async function executeContract({
   }
 }
 
-
-
 async function getContractAddresses() {
   try {
     const clients = await getClients();
@@ -254,63 +252,69 @@ export async function verifyReport(report: StreamReport) {
       [feeTokenAddress]
     );
 
-    const [fee] = await readContract(publicClient, {
-      address: feeManagerAddress,
-      abi: feeManagerAbi,
-      functionName: 'getFeeAndReward',
-      args: [account.address, reportData, feeTokenAddress],
-    });
-    logger.info(`⛽️ Estimated fee: ${formatEther(fee.amount)} LINK`, { fee });
-
-    const approveLinkGas = await estimateContractGas(publicClient, {
-      account,
-      address: feeTokenAddress,
-      abi: erc20Abi,
-      functionName: 'approve',
-      args: [rewardManagerAddress, fee.amount],
-    });
-
-    logger.info(
-      `⛽️ Estimated gas for LINK approval: ${formatEther(approveLinkGas)} ${
-        publicClient.chain?.nativeCurrency.symbol
-      }`,
-      { approveLinkGas }
-    );
     const gasCap = await getGasCap();
-    if (gasCap && approveLinkGas > BigInt(gasCap)) {
-      logger.info(
-        `🛑 LINK approval gas is above the limit of ${formatEther(
-          BigInt(gasCap)
-        )} | Aborting`,
-        { approveLinkGas, gasCap }
-      );
-      return;
-    }
 
-    const { request: approveLinkRequest } = await simulateContract(
-      publicClient,
-      {
+    if (feeManagerAddress && feeManagerAddress !== zeroAddress) {
+      logger.info('⌛ Estimating fee for verification');
+      const [fee] = await readContract(publicClient, {
+        address: feeManagerAddress,
+        abi: feeManagerAbi,
+        functionName: 'getFeeAndReward',
+        args: [account.address, reportData, feeTokenAddress],
+      });
+      logger.info(`⛽️ Estimated fee: ${formatEther(fee.amount)} LINK`, {
+        fee,
+      });
+
+      const approveLinkGas = await estimateContractGas(publicClient, {
         account,
         address: feeTokenAddress,
         abi: erc20Abi,
         functionName: 'approve',
         args: [rewardManagerAddress, fee.amount],
-      }
-    );
-    const approveLinkHash = await writeContract(
-      walletClient,
-      approveLinkRequest
-    );
-    const approveLinkReceipt = await waitForTransactionReceipt(publicClient, {
-      hash: approveLinkHash,
-    });
+      });
 
-    if (approveLinkReceipt.status !== 'success') {
-      logger.warn(
-        `🛑 LINK approval transaction was not successful | Aborting`,
-        { transactionReceipt: approveLinkReceipt }
+      logger.info(
+        `⛽️ Estimated gas for LINK approval: ${formatEther(approveLinkGas)} ${
+          publicClient.chain?.nativeCurrency.symbol
+        }`,
+        { approveLinkGas }
       );
-      return;
+      if (gasCap && approveLinkGas > BigInt(gasCap)) {
+        logger.info(
+          `🛑 LINK approval gas is above the limit of ${formatEther(
+            BigInt(gasCap)
+          )} | Aborting`,
+          { approveLinkGas, gasCap }
+        );
+        return;
+      }
+
+      const { request: approveLinkRequest } = await simulateContract(
+        publicClient,
+        {
+          account,
+          address: feeTokenAddress,
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [rewardManagerAddress, fee.amount],
+        }
+      );
+      const approveLinkHash = await writeContract(
+        walletClient,
+        approveLinkRequest
+      );
+      const approveLinkReceipt = await waitForTransactionReceipt(publicClient, {
+        hash: approveLinkHash,
+      });
+
+      if (approveLinkReceipt.status !== 'success') {
+        logger.warn(
+          `🛑 LINK approval transaction was not successful | Aborting`,
+          { transactionReceipt: approveLinkReceipt }
+        );
+        return;
+      }
     }
 
     const verifyReportGas = await estimateContractGas(publicClient, {
