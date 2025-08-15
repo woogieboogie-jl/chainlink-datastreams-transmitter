@@ -15,7 +15,7 @@ export function Footer() {
 
           <div className="flex space-x-4">
             <Link
-              to="https://github.com/hackbg/chainlink-datastreams-transmitter"
+              to="https://github.com/hackbg/push-engine"
               className="flex text-gray-400 hover:text-white transition"
             >
               <ExternalLink className="size-5" />

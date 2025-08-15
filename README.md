@@ -8,11 +8,11 @@
 
 </div>
 
-# Chainlink Data Streams Transmitter
+# Push Engine
 
 ## Overview
 
-Chainlink Data Streams Transmitter is a service that bridges off-chain data streams with on-chain smart contracts. It continuously monitors off-chain price updates and pushes them on-chain based on predefined conditions such as price deviations or time intervals.
+Push Engine is a service that bridges off-chain data streams with on-chain smart contracts. It continuously monitors off-chain price updates and pushes them on-chain based on predefined conditions such as price deviations or time intervals.
 
 ### Key Features:
 
@@ -25,7 +25,7 @@ Chainlink Data Streams Transmitter is a service that bridges off-chain data stre
 
 ## Table of contents
 
-- [Chainlink Data Streams Transmitter](#chainlink-data-streams-transmitter)
+- [Push Engine](#push-engine)
   - [Overview](#overview)
     - [Key Features:](#key-features)
   - [Table of contents](#table-of-contents)
@@ -80,7 +80,7 @@ Chainlink Data Streams Transmitter is a service that bridges off-chain data stre
 
 ```mermaid
 graph TD
-    A[Streams Aggregation Network] -->|1.Monitors prices via websocket| B[Data Streams Chain Transmitter]
+    A[Streams Aggregation Network] -->|1.Monitors prices via websocket| B[Push Engine]
     B -->|2.Retrieves Verified Reports at set interval or deviation| C[Streams Verifier Contract]
     B -->|3.Writes Prices on-chain to data feeds contract| D[ETH/USD]
     B -->|3.Writes Prices on-chain to data feeds contract| E[BTC/USD]
@@ -107,8 +107,8 @@ Before setting up the , ensure you have the required dependencies installed.
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/hackbg/chainlink-datastreams-transmitter.git
-   cd chainlink-datastreams-transmitter
+   git clone https://github.com/hackbg/push-engine.git
+   cd push-engine
    ```
 2. Copy the example environment file:
    ```sh
@@ -137,18 +137,18 @@ To make setting environment variables easier there is a `.env.example` file in t
 
 | Name | Description|
 | -------------|------------- | 
-| `REDIS_HOST`                            | Required for the local persistence layer operation. If not provided the setup will fallback to the default Redis instance which should be running on localhost or 127.0.0.1 if ran with the provided docker compose setup.                                                |
-| `REDIS_PASSWORD`                        | Required for the local persistence layer operation. If not provided the setup will fallback to the default Redis password.                                                                                                                                                |
-| `PRIVATE_KEY`                           | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. This account will be used to pay for the transaction fees in the respective native currency for the target chain specified. |
-| `DATASTREAMS_HOSTNAME`                  | Chainlink Data Streams Hostname **with protocol prefix** `https://`. Ex.: `https://api.testnet-dataengine.chain.link`                                                                                                                                                     |
-| `DATASTREAMS_WS_HOSTNAME`               | WebSocket Hostname for Data Streams **with protocol prefix** `wss://`. Ex.: `wss://ws.testnet-dataengine.chain.link`                                                                                                                                                      |
-| `DATASTREAMS_CLIENT_ID`                 | Client ID for authentication.                                                                                                                                                                                                                                             |
-| `DATASTREAMS_CLIENT_SECRET`             | Client Secret for authentication.                                                                                                                                                                                                                                         |  |
-| `DATASTREAMS_WS_RECONNECT_ENABLED`      | Automatic websocket reconnect on failure or connection drop. Defaults to `true`                                                                                                                                                                                           |  |
-| `DATASTREAMS_WS_RECONNECT_MAX_ATTEMPTS` | Maximum number of reconnect attempts. Defaults to Infinity.                                                                                                                                                                                                               |  |
-| `DATASTREAMS_WS_RECONNECT_INTERVAL`     | Websocket reconnect interval. Defaults to 5000ms (5seconds).                                                                                                                                                                                                              |  |
-| `DATASTREAMS_WS_RECONNECT_STALE_INTERVAL`     | If in the given interval there are no new reports the transmitter will initiate reconnect. Defaults to 60 000ms (60 seconds).                                                                                                                                                                                                              |  |
-| `HEALTH_PORT`                           | (Optional) Port on which the transmitter can be pinged for health check for integration with a monitoring service. Defaults to `8081`.                                                                                                                                    |  |
+| `REDIS_HOST`                              | Required for the local persistence layer operation. If not provided the setup will fallback to the default Redis instance which should be running on localhost or 127.0.0.1 if ran with the provided docker compose setup.                                                |
+| `REDIS_PASSWORD`                          | Required for the local persistence layer operation. If not provided the setup will fallback to the default Redis password.                                                                                                                                                |
+| `PRIVATE_KEY`                             | Used to make payments in LINK for the Data Streams verifications on-chain and for writing data on-chain on the user provided custom contract. This account will be used to pay for the transaction fees in the respective native currency for the target chain specified. |
+| `DATASTREAMS_HOSTNAME`                    | Chainlink Data Streams Hostname **with protocol prefix** `https://`. Ex.: `https://api.testnet-dataengine.chain.link`                                                                                                                                                     |
+| `DATASTREAMS_WS_HOSTNAME`                 | WebSocket Hostname for Data Streams **with protocol prefix** `wss://`. Ex.: `wss://ws.testnet-dataengine.chain.link`                                                                                                                                                      |
+| `DATASTREAMS_CLIENT_ID`                   | Client ID for authentication.                                                                                                                                                                                                                                             |
+| `DATASTREAMS_CLIENT_SECRET`               | Client Secret for authentication.                                                                                                                                                                                                                                         |     |
+| `DATASTREAMS_WS_RECONNECT_ENABLED`        | Automatic websocket reconnect on failure or connection drop. Defaults to `true`                                                                                                                                                                                           |     |
+| `DATASTREAMS_WS_RECONNECT_MAX_ATTEMPTS`   | Maximum number of reconnect attempts. Defaults to Infinity.                                                                                                                                                                                                               |     |
+| `DATASTREAMS_WS_RECONNECT_INTERVAL`       | Websocket reconnect interval. Defaults to 5000ms (5seconds).                                                                                                                                                                                                              |     |
+| `DATASTREAMS_WS_RECONNECT_STALE_INTERVAL` | If in the given interval there are no new reports the push engine will initiate reconnect. Defaults to 60 000ms (60 seconds).                                                                                                                                             |     |
+| `HEALTH_PORT`                             | (Optional) Port on which the push engine can be pinged for health check for integration with a monitoring service. Defaults to `8081`.                                                                                                                                    |     |
 
 > [!NOTE]
 > All other user configurations are stored locally using Redis file eliminating the need for separate configuration files. This ensures fast access and persistence across sessions without manual file handling. Only sensitive configurations, such as API keys and database credentials, are managed separately in the `.env` file. The application automatically loads and updates configurations in Redis as needed. Users do not need to manually edit or maintain configuration files, simplifying setup and deployment.
@@ -161,18 +161,18 @@ To make setting environment variables easier there is a `.env.example` file in t
 
 Although configurations are stored in Redis, an example YAML configuration is provided for reference. This YAML file can be used to seed the Redis configuration parameters automatically without requiring manual input through the UI. This approach simplifies setup and allows for easier reproducibility of configurations across multiple instances of the service.
 
-Using a YAML file for configuration also makes it possible to replicate a specific setup by copying the file across different instances of the Transmitter. This ensures that deployments remain consistent and eliminates the need for repeated manual configuration when scaling the service.
+Using a YAML file for configuration also makes it possible to replicate a specific setup by copying the file across different instances of the Push Engine. This ensures that deployments remain consistent and eliminates the need for repeated manual configuration when scaling the service.
 
 ### YAML Configuration
 
 ```yaml
-# List of Chainlink Data feeds that the transmitter will subscribe to
+# List of Chainlink Data feeds that the push engine will subscribe to
 feeds:
   # Name of the feed
   - name: 'ETH/USD'
     # Unique identifier for the feed (Ref: https://docs.chain.link/data-streams/crypto-streams?page=1)
     feedId: '0x...'
-# The target blockchain network ID (the network the Transmitter will write the data to)
+# The target blockchain network ID (the network the Push Engine will write the data to)
 chainId: 43113
 # Maximum gas limit. This is the maximum amount of gas you are willing to spend on a transaction.
 # If the estimated gas is greater, the transaction will be canceled.
@@ -191,7 +191,7 @@ priceDeltaPercentage: 0.01
 chains:
   # Each additional chain should be added to the configuration with the following mandatory properties: id, name, currencyName, currencySymbol, currencyDecimals, rpc.
   # Optional: Set the `testnet` property to 'true' if this is a test network.
-  # Removing this property makes the transmitter consider the network a mainnet.
+  # Removing this property makes the push engine consider the network a mainnet.
   - id: 995
     name: '🔥 5ireChain'
     currencyName: '5ire Token'
@@ -210,8 +210,8 @@ targetChains:
     # set the functionName with the arguments to be called. Contract ABI should also be provided.
     targetContracts:
       - feedId: '0x...'
-        # Optional flag to skip report verification by the transmitter before pushing the data to the user provided contract.
-        # Defaults to `false`. Set to `true` if you want the transmitter to not verify reports upon delivery.
+        # Optional flag to skip report verification by the push engine before pushing the data to the user provided contract.
+        # Defaults to `false`. Set to `true` if you want the push engine to not verify reports upon delivery.
         skipVerify: false
         address: '0x...'
         functionName: 'functionNameHere'
@@ -342,7 +342,7 @@ targetChains:
     - `functionArgs`: List of required arguments for the contract function.
     - `abi`: Function definition used for contract interactions.
 
-To apply changes, restart the Transmitter using:
+To apply changes, restart the Push Engine using:
 
 ```sh
 docker compose restart
@@ -402,6 +402,7 @@ Reconnect options can be passed as `env` variables `DATASTREAMS_WS_RECONNECT_ENA
 - Default interval for reconnect attempt is 5000ms (5 seconds).
 
 ### Retry Logic
+
 Each time the WebSocket closes:
 
 If reconnecting is allowed and not manually disconnected, a reconnect attempt is scheduled after interval ms.
@@ -409,7 +410,6 @@ If reconnecting is allowed and not manually disconnected, a reconnect attempt is
 The attempt counter increments.
 
 If maxAttempts is exceeded, reconnect stops and an error is logged.
-
 
 ## Infrastructural Considerations
 
@@ -419,6 +419,7 @@ If maxAttempts is exceeded, reconnect stops and an error is logged.
 We recommend implementing security controls and equivalent protections at the infrastructure level.
 
 These application-level security controls could be supplemented through the following infrastructural-level recommendations:
+
 - The web server leverages HTTP and does not employ protocol-level encryption and authentication (e.g., TLS), leaving network traffic prone to man-in-the-middle attacks.
   - For a local instance run on your machine, the operator should only interact with the web server over localhost, to avoid a man-in-the-middle attack.
   - For a cloud instance (e.g., AWS), the operator should avoid directly exposing the web server, instead introducing a load balancer that enforces TLS in front of the web server.
@@ -430,10 +431,11 @@ These application-level security controls could be supplemented through the foll
   - For a local instance run on your machine, the operator should ensure the guest (container)’s ports that are forwarded to the host cannot be indirectly accessed by another machine through the host over the local network.
   - The system should use Docker configurations to restrict such accesses, or leverage the operating system’s firewall to deny such access.
   - For a cloud instance (e.g., AWS), the operator should enforce strict ingress/egress rules that allow only expected component communications.
-  E.g., with three components, A, B, and C, where only A should communicate
-with C, but B should not, ingress and egress rules can be used to enforce these patterns.
+    E.g., with three components, A, B, and C, where only A should communicate
+    with C, but B should not, ingress and egress rules can be used to enforce these patterns.
 
 Additionally, consider the following:
+
 - Although the Redis server should never be publicly exposed, it should nonetheless be hardened by employing [TLS configurations](https://redis.io/docs/latest/operate/oss_and_stack/management/security/encryption/) to mitigate a man-in-the-middle attack by someone who gained an initial foothold within the network.
 
 ---
@@ -442,7 +444,7 @@ Additionally, consider the following:
 
 ### UI Setup Instructions
 
-The Transmitter provides a UI for managing feeds. It is automatically enabled if you start the transmitter using the Docker compose file as mentioned in the instructions above.
+The Push Engine provides a UI for managing feeds. It is automatically enabled if you start the push engine using the Docker compose file as mentioned in the instructions above.
 
 To start it manually outside of the docker setup:
 
@@ -458,7 +460,7 @@ To start it manually outside of the docker setup:
 ### UI usage
 
 > [!NOTE]
-> If a configuration YAML file is provided, its content gets saved in the local Redis instance on the first start of the transmitter. The UI will automatically load the settings from the Redis store instance when opened. Otherwise, if there is no initial configuration provided - the interface will start with an empty state, requiring the user to enter all details manually. The following sections explain how to complete the configuration step by step.
+> If a configuration YAML file is provided, its content gets saved in the local Redis instance on the first start of the push engine. The UI will automatically load the settings from the Redis store instance when opened. Otherwise, if there is no initial configuration provided - the interface will start with an empty state, requiring the user to enter all details manually. The following sections explain how to complete the configuration step by step.
 
 #### Streams
 
@@ -476,7 +478,7 @@ First section allows monitoring and managing of the streams. Each row contains t
 - `Remove`: This action button can be used to remove the feed from the list and stop tracking its reports.
 - `Start`: Action button to Start or resume all data streams.
 - `Stop`: Action button to Stop all the streams.
-- `Add new data stream`: A button leading to the section for adding a new feed to the list so the transmitter can start tracking it.
+- `Add new data stream`: A button leading to the section for adding a new feed to the list so the push engine can start tracking it.
 
 ##### Contract
 
@@ -494,17 +496,17 @@ View/Add or Edit the target contract address.
 **Skip Report Verification**
 ![skip-verify](public/readme/skip-verify.png)
 
-This setting allows you to configure the transmitter to bypass off-chain report verification before submitting the transaction to the specified contract on-chain.
+This setting allows you to configure the push engine to bypass off-chain report verification before submitting the transaction to the specified contract on-chain.
 
 - Default Behavior:
-  - If this option is not enabled, the transmitter will automatically perform off-chain report verification before submitting reports to the blockchain. The transmitter will submit the received data to on-chain Chainlink verifier contracts to verify the correctness of the report and to ensure it originated from Chainlink's DON before submitting the data to the user provided contract.
+  - If this option is not enabled, the push engine will automatically perform off-chain report verification before submitting reports to the blockchain. The push engine will submit the received data to on-chain Chainlink verifier contracts to verify the correctness of the report and to ensure it originated from Chainlink's DON before submitting the data to the user provided contract.
     - > [!WARNING]
-      > The transmitter side report verification could be a paid operation depending on the selected destination chain. Refer to the documentation for more information on [Data Streams Billing](https://docs.chain.link/data-streams/billing).
+      > The push engine side report verification could be a paid operation depending on the selected destination chain. Refer to the documentation for more information on [Data Streams Billing](https://docs.chain.link/data-streams/billing).
 - Important Considerations:
   - Enabling this option means skipping the off-chain verification step, which could expose your system to risks if the contract's verification mechanism is not robust.
 
 > [!WARNING]
-> Only enable this setting if you have thoroughly implemented and verified the on-chain report verification mechanism in the contract. For an example of how to implement on-chain report verification, refer to the [on-chain report verification documentation]((https://docs.chain.link/data-streams/reference/streams-direct/streams-direct-onchain-verification#interfaces)).
+> Only enable this setting if you have thoroughly implemented and verified the on-chain report verification mechanism in the contract. For an example of how to implement on-chain report verification, refer to the [on-chain report verification documentation](<(https://docs.chain.link/data-streams/reference/streams-direct/streams-direct-onchain-verification#interfaces)>).
 
 **Function**
 ![function](public/readme/function.png)
@@ -658,7 +660,7 @@ The application supports different logging levels:
 Logs can be accessed via:
 
 ```sh
-docker logs -f transmitter
+docker logs -f push-engine
 ```
 
 The application stores logs in the `logs` directory to maintain an audit trail of user actions and configuration changes. They can also be used for troubleshooting..
@@ -679,7 +681,7 @@ After deployment, verify the setup with:
 
 - Verify logs:
   ```sh
-  docker logs transmitter
+  docker logs push-engine
   ```
 
 ---
@@ -687,13 +689,13 @@ After deployment, verify the setup with:
 ## Notes
 
 > [!IMPORTANT]
-> The Transmitter uses [cron-parser](https://github.com/harrisiirak/cron-parser?tab=readme-ov-file#cron-format) for handling cron expressions.
+> The Push Engine uses [cron-parser](https://github.com/harrisiirak/cron-parser?tab=readme-ov-file#cron-format) for handling cron expressions.
 >
-> The cron-parser dependency is noted to lose some pattern information when serializing a cron pattern, such as “?” characters. The transmitter is also prone to this when setting a schedule cron pattern using "?" character which is an alias for "*" in cron-parser.
+> The cron-parser dependency is noted to lose some pattern information when serializing a cron pattern, such as “?” characters. The push engine is also prone to this when setting a schedule cron pattern using "?" character which is an alias for "\*" in cron-parser.
 >
-> For example, using “* * * ? * *” will actually set “* * * * * *”, where in other libraries the “?” character denotes an unspecified one-of (“?”), but not all (“*”).
+> For example, using “\* \* _ ? _ _” will actually set “_ \* \* \* \* _”, where in other libraries the “?” character denotes an unspecified one-of (“?”), but not all (“_”).
 >
->Make sure to check and test your cron expressions.
+> Make sure to check and test your cron expressions.
 
 ## Troubleshooting
 

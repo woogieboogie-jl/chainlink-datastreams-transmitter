@@ -20,7 +20,7 @@ export function Navigation({
         <Link className="flex" to="/">
           <img src="/chainlink.svg" alt="cl" className="size-10" />
           <h1 className="hidden lg:block leading text-3xl font-semibold">
-            Data Streams Transmitter
+            Push Engine
           </h1>
         </Link>
         <div className="grow" />

@@ -1,5 +1,5 @@
 # =================================================================
-# │         Chainlink Data Streams Transmitter Example            │
+# │         Push Engine Example            │
 # =================================================================
 #
 # Copy this file to 'config.yml' and fill in your specific details.
@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------
 # ✅  ON-CHAIN VERIFICATION CONFIG (LINK-FUNDED FEED) ✅
 # -----------------------------------------------------------------
-# • The transmitter sends the raw report and fee-token parameter to
+# • The push engine sends the raw report and fee-token parameter to
 #   `verifyAndUpdateReport(bytes unverifiedReportData, bytes parameterPayload)`.
 # • No REPORT_VERIFIER role assignment is required; the function is public.
 # • The DataStreamsFeed contract MUST hold enough LINK (fee token) so the
@@ -78,9 +78,9 @@ targetChains:
         address: '0xYourDataStreamsFeedContractOnFuji' # <-- CHANGED
         # The name of the function to call on your smart contract
         functionName: 'verifyAndUpdateReport'
-        # The arguments the Transmitter should prepare and send to the function
+        # The arguments the push engine should prepare and send to the function
         #   • rawReport          = the unverified payload from the Data Streams websocket
-        #   • parameterPayload   = abi.encode(address feeToken) – produced automatically by the transmitter
+        #   • parameterPayload   = abi.encode(address feeToken) – produced automatically by the push engine
         functionArgs: ['rawReport', 'parameterPayload']
         # The ABI for the target function, required to encode the transaction
         abi:

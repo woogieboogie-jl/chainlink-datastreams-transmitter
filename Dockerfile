@@ -10,7 +10,7 @@ ENV NODE_ENV production
 
 FROM base as deps
 
-WORKDIR /transmitter
+WORKDIR /push-engine
 
 ADD package.json ./
 RUN npm install --include=dev
@@ -19,9 +19,9 @@ RUN npm install --include=dev
 
 FROM base as production-deps
 
-WORKDIR /transmitter
+WORKDIR /push-engine
 
-COPY --from=deps /transmitter/node_modules /transmitter/node_modules
+COPY --from=deps /push-engine/node_modules /push-engine/node_modules
 ADD package.json ./
 RUN npm prune --omit=dev
 
@@ -29,9 +29,9 @@ RUN npm prune --omit=dev
 
 FROM base as build
 
-WORKDIR /transmitter
+WORKDIR /push-engine
 
-COPY --from=deps /transmitter/node_modules /transmitter/node_modules
+COPY --from=deps /push-engine/node_modules /push-engine/node_modules
 
 ADD . .
 RUN npm run build
@@ -40,12 +40,12 @@ RUN npm run build
 
 FROM base
 
-WORKDIR /transmitter
+WORKDIR /push-engine
 
-COPY --from=production-deps /transmitter/node_modules /transmitter/node_modules
+COPY --from=production-deps /push-engine/node_modules /push-engine/node_modules
 
-COPY --from=build /transmitter/build /transmitter/build
-COPY --from=build /transmitter/public /transmitter/public
+COPY --from=build /push-engine/build /push-engine/build
+COPY --from=build /push-engine/public /push-engine/public
 ADD . .
 
 # Create a non-root user
@@ -53,7 +53,7 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 --gid 1001 nodeuser
 
 # Set ownership of application files
-RUN chown -R nodeuser:nodejs /transmitter
+RUN chown -R nodeuser:nodejs /push-engine
 
 # Switch to non-root user for runtime
 USER nodeuser
